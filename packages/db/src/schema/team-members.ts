@@ -1,7 +1,7 @@
 import { pgTable, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
-import { teams } from "./teams";
-import { users } from "./users";
+import { teams } from "./teams.js";
+import { users } from "./users.js";
 
 export const teamMembers = pgTable(
   "team_members",

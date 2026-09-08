@@ -7,9 +7,9 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 
-import { organizations } from "./organizations";
-import { users } from "./users";
-import { teams } from "./teams";
+import { organizations } from "./organizations.js";
+import { users } from "./users.js";
+import { teams } from "./teams.js";
 
 export const projectStatusEnum = pgEnum("project_status", [
   "PLANNING",
