@@ -1,12 +1,29 @@
-import { Controller, Get } from '@nestjs/common';
-import { AppService } from './app.service.js';
+import { Controller, Get, UseGuards } from '@nestjs/common';
+
+import { ClerkAuthGuard } from './modules/auth/guards/clerk-auth.guard.js';
+import { CurrentUser } from './modules/auth/decorators/current-user.decorator.js';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
-
   @Get()
-  getHello(): string {
-    return this.appService.getHello();
+  getHello() {
+    return {
+      name: 'DevFlow API',
+      status: 'running',
+    };
+  }
+
+  @Get('me')
+  @UseGuards(ClerkAuthGuard)
+  getMe(
+    @CurrentUser()
+    auth: {
+      userId: string;
+    },
+  ) {
+    return {
+      authenticated: true,
+      clerkUserId: auth.userId,
+    };
   }
 }
