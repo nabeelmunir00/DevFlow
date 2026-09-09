@@ -4,7 +4,7 @@ export class UpdateTeamDto {
   @IsOptional()
   @IsString()
   @MinLength(2)
-  @MaxLength(100)
+  @MaxLength(255)
   name?: string;
 
   @IsOptional()
