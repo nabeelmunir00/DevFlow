@@ -10,6 +10,7 @@ import { AuthModule } from './modules/auth/auth.module.js';
 import { UsersModule } from './modules/users/users.module.js';
 import { OrganizationsModule } from './modules/organizations/organizations.module.js';
 import { OrganizationMembersModule } from './modules/organization-members/organization-members.module.js';
+import { OrganizationInvitationsModule } from './modules/organization-invitations/organization-invitations.module.js';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { OrganizationMembersModule } from './modules/organization-members/organi
     UsersModule,
     OrganizationsModule,
     OrganizationMembersModule,
+    OrganizationInvitationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

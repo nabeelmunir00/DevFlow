@@ -82,4 +82,9 @@ export class UsersService {
 
     return user;
   }
+  async findOptionalByEmail(email: string) {
+    return this.databaseService.db.query.users.findFirst({
+      where: (users, { eq }) => eq(users.email, email),
+    });
+  }
 }

@@ -1,6 +1,6 @@
 import { IsEmail, IsIn, IsNotEmpty } from 'class-validator';
 
-const ASSIGNABLE_ROLES = [
+const INVITABLE_ROLES = [
   'ADMIN',
   'PROJECT_MANAGER',
   'DEVELOPER',
@@ -8,11 +8,11 @@ const ASSIGNABLE_ROLES = [
   'VIEWER',
 ] as const;
 
-export class AddOrganizationMemberDto {
+export class CreateOrganizationInvitationDto {
   @IsEmail()
   @IsNotEmpty()
   email: string;
 
-  @IsIn(ASSIGNABLE_ROLES)
+  @IsIn(INVITABLE_ROLES)
   role: 'ADMIN' | 'PROJECT_MANAGER' | 'DEVELOPER' | 'MEMBER' | 'VIEWER';
 }
