@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
   GoneException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 
 import { createHash, randomBytes } from 'node:crypto';
@@ -15,12 +16,16 @@ import { DatabaseService } from '../../database/database.service.js';
 import { UsersService } from '../users/users.service.js';
 
 import { CreateOrganizationInvitationDto } from './dto/create-organization-invitation.dto.js';
+import { EmailService } from '../email/email.service.js';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class OrganizationInvitationsService {
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly usersService: UsersService,
+    private readonly emailService: EmailService,
+    private readonly configService: ConfigService,
   ) {}
 
   async create(
@@ -28,10 +33,20 @@ export class OrganizationInvitationsService {
     organizationId: string,
     dto: CreateOrganizationInvitationDto,
   ) {
-    // 1. Current logged-in user
+    // 1. Current logged-in DevFlow user
     const currentUser = await this.usersService.findByClerkId(clerkUserId);
 
-    // 2. Check current user's organization membership
+    // 2. Check organization
+    const organization =
+      await this.databaseService.db.query.organizations.findFirst({
+        where: (organizations, { eq }) => eq(organizations.id, organizationId),
+      });
+
+    if (!organization) {
+      throw new NotFoundException('Organization not found');
+    }
+
+    // 3. Check current user's membership
     const currentMembership =
       await this.databaseService.db.query.organizationMembers.findFirst({
         where: (members, { and, eq }) =>
@@ -45,7 +60,7 @@ export class OrganizationInvitationsService {
       throw new NotFoundException('Organization not found');
     }
 
-    // 3. Only OWNER or ADMIN can invite
+    // 4. Only OWNER / ADMIN can invite
     if (
       currentMembership.role !== 'OWNER' &&
       currentMembership.role !== 'ADMIN'
@@ -55,12 +70,21 @@ export class OrganizationInvitationsService {
       );
     }
 
+    // Optional stricter RBAC:
+    // ADMIN cannot create another ADMIN
+    if (currentMembership.role === 'ADMIN' && dto.role === 'ADMIN') {
+      throw new ForbiddenException(
+        'Only organization owner can invite an admin',
+      );
+    }
+
+    // 5. Normalize email
     const email = dto.email.trim().toLowerCase();
 
-    // 4. Check if email belongs to existing DevFlow user
+    // 6. Check if target already exists as DevFlow user
     const targetUser = await this.usersService.findOptionalByEmail(email);
 
-    // 5. If user exists, check if already organization member
+    // 7. If user exists, check if already member
     if (targetUser) {
       const existingMembership =
         await this.databaseService.db.query.organizationMembers.findFirst({
@@ -78,7 +102,7 @@ export class OrganizationInvitationsService {
       }
     }
 
-    // 6. Check existing pending invitation
+    // 8. Check existing pending invite
     const existingInvitation =
       await this.databaseService.db.query.organizationInvitations.findFirst({
         where: (invitations, { and, eq }) =>
@@ -90,20 +114,32 @@ export class OrganizationInvitationsService {
       });
 
     if (existingInvitation) {
-      throw new ConflictException(
-        'A pending invitation already exists for this email',
-      );
+      // If old pending invitation has already expired,
+      // mark it expired instead of blocking forever.
+      if (existingInvitation.expiresAt.getTime() < Date.now()) {
+        await this.databaseService.db
+          .update(schema.organizationInvitations)
+          .set({
+            status: 'EXPIRED',
+          })
+          .where(eq(schema.organizationInvitations.id, existingInvitation.id));
+      } else {
+        throw new ConflictException(
+          'A pending invitation already exists for this email',
+        );
+      }
     }
 
-    // 7. Generate secure invitation token
+    // 9. Generate secure raw token
     const token = randomBytes(32).toString('hex');
 
+    // 10. Store only token hash
     const tokenHash = createHash('sha256').update(token).digest('hex');
 
-    // 8. Invite expires after 7 days
+    // 11. Invitation expiry: 7 days
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-    // 9. Store invitation
+    // 12. Create invitation in DB
     const [invitation] = await this.databaseService.db
       .insert(schema.organizationInvitations)
       .values({
@@ -117,24 +153,71 @@ export class OrganizationInvitationsService {
       })
       .returning();
 
-    // Temporary.
-    // Later this URL will be sent through email.
-    const inviteUrl = `http://localhost:3000/invitations/${token}`;
+    if (!invitation) {
+      throw new InternalServerErrorException('Failed to create invitation');
+    }
 
+    // 13. Build frontend invite URL
+    const webUrl =
+      this.configService.get<string>('WEB_URL') ?? 'http://localhost:3000';
+
+    const inviteUrl = `${webUrl}/invitations/${token}`;
+
+    // 14. Send invitation email
+    try {
+      await this.emailService.sendOrganizationInvitation({
+        to: email,
+
+        organizationName: organization.name,
+
+        inviterName: currentUser.name,
+
+        role: dto.role,
+
+        inviteUrl,
+
+        expiresAt,
+      });
+    } catch (error) {
+      /*
+      For now we revoke the invitation if email sending fails.
+
+      Later when we add BullMQ:
+      DB invitation creation and email delivery will be
+      handled more robustly through background jobs/retries.
+    */
+
+      await this.databaseService.db
+        .update(schema.organizationInvitations)
+        .set({
+          status: 'REVOKED',
+        })
+        .where(eq(schema.organizationInvitations.id, invitation.id));
+
+      throw new InternalServerErrorException(
+        'Invitation was created but email could not be sent',
+      );
+    }
+
+    // 15. Safe response
     return {
-      message: 'Invitation created successfully',
+      message: 'Invitation created and email sent successfully',
 
       invitation: {
         id: invitation.id,
+
         organizationId: invitation.organizationId,
+
         email: invitation.email,
+
         role: invitation.role,
+
         status: invitation.status,
+
         expiresAt: invitation.expiresAt,
+
         createdAt: invitation.createdAt,
       },
-
-      inviteUrl,
     };
   }
 
