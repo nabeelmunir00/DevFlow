@@ -110,4 +110,43 @@ export class TeamMembersService {
 
     return members.filter((member) => member !== null);
   }
+
+  async remove(organizationId: string, teamId: string, memberId: string) {
+    // 1. Make sure team belongs to organization
+    const team = await this.databaseService.db.query.teams.findFirst({
+      where: (teams, { and, eq }) =>
+        and(eq(teams.id, teamId), eq(teams.organizationId, organizationId)),
+    });
+
+    if (!team) {
+      throw new NotFoundException('Team not found');
+    }
+
+    // 2. Find team membership
+    const teamMembership =
+      await this.databaseService.db.query.teamMembers.findFirst({
+        where: (members, { and, eq }) =>
+          and(eq(members.id, memberId), eq(members.teamId, teamId)),
+      });
+
+    if (!teamMembership) {
+      throw new NotFoundException('Team member not found');
+    }
+
+    // 3. Delete membership
+    const [removedMember] = await this.databaseService.db
+      .delete(schema.teamMembers)
+      .where(
+        and(
+          eq(schema.teamMembers.id, memberId),
+          eq(schema.teamMembers.teamId, teamId),
+        ),
+      )
+      .returning();
+
+    return {
+      message: 'Team member removed successfully',
+      member: removedMember,
+    };
+  }
 }

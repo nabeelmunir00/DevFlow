@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseUUIDPipe,
@@ -47,5 +48,20 @@ export class TeamMembersController {
     teamId: string,
   ) {
     return this.teamMembersService.findAll(organizationId, teamId);
+  }
+  @Delete(':memberId')
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'PROJECT_MANAGER')
+  remove(
+    @Param('organizationId', new ParseUUIDPipe())
+    organizationId: string,
+
+    @Param('teamId', new ParseUUIDPipe())
+    teamId: string,
+
+    @Param('memberId', new ParseUUIDPipe())
+    memberId: string,
+  ) {
+    return this.teamMembersService.remove(organizationId, teamId, memberId);
   }
 }
