@@ -12,6 +12,9 @@ import {
 import { ClerkAuthGuard } from '../auth/guards/clerk-auth.guard.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 
+import { Roles } from '../../common/rbac/roles.decorator.js';
+import { RolesGuard } from '../../common/rbac/roles.guard.js';
+
 import { OrganizationMembersService } from './organization-members.service.js';
 
 import { UpdateOrganizationMemberRoleDto } from './dto/update-organization-member-role.dto.js';
@@ -35,6 +38,8 @@ export class OrganizationMembersController {
   }
 
   @Patch(':memberId')
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN')
   updateRole(
     @CurrentUser()
     auth: { userId: string },
@@ -57,6 +62,8 @@ export class OrganizationMembersController {
   }
 
   @Delete(':memberId')
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN')
   remove(
     @CurrentUser()
     auth: { userId: string },
