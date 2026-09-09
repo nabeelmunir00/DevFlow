@@ -1,4 +1,8 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 
 import { and, eq } from 'drizzle-orm';
 import { schema } from '@devflow/db';
@@ -46,5 +50,24 @@ export class TeamsService {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '');
+  }
+  async findAll(organizationId: string) {
+    const teams = await this.databaseService.db.query.teams.findMany({
+      where: (teams, { eq }) => eq(teams.organizationId, organizationId),
+    });
+
+    return teams;
+  }
+  async findOne(organizationId: string, teamId: string) {
+    const team = await this.databaseService.db.query.teams.findFirst({
+      where: (teams, { and, eq }) =>
+        and(eq(teams.id, teamId), eq(teams.organizationId, organizationId)),
+    });
+
+    if (!team) {
+      throw new NotFoundException('Team not found');
+    }
+
+    return team;
   }
 }

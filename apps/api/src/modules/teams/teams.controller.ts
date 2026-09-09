@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   Param,
   ParseUUIDPipe,
   Post,
@@ -31,5 +32,26 @@ export class TeamsController {
     dto: CreateTeamDto,
   ) {
     return this.teamsService.create(organizationId, dto);
+  }
+  @Get()
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'PROJECT_MANAGER', 'DEVELOPER', 'MEMBER', 'VIEWER')
+  findAll(
+    @Param('organizationId', new ParseUUIDPipe())
+    organizationId: string,
+  ) {
+    return this.teamsService.findAll(organizationId);
+  }
+  @Get(':teamId')
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'PROJECT_MANAGER', 'DEVELOPER', 'MEMBER', 'VIEWER')
+  findOne(
+    @Param('organizationId', new ParseUUIDPipe())
+    organizationId: string,
+
+    @Param('teamId', new ParseUUIDPipe())
+    teamId: string,
+  ) {
+    return this.teamsService.findOne(organizationId, teamId);
   }
 }
