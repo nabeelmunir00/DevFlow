@@ -5,9 +5,10 @@ import { UsersModule } from '../users/users.module.js';
 import { OrganizationMembersController } from './organization-members.controller.js';
 
 import { OrganizationMembersService } from './organization-members.service.js';
+import { RbacModule } from '../../common/rbac/rbac.module.js';
 
 @Module({
-  imports: [UsersModule],
+  imports: [UsersModule, RbacModule],
 
   controllers: [OrganizationMembersController],
 
