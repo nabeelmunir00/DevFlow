@@ -252,4 +252,116 @@ export class OrganizationInvitationsService {
       },
     };
   }
+  async findAllForOrganization(clerkUserId: string, organizationId: string) {
+    const currentUser = await this.usersService.findByClerkId(clerkUserId);
+
+    const membership =
+      await this.databaseService.db.query.organizationMembers.findFirst({
+        where: (members, { and, eq }) =>
+          and(
+            eq(members.organizationId, organizationId),
+            eq(members.userId, currentUser.id),
+          ),
+      });
+
+    if (!membership) {
+      throw new NotFoundException('Organization not found');
+    }
+
+    if (membership.role !== 'OWNER' && membership.role !== 'ADMIN') {
+      throw new ForbiddenException(
+        'You do not have permission to view invitations',
+      );
+    }
+
+    const invitations =
+      await this.databaseService.db.query.organizationInvitations.findMany({
+        where: (invitations, { eq }) =>
+          eq(invitations.organizationId, organizationId),
+
+        orderBy: (invitations, { desc }) => [desc(invitations.createdAt)],
+      });
+
+    return invitations.map((invitation) => ({
+      id: invitation.id,
+      email: invitation.email,
+      role: invitation.role,
+      status: invitation.status,
+      expiresAt: invitation.expiresAt,
+      acceptedAt: invitation.acceptedAt,
+      createdAt: invitation.createdAt,
+    }));
+  }
+  async revoke(
+    clerkUserId: string,
+    organizationId: string,
+    invitationId: string,
+  ) {
+    const currentUser = await this.usersService.findByClerkId(clerkUserId);
+
+    const membership =
+      await this.databaseService.db.query.organizationMembers.findFirst({
+        where: (members, { and, eq }) =>
+          and(
+            eq(members.organizationId, organizationId),
+            eq(members.userId, currentUser.id),
+          ),
+      });
+
+    if (!membership) {
+      throw new NotFoundException('Organization not found');
+    }
+
+    if (membership.role !== 'OWNER' && membership.role !== 'ADMIN') {
+      throw new ForbiddenException(
+        'You do not have permission to revoke invitations',
+      );
+    }
+
+    const invitation =
+      await this.databaseService.db.query.organizationInvitations.findFirst({
+        where: (invitations, { and, eq }) =>
+          and(
+            eq(invitations.id, invitationId),
+            eq(invitations.organizationId, organizationId),
+          ),
+      });
+
+    if (!invitation) {
+      throw new NotFoundException('Invitation not found');
+    }
+
+    if (invitation.status !== 'PENDING') {
+      throw new ConflictException('Only pending invitations can be revoked');
+    }
+
+    const [revokedInvitation] = await this.databaseService.db
+      .update(schema.organizationInvitations)
+      .set({
+        status: 'REVOKED',
+      })
+      .where(
+        and(
+          eq(schema.organizationInvitations.id, invitationId),
+          eq(schema.organizationInvitations.organizationId, organizationId),
+          eq(schema.organizationInvitations.status, 'PENDING'),
+        ),
+      )
+      .returning();
+
+    if (!revokedInvitation) {
+      throw new ConflictException('Invitation has already been processed');
+    }
+
+    return {
+      message: 'Invitation revoked successfully',
+
+      invitation: {
+        id: revokedInvitation.id,
+        email: revokedInvitation.email,
+        role: revokedInvitation.role,
+        status: revokedInvitation.status,
+      },
+    };
+  }
 }

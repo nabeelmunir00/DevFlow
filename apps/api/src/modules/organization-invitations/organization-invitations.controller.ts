@@ -1,6 +1,8 @@
 import {
   Body,
   Controller,
+  Delete,
+  Get,
   Param,
   ParseUUIDPipe,
   Post,
@@ -36,6 +38,36 @@ export class OrganizationInvitationsController {
       auth.userId,
       organizationId,
       dto,
+    );
+  }
+  @Get()
+  findAll(
+    @CurrentUser()
+    auth: { userId: string },
+
+    @Param('organizationId', new ParseUUIDPipe())
+    organizationId: string,
+  ) {
+    return this.organizationInvitationsService.findAllForOrganization(
+      auth.userId,
+      organizationId,
+    );
+  }
+  @Delete(':invitationId')
+  revoke(
+    @CurrentUser()
+    auth: { userId: string },
+
+    @Param('organizationId', new ParseUUIDPipe())
+    organizationId: string,
+
+    @Param('invitationId', new ParseUUIDPipe())
+    invitationId: string,
+  ) {
+    return this.organizationInvitationsService.revoke(
+      auth.userId,
+      organizationId,
+      invitationId,
     );
   }
 }
