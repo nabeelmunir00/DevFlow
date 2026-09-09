@@ -3,9 +3,11 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  GoneException,
 } from '@nestjs/common';
 
 import { createHash, randomBytes } from 'node:crypto';
+import { and, eq } from 'drizzle-orm';
 
 import { schema } from '@devflow/db';
 
@@ -133,6 +135,121 @@ export class OrganizationInvitationsService {
       },
 
       inviteUrl,
+    };
+  }
+
+  async accept(clerkUserId: string, token: string) {
+    // 1. Hash incoming raw token
+    const tokenHash = createHash('sha256').update(token).digest('hex');
+
+    // 2. Find invitation
+    const invitation =
+      await this.databaseService.db.query.organizationInvitations.findFirst({
+        where: (invitations, { eq }) => eq(invitations.tokenHash, tokenHash),
+      });
+
+    if (!invitation) {
+      throw new NotFoundException('Invitation not found');
+    }
+
+    // 3. Check invitation status
+    if (invitation.status !== 'PENDING') {
+      throw new ConflictException('Invitation is no longer pending');
+    }
+
+    // 4. Check expiration
+    if (invitation.expiresAt.getTime() < Date.now()) {
+      await this.databaseService.db
+        .update(schema.organizationInvitations)
+        .set({
+          status: 'EXPIRED',
+        })
+        .where(eq(schema.organizationInvitations.id, invitation.id));
+
+      throw new GoneException('Invitation has expired');
+    }
+
+    // 5. Get logged-in DevFlow user
+    const currentUser = await this.usersService.findByClerkId(clerkUserId);
+
+    // 6. Invitation must belong to same email
+    const currentUserEmail = currentUser.email.trim().toLowerCase();
+
+    const invitationEmail = invitation.email.trim().toLowerCase();
+
+    if (currentUserEmail !== invitationEmail) {
+      throw new ForbiddenException(
+        'This invitation belongs to another email address',
+      );
+    }
+
+    // 7. Check if already a member
+    const existingMembership =
+      await this.databaseService.db.query.organizationMembers.findFirst({
+        where: (members, { and, eq }) =>
+          and(
+            eq(members.organizationId, invitation.organizationId),
+            eq(members.userId, currentUser.id),
+          ),
+      });
+
+    if (existingMembership) {
+      throw new ConflictException(
+        'You are already a member of this organization',
+      );
+    }
+
+    // 8. Membership + invitation update transaction
+    const result = await this.databaseService.db.transaction(async (tx) => {
+      const [membership] = await tx
+        .insert(schema.organizationMembers)
+        .values({
+          organizationId: invitation.organizationId,
+
+          userId: currentUser.id,
+
+          role: invitation.role,
+        })
+        .returning();
+
+      const [acceptedInvitation] = await tx
+        .update(schema.organizationInvitations)
+        .set({
+          status: 'ACCEPTED',
+          acceptedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(schema.organizationInvitations.id, invitation.id),
+            eq(schema.organizationInvitations.status, 'PENDING'),
+          ),
+        )
+        .returning();
+
+      if (!acceptedInvitation) {
+        throw new ConflictException('Invitation has already been processed');
+      }
+
+      return {
+        membership,
+        invitation: acceptedInvitation,
+      };
+    });
+
+    return {
+      message: 'Invitation accepted successfully',
+
+      membership: {
+        id: result.membership.id,
+
+        organizationId: result.membership.organizationId,
+
+        userId: result.membership.userId,
+
+        role: result.membership.role,
+
+        joinedAt: result.membership.joinedAt,
+      },
     };
   }
 }
