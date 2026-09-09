@@ -1,9 +1,11 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -15,6 +17,7 @@ import { RolesGuard } from '../../common/rbac/roles.guard.js';
 
 import { TeamsService } from './teams.service.js';
 import { CreateTeamDto } from './dto/create-team.dto.js';
+import { UpdateTeamDto } from './dto/update-team.dto.js';
 
 @Controller('organizations/:organizationId/teams')
 @UseGuards(ClerkAuthGuard)
@@ -53,5 +56,32 @@ export class TeamsController {
     teamId: string,
   ) {
     return this.teamsService.findOne(organizationId, teamId);
+  }
+  @Patch(':teamId')
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'PROJECT_MANAGER')
+  update(
+    @Param('organizationId', new ParseUUIDPipe())
+    organizationId: string,
+
+    @Param('teamId', new ParseUUIDPipe())
+    teamId: string,
+
+    @Body()
+    dto: UpdateTeamDto,
+  ) {
+    return this.teamsService.update(organizationId, teamId, dto);
+  }
+  @Delete(':teamId')
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN')
+  remove(
+    @Param('organizationId', new ParseUUIDPipe())
+    organizationId: string,
+
+    @Param('teamId', new ParseUUIDPipe())
+    teamId: string,
+  ) {
+    return this.teamsService.remove(organizationId, teamId);
   }
 }
