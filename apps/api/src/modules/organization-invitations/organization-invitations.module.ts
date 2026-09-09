@@ -7,9 +7,10 @@ import { OrganizationInvitationsController } from './organization-invitations.co
 import { InvitationsController } from './invitations.controller.js';
 
 import { OrganizationInvitationsService } from './organization-invitations.service.js';
+import { EmailModule } from '../email/email.module.js';
 
 @Module({
-  imports: [UsersModule],
+  imports: [UsersModule, EmailModule],
 
   controllers: [OrganizationInvitationsController, InvitationsController],
 
