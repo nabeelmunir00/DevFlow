@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 
 import { ClerkAuthGuard } from '../auth/guards/clerk-auth.guard.js';
 
@@ -7,6 +15,7 @@ import { RolesGuard } from '../../common/rbac/roles.guard.js';
 
 import { SprintsService } from './sprints.service.js';
 import { CreateSprintDto } from './dto/create-sprint.dto.js';
+import { UpdateSprintDto } from './dto/update-sprint.dto.js';
 
 @Controller('organizations/:organizationId/projects/:projectId/sprints')
 @UseGuards(ClerkAuthGuard)
@@ -41,5 +50,16 @@ export class SprintsController {
     @Param('sprintId') sprintId: string,
   ) {
     return this.sprintsService.findOne(organizationId, projectId, sprintId);
+  }
+  @Patch(':sprintId')
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'PROJECT_MANAGER')
+  update(
+    @Param('organizationId') organizationId: string,
+    @Param('projectId') projectId: string,
+    @Param('sprintId') sprintId: string,
+    @Body() dto: UpdateSprintDto,
+  ) {
+    return this.sprintsService.update(organizationId, projectId, sprintId, dto);
   }
 }
