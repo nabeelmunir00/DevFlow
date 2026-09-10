@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 
 import { ClerkAuthGuard } from '../auth/guards/clerk-auth.guard.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
@@ -8,6 +16,7 @@ import { RolesGuard } from '../../common/rbac/roles.guard.js';
 
 import { TasksService } from './tasks.service.js';
 import { CreateTaskDto } from './dto/create-task.dto.js';
+import { UpdateTaskDto } from './dto/update-task.dto.js';
 
 @Controller('organizations/:organizationId/projects/:projectId/tasks')
 @UseGuards(ClerkAuthGuard)
@@ -48,5 +57,16 @@ export class TasksController {
     @Param('taskId') taskId: string,
   ) {
     return this.tasksService.findOne(organizationId, projectId, taskId);
+  }
+  @Patch(':taskId')
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'PROJECT_MANAGER', 'DEVELOPER', 'MEMBER')
+  update(
+    @Param('organizationId') organizationId: string,
+    @Param('projectId') projectId: string,
+    @Param('taskId') taskId: string,
+    @Body() dto: UpdateTaskDto,
+  ) {
+    return this.tasksService.update(organizationId, projectId, taskId, dto);
   }
 }
