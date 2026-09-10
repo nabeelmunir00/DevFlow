@@ -34,4 +34,10 @@ export class ProjectsController {
   ) {
     return this.projectsService.create(clerkUserId.userId, organizationId, dto);
   }
+  @Get()
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'PROJECT_MANAGER', 'DEVELOPER', 'MEMBER', 'VIEWER')
+  findAll(@Param('organizationId') organizationId: string) {
+    return this.projectsService.findAll(organizationId);
+  }
 }

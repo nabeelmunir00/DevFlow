@@ -74,4 +74,14 @@ export class ProjectsService {
       project,
     };
   }
+
+  async findAll(organizationId: string) {
+    const projects = await this.databaseService.db.query.projects.findMany({
+      where: (projects, { eq }) => eq(projects.organizationId, organizationId),
+
+      orderBy: (projects, { desc }) => [desc(projects.createdAt)],
+    });
+
+    return projects;
+  }
 }
