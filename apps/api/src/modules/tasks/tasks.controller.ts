@@ -19,6 +19,7 @@ import { TasksService } from './tasks.service.js';
 import { CreateTaskDto } from './dto/create-task.dto.js';
 import { UpdateTaskDto } from './dto/update-task.dto.js';
 import { MoveTaskToSprintDto } from './dto/move-task-to-sprint.dto.js';
+import { MoveTaskDto } from './dto/move-task.dto.js';
 
 @Controller('organizations/:organizationId/projects/:projectId/tasks')
 @UseGuards(ClerkAuthGuard)
@@ -96,5 +97,16 @@ export class TasksController {
       taskId,
       dto.sprintId,
     );
+  }
+  @Patch(':taskId/move')
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'PROJECT_MANAGER', 'DEVELOPER', 'MEMBER')
+  moveTask(
+    @Param('organizationId') organizationId: string,
+    @Param('projectId') projectId: string,
+    @Param('taskId') taskId: string,
+    @Body() dto: MoveTaskDto,
+  ) {
+    return this.tasksService.moveTask(organizationId, projectId, taskId, dto);
   }
 }

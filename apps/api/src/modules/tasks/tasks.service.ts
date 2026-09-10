@@ -12,6 +12,7 @@ import { UsersService } from '../users/users.service.js';
 import { CreateTaskDto } from './dto/create-task.dto.js';
 import { UpdateTaskDto } from './dto/update-task.dto.js';
 import { and, eq } from 'drizzle-orm';
+import { MoveTaskDto } from './dto/move-task.dto.js';
 
 @Injectable()
 export class TasksService {
@@ -334,6 +335,58 @@ export class TasksService {
       message: sprintId
         ? 'Task moved to sprint successfully'
         : 'Task moved to backlog successfully',
+      task: updatedTask,
+    };
+  }
+  async moveTask(
+    organizationId: string,
+    projectId: string,
+    taskId: string,
+    dto: MoveTaskDto,
+  ) {
+    const task = await this.databaseService.db.query.tasks.findFirst({
+      where: (tasks, { and, eq, isNull }) =>
+        and(
+          eq(tasks.id, taskId),
+          eq(tasks.organizationId, organizationId),
+          eq(tasks.projectId, projectId),
+          isNull(tasks.archivedAt),
+        ),
+    });
+
+    if (!task) {
+      throw new NotFoundException('Task not found');
+    }
+
+    let completedAt = task.completedAt;
+
+    if (dto.status === 'DONE' && task.status !== 'DONE') {
+      completedAt = new Date();
+    }
+
+    if (dto.status !== 'DONE') {
+      completedAt = null;
+    }
+
+    const [updatedTask] = await this.databaseService.db
+      .update(schema.tasks)
+      .set({
+        status: dto.status,
+        position: dto.position ?? task.position,
+        completedAt,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(schema.tasks.id, taskId),
+          eq(schema.tasks.organizationId, organizationId),
+          eq(schema.tasks.projectId, projectId),
+        ),
+      )
+      .returning();
+
+    return {
+      message: 'Task moved successfully',
       task: updatedTask,
     };
   }
