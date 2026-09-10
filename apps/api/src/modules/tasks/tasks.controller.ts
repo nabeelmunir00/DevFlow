@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 
@@ -108,5 +109,19 @@ export class TasksController {
     @Body() dto: MoveTaskDto,
   ) {
     return this.tasksService.moveTask(organizationId, projectId, taskId, dto);
+  }
+  @Get('board/kanban')
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'PROJECT_MANAGER', 'DEVELOPER', 'MEMBER', 'VIEWER')
+  getKanbanBoard(
+    @Param('organizationId') organizationId: string,
+    @Param('projectId') projectId: string,
+    @Query('sprintId') sprintId?: string,
+  ) {
+    return this.tasksService.getKanbanBoard(
+      organizationId,
+      projectId,
+      sprintId,
+    );
   }
 }

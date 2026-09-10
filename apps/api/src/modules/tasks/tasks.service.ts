@@ -390,4 +390,58 @@ export class TasksService {
       task: updatedTask,
     };
   }
+  async getKanbanBoard(
+    organizationId: string,
+    projectId: string,
+    sprintId?: string,
+  ) {
+    // Project verify
+    const project = await this.databaseService.db.query.projects.findFirst({
+      where: (projects, { and, eq }) =>
+        and(
+          eq(projects.id, projectId),
+          eq(projects.organizationId, organizationId),
+        ),
+    });
+
+    if (!project) {
+      throw new NotFoundException('Project not found');
+    }
+
+    // Tasks fetch
+    const tasks = await this.databaseService.db.query.tasks.findMany({
+      where: (tasks, { and, eq, isNull }) => {
+        const conditions = [
+          eq(tasks.organizationId, organizationId),
+          eq(tasks.projectId, projectId),
+          isNull(tasks.archivedAt),
+        ];
+
+        if (sprintId) {
+          conditions.push(eq(tasks.sprintId, sprintId));
+        }
+
+        return and(...conditions);
+      },
+
+      orderBy: (tasks, { asc }) => [asc(tasks.position), asc(tasks.createdAt)],
+    });
+
+    return {
+      projectId,
+      sprintId: sprintId ?? null,
+
+      columns: {
+        TODO: tasks.filter((task) => task.status === 'TODO'),
+
+        IN_PROGRESS: tasks.filter((task) => task.status === 'IN_PROGRESS'),
+
+        IN_REVIEW: tasks.filter((task) => task.status === 'IN_REVIEW'),
+
+        DONE: tasks.filter((task) => task.status === 'DONE'),
+
+        CANCELLED: tasks.filter((task) => task.status === 'CANCELLED'),
+      },
+    };
+  }
 }
