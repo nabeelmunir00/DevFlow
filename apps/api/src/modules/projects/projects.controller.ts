@@ -59,4 +59,13 @@ export class ProjectsController {
   ) {
     return this.projectsService.update(organizationId, projectId, dto);
   }
+  @Delete(':projectId')
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN')
+  archive(
+    @Param('organizationId') organizationId: string,
+    @Param('projectId') projectId: string,
+  ) {
+    return this.projectsService.archive(organizationId, projectId);
+  }
 }

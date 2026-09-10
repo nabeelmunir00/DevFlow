@@ -186,4 +186,44 @@ export class ProjectsService {
       project: updatedProject,
     };
   }
+  async archive(organizationId: string, projectId: string) {
+    const existingProject =
+      await this.databaseService.db.query.projects.findFirst({
+        where: (projects, { and, eq }) =>
+          and(
+            eq(projects.id, projectId),
+            eq(projects.organizationId, organizationId),
+          ),
+      });
+
+    if (!existingProject) {
+      throw new NotFoundException('Project not found');
+    }
+
+    if (existingProject.status === 'ARCHIVED') {
+      throw new ConflictException('Project is already archived');
+    }
+
+    const now = new Date();
+
+    const [archivedProject] = await this.databaseService.db
+      .update(schema.projects)
+      .set({
+        status: 'ARCHIVED',
+        archivedAt: now,
+        updatedAt: now,
+      })
+      .where(
+        and(
+          eq(schema.projects.id, projectId),
+          eq(schema.projects.organizationId, organizationId),
+        ),
+      )
+      .returning();
+
+    return {
+      message: 'Project archived successfully',
+      project: archivedProject,
+    };
+  }
 }
