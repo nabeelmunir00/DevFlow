@@ -237,4 +237,41 @@ export class TasksService {
       task: updatedTask,
     };
   }
+  async archive(organizationId: string, projectId: string, taskId: string) {
+    const existingTask = await this.databaseService.db.query.tasks.findFirst({
+      where: (tasks, { and, eq, isNull }) =>
+        and(
+          eq(tasks.id, taskId),
+          eq(tasks.organizationId, organizationId),
+          eq(tasks.projectId, projectId),
+          isNull(tasks.archivedAt),
+        ),
+    });
+
+    if (!existingTask) {
+      throw new NotFoundException('Task not found');
+    }
+
+    const now = new Date();
+
+    const [archivedTask] = await this.databaseService.db
+      .update(schema.tasks)
+      .set({
+        archivedAt: now,
+        updatedAt: now,
+      })
+      .where(
+        and(
+          eq(schema.tasks.id, taskId),
+          eq(schema.tasks.organizationId, organizationId),
+          eq(schema.tasks.projectId, projectId),
+        ),
+      )
+      .returning();
+
+    return {
+      message: 'Task archived successfully',
+      task: archivedTask,
+    };
+  }
 }

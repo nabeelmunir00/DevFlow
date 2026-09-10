@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -68,5 +69,15 @@ export class TasksController {
     @Body() dto: UpdateTaskDto,
   ) {
     return this.tasksService.update(organizationId, projectId, taskId, dto);
+  }
+  @Delete(':taskId')
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'PROJECT_MANAGER')
+  archive(
+    @Param('organizationId') organizationId: string,
+    @Param('projectId') projectId: string,
+    @Param('taskId') taskId: string,
+  ) {
+    return this.tasksService.archive(organizationId, projectId, taskId);
   }
 }
