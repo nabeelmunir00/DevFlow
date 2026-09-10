@@ -18,6 +18,7 @@ import { RolesGuard } from '../../common/rbac/roles.guard.js';
 import { TasksService } from './tasks.service.js';
 import { CreateTaskDto } from './dto/create-task.dto.js';
 import { UpdateTaskDto } from './dto/update-task.dto.js';
+import { MoveTaskToSprintDto } from './dto/move-task-to-sprint.dto.js';
 
 @Controller('organizations/:organizationId/projects/:projectId/tasks')
 @UseGuards(ClerkAuthGuard)
@@ -79,5 +80,21 @@ export class TasksController {
     @Param('taskId') taskId: string,
   ) {
     return this.tasksService.archive(organizationId, projectId, taskId);
+  }
+  @Patch(':taskId/sprint')
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'PROJECT_MANAGER', 'DEVELOPER')
+  moveToSprint(
+    @Param('organizationId') organizationId: string,
+    @Param('projectId') projectId: string,
+    @Param('taskId') taskId: string,
+    @Body() dto: MoveTaskToSprintDto,
+  ) {
+    return this.tasksService.moveToSprint(
+      organizationId,
+      projectId,
+      taskId,
+      dto.sprintId,
+    );
   }
 }

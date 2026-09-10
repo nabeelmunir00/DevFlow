@@ -274,4 +274,67 @@ export class TasksService {
       task: archivedTask,
     };
   }
+  async moveToSprint(
+    organizationId: string,
+    projectId: string,
+    taskId: string,
+    sprintId?: string,
+  ) {
+    const task = await this.databaseService.db.query.tasks.findFirst({
+      where: (tasks, { and, eq, isNull }) =>
+        and(
+          eq(tasks.id, taskId),
+          eq(tasks.organizationId, organizationId),
+          eq(tasks.projectId, projectId),
+          isNull(tasks.archivedAt),
+        ),
+    });
+
+    if (!task) {
+      throw new NotFoundException('Task not found');
+    }
+
+    if (sprintId) {
+      const sprint = await this.databaseService.db.query.sprints.findFirst({
+        where: (sprints, { and, eq }) =>
+          and(
+            eq(sprints.id, sprintId),
+            eq(sprints.organizationId, organizationId),
+            eq(sprints.projectId, projectId),
+          ),
+      });
+
+      if (!sprint) {
+        throw new NotFoundException('Sprint not found');
+      }
+
+      if (sprint.status === 'COMPLETED' || sprint.status === 'CANCELLED') {
+        throw new BadRequestException(
+          'Task cannot be moved to a completed or cancelled sprint',
+        );
+      }
+    }
+
+    const [updatedTask] = await this.databaseService.db
+      .update(schema.tasks)
+      .set({
+        sprintId: sprintId ?? null,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(schema.tasks.id, taskId),
+          eq(schema.tasks.organizationId, organizationId),
+          eq(schema.tasks.projectId, projectId),
+        ),
+      )
+      .returning();
+
+    return {
+      message: sprintId
+        ? 'Task moved to sprint successfully'
+        : 'Task moved to backlog successfully',
+      task: updatedTask,
+    };
+  }
 }
