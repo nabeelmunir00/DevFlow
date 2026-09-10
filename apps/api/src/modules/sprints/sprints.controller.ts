@@ -1,4 +1,4 @@
-import { Body, Controller, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 
 import { ClerkAuthGuard } from '../auth/guards/clerk-auth.guard.js';
 
@@ -22,5 +22,24 @@ export class SprintsController {
     @Body() dto: CreateSprintDto,
   ) {
     return this.sprintsService.create(organizationId, projectId, dto);
+  }
+  @Get()
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'PROJECT_MANAGER', 'DEVELOPER', 'MEMBER', 'VIEWER')
+  findAll(
+    @Param('organizationId') organizationId: string,
+    @Param('projectId') projectId: string,
+  ) {
+    return this.sprintsService.findAll(organizationId, projectId);
+  }
+  @Get(':sprintId')
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'PROJECT_MANAGER', 'DEVELOPER', 'MEMBER', 'VIEWER')
+  findOne(
+    @Param('organizationId') organizationId: string,
+    @Param('projectId') projectId: string,
+    @Param('sprintId') sprintId: string,
+  ) {
+    return this.sprintsService.findOne(organizationId, projectId, sprintId);
   }
 }

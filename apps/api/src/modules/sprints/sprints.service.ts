@@ -66,4 +66,44 @@ export class SprintsService {
       sprint,
     };
   }
+  async findAll(organizationId: string, projectId: string) {
+    const project = await this.databaseService.db.query.projects.findFirst({
+      where: (projects, { and, eq }) =>
+        and(
+          eq(projects.id, projectId),
+          eq(projects.organizationId, organizationId),
+        ),
+    });
+
+    if (!project) {
+      throw new NotFoundException('Project not found');
+    }
+
+    const sprints = await this.databaseService.db.query.sprints.findMany({
+      where: (sprints, { and, eq }) =>
+        and(
+          eq(sprints.organizationId, organizationId),
+          eq(sprints.projectId, projectId),
+        ),
+
+      orderBy: (sprints, { desc }) => [desc(sprints.createdAt)],
+    });
+
+    return sprints;
+  }
+
+  async findOne(organizationId: string, projectId: string, sprintId: string) {
+    const sprints = await this.databaseService.db.query.sprints.findFirst({
+      where: (sprints, { and, eq }) =>
+        and(
+          eq(sprints.organizationId, organizationId),
+          eq(sprints.projectId, projectId),
+          eq(sprints.id, sprintId),
+        ),
+    });
+    if (!sprints) {
+      throw new NotFoundException('Sprint not found');
+    }
+    return sprints;
+  }
 }
