@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -61,5 +62,15 @@ export class SprintsController {
     @Body() dto: UpdateSprintDto,
   ) {
     return this.sprintsService.update(organizationId, projectId, sprintId, dto);
+  }
+  @Delete(':sprintId')
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'PROJECT_MANAGER')
+  cancel(
+    @Param('organizationId') organizationId: string,
+    @Param('projectId') projectId: string,
+    @Param('sprintId') sprintId: string,
+  ) {
+    return this.sprintsService.cancel(organizationId, projectId, sprintId);
   }
 }

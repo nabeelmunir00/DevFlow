@@ -192,4 +192,47 @@ export class SprintsService {
       sprint: updatedSprint,
     };
   }
+  async cancel(organizationId: string, projectId: string, sprintId: string) {
+    const existingSprint =
+      await this.databaseService.db.query.sprints.findFirst({
+        where: (sprints, { and, eq }) =>
+          and(
+            eq(sprints.organizationId, organizationId),
+            eq(sprints.projectId, projectId),
+            eq(sprints.id, sprintId),
+          ),
+      });
+
+    if (!existingSprint) {
+      throw new NotFoundException('Sprint not found');
+    }
+
+    if (existingSprint.status === 'CANCELLED') {
+      throw new BadRequestException('Sprint is already cancelled');
+    }
+
+    if (existingSprint.status === 'COMPLETED') {
+      throw new BadRequestException('Completed sprint cannot be cancelled');
+    }
+
+    const [cancelledSprint] = await this.databaseService.db
+      .update(schema.sprints)
+      .set({
+        status: 'CANCELLED',
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(schema.sprints.organizationId, organizationId),
+          eq(schema.sprints.projectId, projectId),
+          eq(schema.sprints.id, sprintId),
+        ),
+      )
+      .returning();
+
+    return {
+      message: 'Sprint cancelled successfully',
+      sprint: cancelledSprint,
+    };
+  }
 }
