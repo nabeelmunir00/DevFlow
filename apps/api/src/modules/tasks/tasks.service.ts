@@ -88,4 +88,33 @@ export class TasksService {
       task,
     };
   }
+  async findAll(organizationId: string, projectId: string) {
+    const project = await this.databaseService.db.query.projects.findFirst({
+      where: (projects, { and, eq }) =>
+        and(
+          eq(projects.id, projectId),
+          eq(projects.organizationId, organizationId),
+        ),
+    });
+
+    if (!project) {
+      throw new NotFoundException('Project not found');
+    }
+
+    const tasks = await this.databaseService.db.query.tasks.findMany({
+      where: (tasks, { and, eq, isNull }) =>
+        and(
+          eq(tasks.organizationId, organizationId),
+          eq(tasks.projectId, projectId),
+          isNull(tasks.archivedAt),
+        ),
+
+      orderBy: (tasks, { asc, desc }) => [
+        asc(tasks.position),
+        desc(tasks.createdAt),
+      ],
+    });
+
+    return tasks;
+  }
 }
