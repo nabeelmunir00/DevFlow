@@ -40,4 +40,13 @@ export class ProjectsController {
   findAll(@Param('organizationId') organizationId: string) {
     return this.projectsService.findAll(organizationId);
   }
+  @Get(':projectId')
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'PROJECT_MANAGER', 'DEVELOPER', 'MEMBER', 'VIEWER')
+  findOne(
+    @Param('organizationId') organizationId: string,
+    @Param('projectId') projectId: string,
+  ) {
+    return this.projectsService.findOne(organizationId, projectId);
+  }
 }

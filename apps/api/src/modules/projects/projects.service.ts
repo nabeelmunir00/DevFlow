@@ -84,4 +84,19 @@ export class ProjectsService {
 
     return projects;
   }
+  async findOne(organizationId: string, projectId: string) {
+    const project = await this.databaseService.db.query.projects.findFirst({
+      where: (projects, { and, eq }) =>
+        and(
+          eq(projects.id, projectId),
+          eq(projects.organizationId, organizationId),
+        ),
+    });
+
+    if (!project) {
+      throw new NotFoundException('Project not found');
+    }
+
+    return project;
+  }
 }
