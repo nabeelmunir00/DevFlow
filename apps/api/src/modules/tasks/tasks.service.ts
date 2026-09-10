@@ -13,6 +13,7 @@ import { CreateTaskDto } from './dto/create-task.dto.js';
 import { UpdateTaskDto } from './dto/update-task.dto.js';
 import { and, eq } from 'drizzle-orm';
 import { MoveTaskDto } from './dto/move-task.dto.js';
+import { ReorderTasksDto } from './dto/reorder-tasks.dto.js';
 
 @Injectable()
 export class TasksService {
@@ -442,6 +443,76 @@ export class TasksService {
 
         CANCELLED: tasks.filter((task) => task.status === 'CANCELLED'),
       },
+    };
+  }
+  async reorderTasks(
+    organizationId: string,
+    projectId: string,
+    dto: ReorderTasksDto,
+  ) {
+    const taskIds = dto.tasks.map((task) => task.id);
+
+    // Duplicate IDs reject
+    if (new Set(taskIds).size !== taskIds.length) {
+      throw new BadRequestException('Duplicate task IDs are not allowed');
+    }
+
+    // Make sure every task actually belongs to this project/org
+    const existingTasks = await this.databaseService.db.query.tasks.findMany({
+      where: (tasks, { and, eq, inArray, isNull }) =>
+        and(
+          eq(tasks.organizationId, organizationId),
+          eq(tasks.projectId, projectId),
+          inArray(tasks.id, taskIds),
+          isNull(tasks.archivedAt),
+        ),
+    });
+
+    if (existingTasks.length !== taskIds.length) {
+      throw new BadRequestException(
+        'One or more tasks are invalid or archived',
+      );
+    }
+
+    await this.databaseService.db.transaction(async (tx) => {
+      for (const item of dto.tasks) {
+        const existingTask = existingTasks.find((task) => task.id === item.id);
+
+        if (!existingTask) {
+          throw new BadRequestException('Task not found');
+        }
+
+        let completedAt = existingTask.completedAt;
+
+        if (item.status === 'DONE' && existingTask.status !== 'DONE') {
+          completedAt = new Date();
+        }
+
+        if (item.status !== 'DONE') {
+          completedAt = null;
+        }
+
+        await tx
+          .update(schema.tasks)
+          .set({
+            status: item.status,
+            position: item.position,
+            completedAt,
+            updatedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(schema.tasks.id, item.id),
+              eq(schema.tasks.organizationId, organizationId),
+              eq(schema.tasks.projectId, projectId),
+            ),
+          );
+      }
+    });
+
+    return {
+      message: 'Tasks reordered successfully',
+      updated: dto.tasks.length,
     };
   }
 }
