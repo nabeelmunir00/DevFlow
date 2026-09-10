@@ -15,6 +15,7 @@ import { EmailModule } from './modules/email/email.module.js';
 import { TeamsModule } from './modules/teams/teams.module.js';
 import { TeamMembersModule } from './modules/team-members/team-members.module.js';
 import { TasksModule } from './modules/tasks/tasks.module.js';
+import { ProjectsModule } from './modules/projects/projects.module.js';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { TasksModule } from './modules/tasks/tasks.module.js';
     TeamsModule,
     TeamMembersModule,
     TasksModule,
+    ProjectsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
