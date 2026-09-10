@@ -49,4 +49,14 @@ export class ProjectsController {
   ) {
     return this.projectsService.findOne(organizationId, projectId);
   }
+  @Patch(':projectId')
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'PROJECT_MANAGER')
+  update(
+    @Param('organizationId') organizationId: string,
+    @Param('projectId') projectId: string,
+    @Body() dto: UpdateProjectDto,
+  ) {
+    return this.projectsService.update(organizationId, projectId, dto);
+  }
 }
