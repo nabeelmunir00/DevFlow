@@ -16,6 +16,7 @@ import { TeamsModule } from './modules/teams/teams.module.js';
 import { TeamMembersModule } from './modules/team-members/team-members.module.js';
 import { TasksModule } from './modules/tasks/tasks.module.js';
 import { ProjectsModule } from './modules/projects/projects.module.js';
+import { SprintsModule } from './modules/sprints/sprints.module.js';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { ProjectsModule } from './modules/projects/projects.module.js';
     TeamMembersModule,
     TasksModule,
     ProjectsModule,
+    SprintsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

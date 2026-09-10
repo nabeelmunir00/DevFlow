@@ -12,6 +12,8 @@ import { UsersService } from '../users/users.service.js';
 import { CreateTaskDto } from './dto/create-task.dto.js';
 import { UpdateTaskDto } from './dto/update-task.dto.js';
 import { and, eq } from 'drizzle-orm';
+import { MoveTaskDto } from './dto/move-task.dto.js';
+import { ReorderTasksDto } from './dto/reorder-tasks.dto.js';
 
 @Injectable()
 export class TasksService {
@@ -272,6 +274,245 @@ export class TasksService {
     return {
       message: 'Task archived successfully',
       task: archivedTask,
+    };
+  }
+  async moveToSprint(
+    organizationId: string,
+    projectId: string,
+    taskId: string,
+    sprintId?: string,
+  ) {
+    const task = await this.databaseService.db.query.tasks.findFirst({
+      where: (tasks, { and, eq, isNull }) =>
+        and(
+          eq(tasks.id, taskId),
+          eq(tasks.organizationId, organizationId),
+          eq(tasks.projectId, projectId),
+          isNull(tasks.archivedAt),
+        ),
+    });
+
+    if (!task) {
+      throw new NotFoundException('Task not found');
+    }
+
+    if (sprintId) {
+      const sprint = await this.databaseService.db.query.sprints.findFirst({
+        where: (sprints, { and, eq }) =>
+          and(
+            eq(sprints.id, sprintId),
+            eq(sprints.organizationId, organizationId),
+            eq(sprints.projectId, projectId),
+          ),
+      });
+
+      if (!sprint) {
+        throw new NotFoundException('Sprint not found');
+      }
+
+      if (sprint.status === 'COMPLETED' || sprint.status === 'CANCELLED') {
+        throw new BadRequestException(
+          'Task cannot be moved to a completed or cancelled sprint',
+        );
+      }
+    }
+
+    const [updatedTask] = await this.databaseService.db
+      .update(schema.tasks)
+      .set({
+        sprintId: sprintId ?? null,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(schema.tasks.id, taskId),
+          eq(schema.tasks.organizationId, organizationId),
+          eq(schema.tasks.projectId, projectId),
+        ),
+      )
+      .returning();
+
+    return {
+      message: sprintId
+        ? 'Task moved to sprint successfully'
+        : 'Task moved to backlog successfully',
+      task: updatedTask,
+    };
+  }
+  async moveTask(
+    organizationId: string,
+    projectId: string,
+    taskId: string,
+    dto: MoveTaskDto,
+  ) {
+    const task = await this.databaseService.db.query.tasks.findFirst({
+      where: (tasks, { and, eq, isNull }) =>
+        and(
+          eq(tasks.id, taskId),
+          eq(tasks.organizationId, organizationId),
+          eq(tasks.projectId, projectId),
+          isNull(tasks.archivedAt),
+        ),
+    });
+
+    if (!task) {
+      throw new NotFoundException('Task not found');
+    }
+
+    let completedAt = task.completedAt;
+
+    if (dto.status === 'DONE' && task.status !== 'DONE') {
+      completedAt = new Date();
+    }
+
+    if (dto.status !== 'DONE') {
+      completedAt = null;
+    }
+
+    const [updatedTask] = await this.databaseService.db
+      .update(schema.tasks)
+      .set({
+        status: dto.status,
+        position: dto.position ?? task.position,
+        completedAt,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(schema.tasks.id, taskId),
+          eq(schema.tasks.organizationId, organizationId),
+          eq(schema.tasks.projectId, projectId),
+        ),
+      )
+      .returning();
+
+    return {
+      message: 'Task moved successfully',
+      task: updatedTask,
+    };
+  }
+  async getKanbanBoard(
+    organizationId: string,
+    projectId: string,
+    sprintId?: string,
+  ) {
+    // Project verify
+    const project = await this.databaseService.db.query.projects.findFirst({
+      where: (projects, { and, eq }) =>
+        and(
+          eq(projects.id, projectId),
+          eq(projects.organizationId, organizationId),
+        ),
+    });
+
+    if (!project) {
+      throw new NotFoundException('Project not found');
+    }
+
+    // Tasks fetch
+    const tasks = await this.databaseService.db.query.tasks.findMany({
+      where: (tasks, { and, eq, isNull }) => {
+        const conditions = [
+          eq(tasks.organizationId, organizationId),
+          eq(tasks.projectId, projectId),
+          isNull(tasks.archivedAt),
+        ];
+
+        if (sprintId) {
+          conditions.push(eq(tasks.sprintId, sprintId));
+        }
+
+        return and(...conditions);
+      },
+
+      orderBy: (tasks, { asc }) => [asc(tasks.position), asc(tasks.createdAt)],
+    });
+
+    return {
+      projectId,
+      sprintId: sprintId ?? null,
+
+      columns: {
+        TODO: tasks.filter((task) => task.status === 'TODO'),
+
+        IN_PROGRESS: tasks.filter((task) => task.status === 'IN_PROGRESS'),
+
+        IN_REVIEW: tasks.filter((task) => task.status === 'IN_REVIEW'),
+
+        DONE: tasks.filter((task) => task.status === 'DONE'),
+
+        CANCELLED: tasks.filter((task) => task.status === 'CANCELLED'),
+      },
+    };
+  }
+  async reorderTasks(
+    organizationId: string,
+    projectId: string,
+    dto: ReorderTasksDto,
+  ) {
+    const taskIds = dto.tasks.map((task) => task.id);
+
+    // Duplicate IDs reject
+    if (new Set(taskIds).size !== taskIds.length) {
+      throw new BadRequestException('Duplicate task IDs are not allowed');
+    }
+
+    // Make sure every task actually belongs to this project/org
+    const existingTasks = await this.databaseService.db.query.tasks.findMany({
+      where: (tasks, { and, eq, inArray, isNull }) =>
+        and(
+          eq(tasks.organizationId, organizationId),
+          eq(tasks.projectId, projectId),
+          inArray(tasks.id, taskIds),
+          isNull(tasks.archivedAt),
+        ),
+    });
+
+    if (existingTasks.length !== taskIds.length) {
+      throw new BadRequestException(
+        'One or more tasks are invalid or archived',
+      );
+    }
+
+    await this.databaseService.db.transaction(async (tx) => {
+      for (const item of dto.tasks) {
+        const existingTask = existingTasks.find((task) => task.id === item.id);
+
+        if (!existingTask) {
+          throw new BadRequestException('Task not found');
+        }
+
+        let completedAt = existingTask.completedAt;
+
+        if (item.status === 'DONE' && existingTask.status !== 'DONE') {
+          completedAt = new Date();
+        }
+
+        if (item.status !== 'DONE') {
+          completedAt = null;
+        }
+
+        await tx
+          .update(schema.tasks)
+          .set({
+            status: item.status,
+            position: item.position,
+            completedAt,
+            updatedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(schema.tasks.id, item.id),
+              eq(schema.tasks.organizationId, organizationId),
+              eq(schema.tasks.projectId, projectId),
+            ),
+          );
+      }
+    });
+
+    return {
+      message: 'Tasks reordered successfully',
+      updated: dto.tasks.length,
     };
   }
 }
