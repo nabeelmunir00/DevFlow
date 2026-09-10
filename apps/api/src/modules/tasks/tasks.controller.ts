@@ -39,4 +39,14 @@ export class TasksController {
   ) {
     return this.tasksService.findAll(organizationId, projectId);
   }
+  @Get(':taskId')
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'PROJECT_MANAGER', 'DEVELOPER', 'MEMBER', 'VIEWER')
+  findOne(
+    @Param('organizationId') organizationId: string,
+    @Param('projectId') projectId: string,
+    @Param('taskId') taskId: string,
+  ) {
+    return this.tasksService.findOne(organizationId, projectId, taskId);
+  }
 }
