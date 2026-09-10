@@ -14,6 +14,7 @@ import { OrganizationInvitationsModule } from './modules/organization-invitation
 import { EmailModule } from './modules/email/email.module.js';
 import { TeamsModule } from './modules/teams/teams.module.js';
 import { TeamMembersModule } from './modules/team-members/team-members.module.js';
+import { ProjectsModule } from './modules/projects/projects.module.js';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { TeamMembersModule } from './modules/team-members/team-members.module.js
     EmailModule,
     TeamsModule,
     TeamMembersModule,
+    ProjectsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
