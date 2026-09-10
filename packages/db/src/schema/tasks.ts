@@ -12,6 +12,7 @@ import {
 import { organizations } from "./organizations.js";
 import { projects } from "./projects.js";
 import { users } from "./users.js";
+import { sprints } from "./sprints.js";
 
 export const taskStatusEnum = pgEnum("task_status", [
   "TODO",
@@ -44,6 +45,9 @@ export const tasks = pgTable(
       .references(() => projects.id, {
         onDelete: "cascade",
       }),
+    sprintId: uuid("sprint_id").references(() => sprints.id, {
+      onDelete: "set null",
+    }),
 
     reporterId: uuid("reporter_id")
       .notNull()
@@ -104,5 +108,6 @@ export const tasks = pgTable(
     index("tasks_status_idx").on(table.status),
 
     index("tasks_project_status_idx").on(table.projectId, table.status),
+    index("tasks_sprint_idx").on(table.sprintId),
   ],
 );
