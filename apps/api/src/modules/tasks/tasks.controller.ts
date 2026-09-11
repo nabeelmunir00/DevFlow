@@ -179,12 +179,19 @@ export class TasksController {
   @UseGuards(RolesGuard)
   @Roles('OWNER', 'ADMIN', 'PROJECT_MANAGER', 'DEVELOPER', 'MEMBER')
   update(
+    @CurrentUser() clerkUserId: { userId: string },
     @Param('organizationId') organizationId: string,
     @Param('projectId') projectId: string,
     @Param('taskId') taskId: string,
     @Body() dto: UpdateTaskDto,
   ) {
-    return this.tasksService.update(organizationId, projectId, taskId, dto);
+    return this.tasksService.update(
+      clerkUserId.userId,
+      organizationId,
+      projectId,
+      taskId,
+      dto,
+    );
   }
 
   // ============================================================
