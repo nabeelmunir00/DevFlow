@@ -73,4 +73,59 @@ export class CommentsService {
       comment,
     };
   }
+  async findAll(organizationId: string, projectId: string, taskId: string) {
+    const task = await this.databaseService.db.query.tasks.findFirst({
+      where: (tasks, { and, eq }) =>
+        and(
+          eq(tasks.id, taskId),
+          eq(tasks.organizationId, organizationId),
+          eq(tasks.projectId, projectId),
+        ),
+    });
+
+    if (!task) {
+      throw new NotFoundException('Task not found');
+    }
+
+    const comments = await this.databaseService.db.query.taskComments.findMany({
+      where: (comments, { and, eq, isNull }) =>
+        and(
+          eq(comments.organizationId, organizationId),
+          eq(comments.projectId, projectId),
+          eq(comments.taskId, taskId),
+          isNull(comments.deletedAt),
+        ),
+
+      orderBy: (comments, { asc }) => [asc(comments.createdAt)],
+    });
+
+    return {
+      taskId,
+      comments,
+    };
+  }
+
+  async findOne(
+    organizationId: string,
+    projectId: string,
+    taskId: string,
+    commentId: string,
+  ) {
+    const comment = await this.databaseService.db.query.taskComments.findFirst({
+      where: (comments, { and, eq, isNull }) =>
+        and(
+          eq(comments.id, commentId),
+          eq(comments.organizationId, organizationId),
+          eq(comments.projectId, projectId),
+          eq(comments.taskId, taskId),
+          isNull(comments.deletedAt),
+        ),
+    });
+
+    if (!comment) {
+      throw new NotFoundException('Comment not found');
+    }
+
+    return comment;
+  }
 }
