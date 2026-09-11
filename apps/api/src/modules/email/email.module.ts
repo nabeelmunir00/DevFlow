@@ -5,6 +5,7 @@ import { EmailController } from './email.controller.js';
 
 @Module({
   controllers: [EmailController],
+
   providers: [EmailService],
 
   exports: [EmailService],
