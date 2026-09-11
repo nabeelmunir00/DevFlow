@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -157,11 +158,14 @@ export class AttachmentsService {
   }
 
   async remove(
+    clerkUserId: string,
     organizationId: string,
     projectId: string,
     taskId: string,
     attachmentId: string,
   ) {
+    const currentUser = await this.usersService.findByClerkId(clerkUserId);
+
     const attachment =
       await this.databaseService.db.query.taskAttachments.findFirst({
         where: (attachments, { and, eq, isNull }) =>
@@ -178,7 +182,33 @@ export class AttachmentsService {
       throw new NotFoundException('Attachment not found');
     }
 
-    // First remove actual object from R2
+    const membership =
+      await this.databaseService.db.query.organizationMembers.findFirst({
+        where: (members, { and, eq }) =>
+          and(
+            eq(members.organizationId, organizationId),
+            eq(members.userId, currentUser.id),
+          ),
+      });
+
+    if (!membership) {
+      throw new ForbiddenException('You are not a member of this organization');
+    }
+
+    const canDeleteAnyAttachment = [
+      'OWNER',
+      'ADMIN',
+      'PROJECT_MANAGER',
+    ].includes(membership.role);
+
+    const isUploader = attachment.uploadedById === currentUser.id;
+
+    if (!canDeleteAnyAttachment && !isUploader) {
+      throw new ForbiddenException(
+        'You can only delete attachments uploaded by you',
+      );
+    }
+
     await this.r2StorageService.delete(attachment.storageKey);
 
     const deletedAt = new Date();
@@ -188,7 +218,14 @@ export class AttachmentsService {
       .set({
         deletedAt,
       })
-      .where(eq(schema.taskAttachments.id, attachmentId))
+      .where(
+        and(
+          eq(schema.taskAttachments.id, attachmentId),
+          eq(schema.taskAttachments.organizationId, organizationId),
+          eq(schema.taskAttachments.projectId, projectId),
+          eq(schema.taskAttachments.taskId, taskId),
+        ),
+      )
       .returning();
 
     return {

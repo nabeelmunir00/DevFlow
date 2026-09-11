@@ -81,12 +81,22 @@ export class AttachmentsController {
   @Delete(':attachmentId')
   @Roles('OWNER', 'ADMIN', 'PROJECT_MANAGER', 'DEVELOPER', 'MEMBER')
   remove(
-    @Param('organizationId') organizationId: string,
-    @Param('projectId') projectId: string,
-    @Param('taskId') taskId: string,
-    @Param('attachmentId') attachmentId: string,
+    @CurrentUser() clerkUserId: { userId: string },
+
+    @Param('organizationId')
+    organizationId: string,
+
+    @Param('projectId')
+    projectId: string,
+
+    @Param('taskId')
+    taskId: string,
+
+    @Param('attachmentId')
+    attachmentId: string,
   ) {
     return this.attachmentsService.remove(
+      clerkUserId.userId,
       organizationId,
       projectId,
       taskId,
