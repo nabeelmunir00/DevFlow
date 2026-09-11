@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 
 import { schema } from '@devflow/db';
-import { and, eq } from 'drizzle-orm';
+import { and, desc, eq, isNull } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import type { Multer } from 'multer';
 import type { UploadedFileType } from './types/uploaded-file.type.js';
@@ -91,5 +91,109 @@ export class AttachmentsService {
 
       throw error;
     }
+  }
+  async findAll(organizationId: string, projectId: string, taskId: string) {
+    const task = await this.databaseService.db.query.tasks.findFirst({
+      where: (tasks, { and, eq, isNull }) =>
+        and(
+          eq(tasks.id, taskId),
+          eq(tasks.organizationId, organizationId),
+          eq(tasks.projectId, projectId),
+          isNull(tasks.archivedAt),
+        ),
+    });
+
+    if (!task) {
+      throw new NotFoundException('Task not found');
+    }
+
+    return this.databaseService.db
+      .select()
+      .from(schema.taskAttachments)
+      .where(
+        and(
+          eq(schema.taskAttachments.organizationId, organizationId),
+          eq(schema.taskAttachments.projectId, projectId),
+          eq(schema.taskAttachments.taskId, taskId),
+          isNull(schema.taskAttachments.deletedAt),
+        ),
+      )
+      .orderBy(desc(schema.taskAttachments.createdAt));
+  }
+
+  async getDownloadUrl(
+    organizationId: string,
+    projectId: string,
+    taskId: string,
+    attachmentId: string,
+  ) {
+    const attachment =
+      await this.databaseService.db.query.taskAttachments.findFirst({
+        where: (attachments, { and, eq, isNull }) =>
+          and(
+            eq(attachments.id, attachmentId),
+            eq(attachments.organizationId, organizationId),
+            eq(attachments.projectId, projectId),
+            eq(attachments.taskId, taskId),
+            isNull(attachments.deletedAt),
+          ),
+      });
+
+    if (!attachment) {
+      throw new NotFoundException('Attachment not found');
+    }
+
+    const url = await this.r2StorageService.getDownloadUrl(
+      attachment.storageKey,
+      300,
+    );
+
+    return {
+      fileName: attachment.fileName,
+      mimeType: attachment.mimeType,
+      expiresIn: 300,
+      downloadUrl: url,
+    };
+  }
+
+  async remove(
+    organizationId: string,
+    projectId: string,
+    taskId: string,
+    attachmentId: string,
+  ) {
+    const attachment =
+      await this.databaseService.db.query.taskAttachments.findFirst({
+        where: (attachments, { and, eq, isNull }) =>
+          and(
+            eq(attachments.id, attachmentId),
+            eq(attachments.organizationId, organizationId),
+            eq(attachments.projectId, projectId),
+            eq(attachments.taskId, taskId),
+            isNull(attachments.deletedAt),
+          ),
+      });
+
+    if (!attachment) {
+      throw new NotFoundException('Attachment not found');
+    }
+
+    // First remove actual object from R2
+    await this.r2StorageService.delete(attachment.storageKey);
+
+    const deletedAt = new Date();
+
+    const [deletedAttachment] = await this.databaseService.db
+      .update(schema.taskAttachments)
+      .set({
+        deletedAt,
+      })
+      .where(eq(schema.taskAttachments.id, attachmentId))
+      .returning();
+
+    return {
+      message: 'Attachment deleted successfully',
+      attachment: deletedAttachment,
+    };
   }
 }

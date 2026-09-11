@@ -1,5 +1,7 @@
 import {
   Controller,
+  Delete,
+  Get,
   Param,
   Post,
   UploadedFile,
@@ -52,6 +54,63 @@ export class AttachmentsController {
       projectId,
       taskId,
       file,
+    );
+  }
+  @Get()
+  findAll(
+    @Param('organizationId')
+    organizationId: string,
+
+    @Param('projectId')
+    projectId: string,
+
+    @Param('taskId')
+    taskId: string,
+  ) {
+    return this.attachmentsService.findAll(organizationId, projectId, taskId);
+  }
+
+  @Get(':attachmentId/download')
+  getDownloadUrl(
+    @Param('organizationId')
+    organizationId: string,
+
+    @Param('projectId')
+    projectId: string,
+
+    @Param('taskId')
+    taskId: string,
+
+    @Param('attachmentId')
+    attachmentId: string,
+  ) {
+    return this.attachmentsService.getDownloadUrl(
+      organizationId,
+      projectId,
+      taskId,
+      attachmentId,
+    );
+  }
+
+  @Delete(':attachmentId')
+  remove(
+    @Param('organizationId')
+    organizationId: string,
+
+    @Param('projectId')
+    projectId: string,
+
+    @Param('taskId')
+    taskId: string,
+
+    @Param('attachmentId')
+    attachmentId: string,
+  ) {
+    return this.attachmentsService.remove(
+      organizationId,
+      projectId,
+      taskId,
+      attachmentId,
     );
   }
 }
