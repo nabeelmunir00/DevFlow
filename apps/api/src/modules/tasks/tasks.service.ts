@@ -357,11 +357,20 @@ export class TasksService {
     };
   }
   async moveTask(
+    clerkUserId: string,
     organizationId: string,
     projectId: string,
     taskId: string,
     dto: MoveTaskDto,
   ) {
+    const currentUser = await this.databaseService.db.query.users.findFirst({
+      where: (users, { eq }) => eq(users.externalAuthId, clerkUserId),
+    });
+
+    if (!currentUser) {
+      throw new NotFoundException('User not found');
+    }
+
     const task = await this.databaseService.db.query.tasks.findFirst({
       where: (tasks, { and, eq, isNull }) =>
         and(
@@ -402,11 +411,12 @@ export class TasksService {
         ),
       )
       .returning();
+
     if (task.status !== updatedTask.status) {
       await this.activityLogsService.create({
         organizationId,
         projectId,
-        actorId: task.reporterId,
+        actorId: currentUser.id,
         action: 'TASK_STATUS_CHANGED',
         entityType: 'TASK',
         entityId: task.id,
