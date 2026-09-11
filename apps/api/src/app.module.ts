@@ -23,6 +23,7 @@ import { QueueModule } from './queue/queue.module.js';
 import { CommentsModule } from './modules/comments/comments.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { StorageModule } from './modules/storage/storage.module.js';
+import { AttachmentsModule } from './modules/attachments/attachments.module.js';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { StorageModule } from './modules/storage/storage.module.js';
     CommentsModule,
     NotificationsModule,
     StorageModule,
+    AttachmentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
