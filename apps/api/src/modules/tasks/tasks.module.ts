@@ -6,9 +6,10 @@ import { RbacModule } from '../../common/rbac/rbac.module.js';
 import { TasksController } from './tasks.controller.js';
 import { TasksService } from './tasks.service.js';
 import { ActivityLogsModule } from '../activity-logs/activity-logs.module.js';
+import { NotificationsModule } from '../notifications/notifications.module.js';
 
 @Module({
-  imports: [UsersModule, RbacModule, ActivityLogsModule],
+  imports: [UsersModule, RbacModule, ActivityLogsModule, NotificationsModule],
   controllers: [TasksController],
   providers: [TasksService],
   exports: [TasksService],

@@ -15,6 +15,7 @@ import { and, eq } from 'drizzle-orm';
 import { MoveTaskDto } from './dto/move-task.dto.js';
 import { ReorderTasksDto } from './dto/reorder-tasks.dto.js';
 import { ActivityLogsService } from '../activity-logs/activity-logs.service.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 
 @Injectable()
 export class TasksService {
@@ -22,6 +23,7 @@ export class TasksService {
     private readonly databaseService: DatabaseService,
     private readonly usersService: UsersService,
     private readonly activityLogsService: ActivityLogsService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async create(
@@ -104,6 +106,28 @@ export class TasksService {
       },
     });
 
+    if (task.assigneeId && task.assigneeId !== currentUser.id) {
+      await this.notificationsService.create({
+        organizationId,
+        userId: task.assigneeId,
+
+        type: 'TASK_ASSIGNED',
+
+        title: 'New task assigned',
+
+        message: `${currentUser.name ?? currentUser.email} assigned you "${task.title}"`,
+
+        entityType: 'TASK',
+        entityId: task.id,
+
+        metadata: {
+          projectId,
+          taskId: task.id,
+          assignedBy: currentUser.id,
+        },
+      });
+    }
+
     return {
       message: 'Task created successfully',
       task,
@@ -156,11 +180,13 @@ export class TasksService {
     return task;
   }
   async update(
+    clerkUserId: string,
     organizationId: string,
     projectId: string,
     taskId: string,
     dto: UpdateTaskDto,
   ) {
+    const currentUser = await this.usersService.findByClerkId(clerkUserId);
     const existingTask = await this.databaseService.db.query.tasks.findFirst({
       where: (tasks, { and, eq, isNull }) =>
         and(
@@ -250,6 +276,37 @@ export class TasksService {
         ),
       )
       .returning();
+
+    const assigneeChanged =
+      dto.assigneeId !== undefined &&
+      dto.assigneeId !== existingTask.assigneeId;
+
+    if (
+      assigneeChanged &&
+      updatedTask.assigneeId &&
+      updatedTask.assigneeId !== currentUser.id
+    ) {
+      await this.notificationsService.create({
+        organizationId,
+        userId: updatedTask.assigneeId,
+
+        type: 'TASK_ASSIGNED',
+
+        title: 'Task assigned to you',
+
+        message: `${currentUser.name ?? currentUser.email} assigned you "${updatedTask.title}"`,
+
+        entityType: 'TASK',
+        entityId: updatedTask.id,
+
+        metadata: {
+          projectId,
+          taskId: updatedTask.id,
+          assignedBy: currentUser.id,
+          previousAssigneeId: existingTask.assigneeId,
+        },
+      });
+    }
 
     return {
       message: 'Task updated successfully',
