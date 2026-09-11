@@ -20,6 +20,7 @@ import { SprintsModule } from './modules/sprints/sprints.module.js';
 import { ActivityLogsModule } from './modules/activity-logs/activity-logs.module.js';
 import { RedisModule } from './redis/redis.module.js';
 import { QueueModule } from './queue/queue.module.js';
+import { CommentsModule } from './modules/comments/comments.module.js';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { QueueModule } from './queue/queue.module.js';
     ActivityLogsModule,
     RedisModule,
     QueueModule,
+    CommentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
