@@ -22,6 +22,7 @@ import { RedisModule } from './redis/redis.module.js';
 import { QueueModule } from './queue/queue.module.js';
 import { CommentsModule } from './modules/comments/comments.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
+import { StorageModule } from './modules/storage/storage.module.js';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     QueueModule,
     CommentsModule,
     NotificationsModule,
+    StorageModule,
   ],
   controllers: [AppController],
   providers: [AppService],
