@@ -16,6 +16,7 @@ import { DatabaseService } from '../../database/database.service.js';
 import { UsersService } from '../users/users.service.js';
 
 import { CreateOrganizationInvitationDto } from './dto/create-organization-invitation.dto.js';
+import { EmailQueueService } from '../../queue/email-queue.service.js';
 import { EmailService } from '../email/email.service.js';
 import { ConfigService } from '@nestjs/config';
 
@@ -24,7 +25,7 @@ export class OrganizationInvitationsService {
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly usersService: UsersService,
-    private readonly emailService: EmailService,
+    private readonly emailQueueService: EmailQueueService,
     private readonly configService: ConfigService,
   ) {}
 
@@ -165,18 +166,13 @@ export class OrganizationInvitationsService {
 
     // 14. Send invitation email
     try {
-      await this.emailService.sendOrganizationInvitation({
-        to: email,
-
+      await this.emailQueueService.addOrganizationInvitationEmail({
+        to: invitation.email,
         organizationName: organization.name,
-
-        inviterName: currentUser.name,
-
-        role: dto.role,
-
+        inviterName: currentUser.name ?? currentUser.email,
+        role: invitation.role,
         inviteUrl,
-
-        expiresAt,
+        expiresAt: invitation.expiresAt.toISOString(),
       });
     } catch (error) {
       /*
@@ -201,7 +197,7 @@ export class OrganizationInvitationsService {
 
     // 15. Safe response
     return {
-      message: 'Invitation created and email sent successfully',
+      message: 'Invitation created and email queued successfully',
 
       invitation: {
         id: invitation.id,
