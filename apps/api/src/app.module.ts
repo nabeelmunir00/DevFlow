@@ -18,6 +18,7 @@ import { TasksModule } from './modules/tasks/tasks.module.js';
 import { ProjectsModule } from './modules/projects/projects.module.js';
 import { SprintsModule } from './modules/sprints/sprints.module.js';
 import { ActivityLogsModule } from './modules/activity-logs/activity-logs.module.js';
+import { RedisModule } from './redis/redis.module.js';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { ActivityLogsModule } from './modules/activity-logs/activity-logs.module
     ProjectsModule,
     SprintsModule,
     ActivityLogsModule,
+    RedisModule,
   ],
   controllers: [AppController],
   providers: [AppService],
