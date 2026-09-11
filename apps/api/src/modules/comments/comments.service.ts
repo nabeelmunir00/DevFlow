@@ -12,12 +12,14 @@ import { ActivityLogsService } from '../activity-logs/activity-logs.service.js';
 import { CreateCommentDto } from './dto/create-comment.dto.js';
 import { eq } from 'drizzle-orm';
 import { UpdateCommentDto } from './dto/update-comment.dto.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 
 @Injectable()
 export class CommentsService {
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly activityLogsService: ActivityLogsService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async create(
@@ -73,6 +75,28 @@ export class CommentsService {
         commentId: comment.id,
       },
     });
+    if (task.assigneeId && task.assigneeId !== currentUser.id) {
+      await this.notificationsService.create({
+        organizationId,
+        userId: task.assigneeId,
+
+        type: 'TASK_COMMENTED',
+
+        title: 'New comment on your task',
+
+        message: `${currentUser.name ?? currentUser.email} commented on "${task.title}"`,
+
+        entityType: 'TASK',
+        entityId: task.id,
+
+        metadata: {
+          projectId,
+          taskId: task.id,
+          commentId: comment.id,
+          commentedBy: currentUser.id,
+        },
+      });
+    }
 
     return {
       message: 'Comment created successfully',
