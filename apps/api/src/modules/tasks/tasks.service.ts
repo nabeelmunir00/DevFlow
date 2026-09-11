@@ -14,12 +14,14 @@ import { UpdateTaskDto } from './dto/update-task.dto.js';
 import { and, eq } from 'drizzle-orm';
 import { MoveTaskDto } from './dto/move-task.dto.js';
 import { ReorderTasksDto } from './dto/reorder-tasks.dto.js';
+import { ActivityLogsService } from '../activity-logs/activity-logs.service.js';
 
 @Injectable()
 export class TasksService {
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly usersService: UsersService,
+    private readonly activityLogsService: ActivityLogsService,
   ) {}
 
   async create(
@@ -86,6 +88,21 @@ export class TasksService {
         completedAt,
       })
       .returning();
+
+    await this.activityLogsService.create({
+      organizationId,
+      projectId,
+      actorId: currentUser.id,
+      action: 'TASK_CREATED',
+      entityType: 'TASK',
+      entityId: task.id,
+      metadata: {
+        title: task.title,
+        status: task.status,
+        priority: task.priority,
+        assigneeId: task.assigneeId,
+      },
+    });
 
     return {
       message: 'Task created successfully',
@@ -239,49 +256,20 @@ export class TasksService {
       task: updatedTask,
     };
   }
-  async archive(organizationId: string, projectId: string, taskId: string) {
-    const existingTask = await this.databaseService.db.query.tasks.findFirst({
-      where: (tasks, { and, eq, isNull }) =>
-        and(
-          eq(tasks.id, taskId),
-          eq(tasks.organizationId, organizationId),
-          eq(tasks.projectId, projectId),
-          isNull(tasks.archivedAt),
-        ),
-    });
-
-    if (!existingTask) {
-      throw new NotFoundException('Task not found');
-    }
-
-    const now = new Date();
-
-    const [archivedTask] = await this.databaseService.db
-      .update(schema.tasks)
-      .set({
-        archivedAt: now,
-        updatedAt: now,
-      })
-      .where(
-        and(
-          eq(schema.tasks.id, taskId),
-          eq(schema.tasks.organizationId, organizationId),
-          eq(schema.tasks.projectId, projectId),
-        ),
-      )
-      .returning();
-
-    return {
-      message: 'Task archived successfully',
-      task: archivedTask,
-    };
-  }
-  async moveToSprint(
+  async archive(
+    clerkUserId: string,
     organizationId: string,
     projectId: string,
     taskId: string,
-    sprintId?: string,
   ) {
+    const currentUser = await this.databaseService.db.query.users.findFirst({
+      where: (users, { eq }) => eq(users.externalAuthId, clerkUserId),
+    });
+
+    if (!currentUser) {
+      throw new NotFoundException('User not found');
+    }
+
     const task = await this.databaseService.db.query.tasks.findFirst({
       where: (tasks, { and, eq, isNull }) =>
         and(
@@ -296,6 +284,74 @@ export class TasksService {
       throw new NotFoundException('Task not found');
     }
 
+    const archivedAt = new Date();
+
+    const [archivedTask] = await this.databaseService.db
+      .update(schema.tasks)
+      .set({
+        archivedAt,
+        updatedAt: archivedAt,
+      })
+      .where(
+        and(
+          eq(schema.tasks.id, taskId),
+          eq(schema.tasks.organizationId, organizationId),
+          eq(schema.tasks.projectId, projectId),
+        ),
+      )
+      .returning();
+
+    await this.activityLogsService.create({
+      organizationId,
+      projectId,
+      actorId: currentUser.id,
+      action: 'TASK_ARCHIVED',
+      entityType: 'TASK',
+      entityId: taskId,
+      metadata: {
+        title: task.title,
+        status: task.status,
+        sprintId: task.sprintId,
+      },
+    });
+
+    return {
+      message: 'Task archived successfully',
+      task: archivedTask,
+    };
+  }
+  async moveToSprint(
+    clerkUserId: string,
+    organizationId: string,
+    projectId: string,
+    taskId: string,
+    sprintId?: string,
+  ) {
+    // Current user
+    const currentUser = await this.databaseService.db.query.users.findFirst({
+      where: (users, { eq }) => eq(users.externalAuthId, clerkUserId),
+    });
+
+    if (!currentUser) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Task verify
+    const task = await this.databaseService.db.query.tasks.findFirst({
+      where: (tasks, { and, eq, isNull }) =>
+        and(
+          eq(tasks.id, taskId),
+          eq(tasks.organizationId, organizationId),
+          eq(tasks.projectId, projectId),
+          isNull(tasks.archivedAt),
+        ),
+    });
+
+    if (!task) {
+      throw new NotFoundException('Task not found');
+    }
+
+    // Sprint verify
     if (sprintId) {
       const sprint = await this.databaseService.db.query.sprints.findFirst({
         where: (sprints, { and, eq }) =>
@@ -317,6 +373,8 @@ export class TasksService {
       }
     }
 
+    const previousSprintId = task.sprintId;
+
     const [updatedTask] = await this.databaseService.db
       .update(schema.tasks)
       .set({
@@ -332,19 +390,50 @@ export class TasksService {
       )
       .returning();
 
+    // Only create activity when sprint actually changed
+    if (previousSprintId !== updatedTask.sprintId) {
+      await this.activityLogsService.create({
+        organizationId,
+        projectId,
+        actorId: currentUser.id,
+
+        action: updatedTask.sprintId
+          ? 'TASK_MOVED_TO_SPRINT'
+          : 'TASK_MOVED_TO_BACKLOG',
+
+        entityType: 'TASK',
+        entityId: taskId,
+
+        metadata: {
+          fromSprintId: previousSprintId,
+          toSprintId: updatedTask.sprintId,
+        },
+      });
+    }
+
     return {
-      message: sprintId
+      message: updatedTask.sprintId
         ? 'Task moved to sprint successfully'
         : 'Task moved to backlog successfully',
+
       task: updatedTask,
     };
   }
   async moveTask(
+    clerkUserId: string,
     organizationId: string,
     projectId: string,
     taskId: string,
     dto: MoveTaskDto,
   ) {
+    const currentUser = await this.databaseService.db.query.users.findFirst({
+      where: (users, { eq }) => eq(users.externalAuthId, clerkUserId),
+    });
+
+    if (!currentUser) {
+      throw new NotFoundException('User not found');
+    }
+
     const task = await this.databaseService.db.query.tasks.findFirst({
       where: (tasks, { and, eq, isNull }) =>
         and(
@@ -385,6 +474,22 @@ export class TasksService {
         ),
       )
       .returning();
+
+    if (task.status !== updatedTask.status) {
+      await this.activityLogsService.create({
+        organizationId,
+        projectId,
+        actorId: currentUser.id,
+        action: 'TASK_STATUS_CHANGED',
+        entityType: 'TASK',
+        entityId: task.id,
+        metadata: {
+          from: task.status,
+          to: updatedTask.status,
+          position: updatedTask.position,
+        },
+      });
+    }
 
     return {
       message: 'Task moved successfully',

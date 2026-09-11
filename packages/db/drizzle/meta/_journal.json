@@ -50,6 +50,13 @@
       "when": 1789034208016,
       "tag": "0006_harsh_the_hand",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789058867565,
+      "tag": "0007_bouncy_shadow_king",
+      "breakpoints": true
     }
   ]
 }

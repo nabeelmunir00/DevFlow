@@ -38,13 +38,13 @@ export class TasksController {
   @UseGuards(RolesGuard)
   @Roles('OWNER', 'ADMIN', 'PROJECT_MANAGER', 'DEVELOPER', 'MEMBER')
   create(
-    @CurrentUser() clerkUserId: string,
+    @CurrentUser() clerkUserId: { userId: string },
     @Param('organizationId') organizationId: string,
     @Param('projectId') projectId: string,
     @Body() dto: CreateTaskDto,
   ) {
     return this.tasksService.create(
-      clerkUserId,
+      clerkUserId.userId,
       organizationId,
       projectId,
       dto,
@@ -114,12 +114,14 @@ export class TasksController {
   @UseGuards(RolesGuard)
   @Roles('OWNER', 'ADMIN', 'PROJECT_MANAGER', 'DEVELOPER')
   moveToSprint(
+    @CurrentUser() clerkUserId: { userId: string },
     @Param('organizationId') organizationId: string,
     @Param('projectId') projectId: string,
     @Param('taskId') taskId: string,
     @Body() dto: MoveTaskToSprintDto,
   ) {
     return this.tasksService.moveToSprint(
+      clerkUserId.userId,
       organizationId,
       projectId,
       taskId,
@@ -136,12 +138,19 @@ export class TasksController {
   @UseGuards(RolesGuard)
   @Roles('OWNER', 'ADMIN', 'PROJECT_MANAGER', 'DEVELOPER', 'MEMBER')
   moveTask(
+    @CurrentUser() clerkUserId: { userId: string },
     @Param('organizationId') organizationId: string,
     @Param('projectId') projectId: string,
     @Param('taskId') taskId: string,
     @Body() dto: MoveTaskDto,
   ) {
-    return this.tasksService.moveTask(organizationId, projectId, taskId, dto);
+    return this.tasksService.moveTask(
+      clerkUserId.userId,
+      organizationId,
+      projectId,
+      taskId,
+      dto,
+    );
   }
 
   // ============================================================
@@ -187,10 +196,16 @@ export class TasksController {
   @UseGuards(RolesGuard)
   @Roles('OWNER', 'ADMIN', 'PROJECT_MANAGER')
   archive(
+    @CurrentUser() clerkUserId: { userId: string },
     @Param('organizationId') organizationId: string,
     @Param('projectId') projectId: string,
     @Param('taskId') taskId: string,
   ) {
-    return this.tasksService.archive(organizationId, projectId, taskId);
+    return this.tasksService.archive(
+      clerkUserId.userId,
+      organizationId,
+      projectId,
+      taskId,
+    );
   }
 }
