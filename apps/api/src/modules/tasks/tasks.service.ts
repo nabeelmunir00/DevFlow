@@ -294,11 +294,22 @@ export class TasksService {
     };
   }
   async moveToSprint(
+    clerkUserId: string,
     organizationId: string,
     projectId: string,
     taskId: string,
     sprintId?: string,
   ) {
+    // Current user
+    const currentUser = await this.databaseService.db.query.users.findFirst({
+      where: (users, { eq }) => eq(users.externalAuthId, clerkUserId),
+    });
+
+    if (!currentUser) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Task verify
     const task = await this.databaseService.db.query.tasks.findFirst({
       where: (tasks, { and, eq, isNull }) =>
         and(
@@ -313,6 +324,7 @@ export class TasksService {
       throw new NotFoundException('Task not found');
     }
 
+    // Sprint verify
     if (sprintId) {
       const sprint = await this.databaseService.db.query.sprints.findFirst({
         where: (sprints, { and, eq }) =>
@@ -334,6 +346,8 @@ export class TasksService {
       }
     }
 
+    const previousSprintId = task.sprintId;
+
     const [updatedTask] = await this.databaseService.db
       .update(schema.tasks)
       .set({
@@ -349,10 +363,32 @@ export class TasksService {
       )
       .returning();
 
+    // Only create activity when sprint actually changed
+    if (previousSprintId !== updatedTask.sprintId) {
+      await this.activityLogsService.create({
+        organizationId,
+        projectId,
+        actorId: currentUser.id,
+
+        action: updatedTask.sprintId
+          ? 'TASK_MOVED_TO_SPRINT'
+          : 'TASK_MOVED_TO_BACKLOG',
+
+        entityType: 'TASK',
+        entityId: taskId,
+
+        metadata: {
+          fromSprintId: previousSprintId,
+          toSprintId: updatedTask.sprintId,
+        },
+      });
+    }
+
     return {
-      message: sprintId
+      message: updatedTask.sprintId
         ? 'Task moved to sprint successfully'
         : 'Task moved to backlog successfully',
+
       task: updatedTask,
     };
   }

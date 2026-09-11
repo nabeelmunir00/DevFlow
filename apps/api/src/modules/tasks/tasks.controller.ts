@@ -114,12 +114,14 @@ export class TasksController {
   @UseGuards(RolesGuard)
   @Roles('OWNER', 'ADMIN', 'PROJECT_MANAGER', 'DEVELOPER')
   moveToSprint(
+    @CurrentUser() clerkUserId: { userId: string },
     @Param('organizationId') organizationId: string,
     @Param('projectId') projectId: string,
     @Param('taskId') taskId: string,
     @Body() dto: MoveTaskToSprintDto,
   ) {
     return this.tasksService.moveToSprint(
+      clerkUserId.userId,
       organizationId,
       projectId,
       taskId,
