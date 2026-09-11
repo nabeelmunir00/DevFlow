@@ -18,33 +18,36 @@ export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
   @Get()
-  findAll(@CurrentUser() clerkUserId: string) {
-    return this.notificationsService.findAll(clerkUserId);
+  findAll(@CurrentUser() clerkUserId: { userId: string }) {
+    return this.notificationsService.findAll(clerkUserId.userId);
   }
 
   @Get('unread-count')
-  getUnreadCount(@CurrentUser() clerkUserId: string) {
-    return this.notificationsService.getUnreadCount(clerkUserId);
+  getUnreadCount(@CurrentUser() clerkUserId: { userId: string }) {
+    return this.notificationsService.getUnreadCount(clerkUserId.userId);
   }
 
   @Patch('read-all')
-  markAllAsRead(@CurrentUser() clerkUserId: string) {
-    return this.notificationsService.markAllAsRead(clerkUserId);
+  markAllAsRead(@CurrentUser() clerkUserId: { userId: string }) {
+    return this.notificationsService.markAllAsRead(clerkUserId.userId);
   }
 
   @Patch(':notificationId/read')
   markAsRead(
-    @CurrentUser() clerkUserId: string,
+    @CurrentUser() clerkUserId: { userId: string },
     @Param('notificationId') notificationId: string,
   ) {
-    return this.notificationsService.markAsRead(clerkUserId, notificationId);
+    return this.notificationsService.markAsRead(
+      clerkUserId.userId,
+      notificationId,
+    );
   }
 
   @Delete(':notificationId')
   remove(
-    @CurrentUser() clerkUserId: string,
+    @CurrentUser() clerkUserId: { userId: string },
     @Param('notificationId') notificationId: string,
   ) {
-    return this.notificationsService.remove(clerkUserId, notificationId);
+    return this.notificationsService.remove(clerkUserId.userId, notificationId);
   }
 }

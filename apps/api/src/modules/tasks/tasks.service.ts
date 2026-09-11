@@ -548,6 +548,34 @@ export class TasksService {
       });
     }
 
+    if (
+      task.status !== updatedTask.status &&
+      updatedTask.assigneeId &&
+      updatedTask.assigneeId !== currentUser.id
+    ) {
+      await this.notificationsService.create({
+        organizationId,
+        userId: updatedTask.assigneeId,
+
+        type: 'TASK_STATUS_CHANGED',
+
+        title: 'Task status changed',
+
+        message: `${currentUser.name ?? currentUser.email} moved "${updatedTask.title}" from ${task.status} to ${updatedTask.status}`,
+
+        entityType: 'TASK',
+        entityId: updatedTask.id,
+
+        metadata: {
+          projectId,
+          taskId: updatedTask.id,
+          changedBy: currentUser.id,
+          fromStatus: task.status,
+          toStatus: updatedTask.status,
+        },
+      });
+    }
+
     return {
       message: 'Task moved successfully',
       task: updatedTask,
