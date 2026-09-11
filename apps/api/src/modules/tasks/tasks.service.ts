@@ -14,12 +14,14 @@ import { UpdateTaskDto } from './dto/update-task.dto.js';
 import { and, eq } from 'drizzle-orm';
 import { MoveTaskDto } from './dto/move-task.dto.js';
 import { ReorderTasksDto } from './dto/reorder-tasks.dto.js';
+import { ActivityLogsService } from '../activity-logs/activity-logs.service.js';
 
 @Injectable()
 export class TasksService {
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly usersService: UsersService,
+    private readonly activityLogsService: ActivityLogsService,
   ) {}
 
   async create(
@@ -86,6 +88,21 @@ export class TasksService {
         completedAt,
       })
       .returning();
+
+    await this.activityLogsService.create({
+      organizationId,
+      projectId,
+      actorId: currentUser.id,
+      action: 'TASK_CREATED',
+      entityType: 'TASK',
+      entityId: task.id,
+      metadata: {
+        title: task.title,
+        status: task.status,
+        priority: task.priority,
+        assigneeId: task.assigneeId,
+      },
+    });
 
     return {
       message: 'Task created successfully',
@@ -385,6 +402,21 @@ export class TasksService {
         ),
       )
       .returning();
+    if (task.status !== updatedTask.status) {
+      await this.activityLogsService.create({
+        organizationId,
+        projectId,
+        actorId: task.reporterId,
+        action: 'TASK_STATUS_CHANGED',
+        entityType: 'TASK',
+        entityId: task.id,
+        metadata: {
+          from: task.status,
+          to: updatedTask.status,
+          position: updatedTask.position,
+        },
+      });
+    }
 
     return {
       message: 'Task moved successfully',

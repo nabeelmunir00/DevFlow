@@ -38,13 +38,13 @@ export class TasksController {
   @UseGuards(RolesGuard)
   @Roles('OWNER', 'ADMIN', 'PROJECT_MANAGER', 'DEVELOPER', 'MEMBER')
   create(
-    @CurrentUser() clerkUserId: string,
+    @CurrentUser() clerkUserId: { userId: string },
     @Param('organizationId') organizationId: string,
     @Param('projectId') projectId: string,
     @Body() dto: CreateTaskDto,
   ) {
     return this.tasksService.create(
-      clerkUserId,
+      clerkUserId.userId,
       organizationId,
       projectId,
       dto,
