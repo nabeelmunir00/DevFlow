@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { DatabaseService } from '../../database/database.service.js';
 import { schema } from '@devflow/db';
@@ -32,5 +32,42 @@ export class ActivityLogsService {
       .returning();
 
     return activity;
+  }
+  async getTaskTimeline(
+    organizationId: string,
+    projectId: string,
+    taskId: string,
+  ) {
+    // Task verify
+    const task = await this.databaseService.db.query.tasks.findFirst({
+      where: (tasks, { and, eq }) =>
+        and(
+          eq(tasks.id, taskId),
+          eq(tasks.organizationId, organizationId),
+          eq(tasks.projectId, projectId),
+        ),
+    });
+
+    if (!task) {
+      throw new NotFoundException('Task not found');
+    }
+
+    const activities =
+      await this.databaseService.db.query.activityLogs.findMany({
+        where: (activityLogs, { and, eq }) =>
+          and(
+            eq(activityLogs.organizationId, organizationId),
+            eq(activityLogs.projectId, projectId),
+            eq(activityLogs.entityType, 'TASK'),
+            eq(activityLogs.entityId, taskId),
+          ),
+
+        orderBy: (activityLogs, { desc }) => [desc(activityLogs.createdAt)],
+      });
+
+    return {
+      taskId,
+      activities,
+    };
   }
 }
