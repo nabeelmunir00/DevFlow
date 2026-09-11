@@ -256,8 +256,21 @@ export class TasksService {
       task: updatedTask,
     };
   }
-  async archive(organizationId: string, projectId: string, taskId: string) {
-    const existingTask = await this.databaseService.db.query.tasks.findFirst({
+  async archive(
+    clerkUserId: string,
+    organizationId: string,
+    projectId: string,
+    taskId: string,
+  ) {
+    const currentUser = await this.databaseService.db.query.users.findFirst({
+      where: (users, { eq }) => eq(users.externalAuthId, clerkUserId),
+    });
+
+    if (!currentUser) {
+      throw new NotFoundException('User not found');
+    }
+
+    const task = await this.databaseService.db.query.tasks.findFirst({
       where: (tasks, { and, eq, isNull }) =>
         and(
           eq(tasks.id, taskId),
@@ -267,17 +280,17 @@ export class TasksService {
         ),
     });
 
-    if (!existingTask) {
+    if (!task) {
       throw new NotFoundException('Task not found');
     }
 
-    const now = new Date();
+    const archivedAt = new Date();
 
     const [archivedTask] = await this.databaseService.db
       .update(schema.tasks)
       .set({
-        archivedAt: now,
-        updatedAt: now,
+        archivedAt,
+        updatedAt: archivedAt,
       })
       .where(
         and(
@@ -287,6 +300,20 @@ export class TasksService {
         ),
       )
       .returning();
+
+    await this.activityLogsService.create({
+      organizationId,
+      projectId,
+      actorId: currentUser.id,
+      action: 'TASK_ARCHIVED',
+      entityType: 'TASK',
+      entityId: taskId,
+      metadata: {
+        title: task.title,
+        status: task.status,
+        sprintId: task.sprintId,
+      },
+    });
 
     return {
       message: 'Task archived successfully',
