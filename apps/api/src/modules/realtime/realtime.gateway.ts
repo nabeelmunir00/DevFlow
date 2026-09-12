@@ -11,6 +11,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { verifyToken } from '@clerk/backend';
 import { Server, Socket } from 'socket.io';
+import { DatabaseService } from '../../database/database.service.js';
 
 @WebSocketGateway({
   cors: {
@@ -24,7 +25,10 @@ export class RealtimeGateway
   @WebSocketServer()
   server: Server;
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly databaseService: DatabaseService,
+  ) {}
 
   async handleConnection(client: Socket) {
     try {
@@ -65,11 +69,13 @@ export class RealtimeGateway
   }
 
   @SubscribeMessage('join:organization')
-  handleJoinOrganization(
+  async handleJoinOrganization(
     @ConnectedSocket() client: Socket,
     @MessageBody() organizationId: string,
   ) {
-    if (!client.data.userId) {
+    const clerkUserId = client.data.userId as string | undefined;
+
+    if (!clerkUserId) {
       return {
         event: 'error',
         data: {
@@ -78,18 +84,50 @@ export class RealtimeGateway
       };
     }
 
-    client.join(`organization:${organizationId}`);
+    const user = await this.databaseService.db.query.users.findFirst({
+      where: (users, { eq }) => eq(users.externalAuthId, clerkUserId),
+    });
+
+    if (!user) {
+      return {
+        event: 'error',
+        data: {
+          message: 'User not found',
+        },
+      };
+    }
+
+    const membership =
+      await this.databaseService.db.query.organizationMembers.findFirst({
+        where: (members, { and, eq }) =>
+          and(
+            eq(members.organizationId, organizationId),
+            eq(members.userId, user.id),
+          ),
+      });
+
+    if (!membership) {
+      return {
+        event: 'error',
+        data: {
+          message: 'Access denied',
+        },
+      };
+    }
+
+    await client.join(`organization:${organizationId}`);
 
     return {
       event: 'joined:organization',
       data: {
         organizationId,
+        role: membership.role,
       },
     };
   }
 
   @SubscribeMessage('join:project')
-  handleJoinProject(
+  async handleJoinProject(
     @ConnectedSocket() client: Socket,
     @MessageBody()
     payload: {
@@ -97,7 +135,9 @@ export class RealtimeGateway
       projectId: string;
     },
   ) {
-    if (!client.data.userId) {
+    const clerkUserId = client.data.userId as string | undefined;
+
+    if (!clerkUserId) {
       return {
         event: 'error',
         data: {
@@ -106,13 +146,65 @@ export class RealtimeGateway
       };
     }
 
+    const user = await this.databaseService.db.query.users.findFirst({
+      where: (users, { eq }) => eq(users.externalAuthId, clerkUserId),
+    });
+
+    if (!user) {
+      return {
+        event: 'error',
+        data: {
+          message: 'User not found',
+        },
+      };
+    }
+
+    const membership =
+      await this.databaseService.db.query.organizationMembers.findFirst({
+        where: (members, { and, eq }) =>
+          and(
+            eq(members.organizationId, payload.organizationId),
+            eq(members.userId, user.id),
+          ),
+      });
+
+    if (!membership) {
+      return {
+        event: 'error',
+        data: {
+          message: 'Access denied',
+        },
+      };
+    }
+
+    const project = await this.databaseService.db.query.projects.findFirst({
+      where: (projects, { and, eq }) =>
+        and(
+          eq(projects.id, payload.projectId),
+          eq(projects.organizationId, payload.organizationId),
+        ),
+    });
+
+    if (!project) {
+      return {
+        event: 'error',
+        data: {
+          message: 'Project not found',
+        },
+      };
+    }
+
     const room = `project:${payload.organizationId}:${payload.projectId}`;
 
-    client.join(room);
+    await client.join(room);
 
     return {
       event: 'joined:project',
-      data: payload,
+      data: {
+        organizationId: payload.organizationId,
+        projectId: payload.projectId,
+        role: membership.role,
+      },
     };
   }
 
