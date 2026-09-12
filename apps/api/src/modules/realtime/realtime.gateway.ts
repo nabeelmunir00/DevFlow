@@ -56,6 +56,7 @@ export class RealtimeGateway
       });
 
       client.data.userId = payload.sub;
+      await client.join(`user:${payload.sub}`);
 
       console.log(`Socket authenticated: ${client.id} user=${payload.sub}`);
     } catch (error) {
@@ -221,5 +222,25 @@ export class RealtimeGateway
     }
 
     return token;
+  }
+  emitToProject(
+    organizationId: string,
+    projectId: string,
+    event: string,
+    payload: unknown,
+  ) {
+    const room = `project:${organizationId}:${projectId}`;
+
+    this.server.to(room).emit(event, payload);
+  }
+
+  emitToOrganization(organizationId: string, event: string, payload: unknown) {
+    const room = `organization:${organizationId}`;
+
+    this.server.to(room).emit(event, payload);
+  }
+
+  emitToUser(userId: string, event: string, payload: unknown) {
+    this.server.to(`user:${userId}`).emit(event, payload);
   }
 }

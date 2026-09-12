@@ -7,7 +7,7 @@ export default function Home() {
 
   async function testBackend() {
     const token = await getToken();
-    // console.log(`Bearer ${token}`);
+    console.log(`Bearer ${token}`);
 
     if (!token) {
       console.error("No Clerk token found");
