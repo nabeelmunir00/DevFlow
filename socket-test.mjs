@@ -1,7 +1,7 @@
 import { io } from "socket.io-client";
 
 const TOKEN =
-  "eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zSjJTSnNKbFBSWVBRSHdhN3BWUFViZ2s5Z0QiLCJvaWF0IjoxNzg5MjIyOTgwLCJ0eXAiOiJKV1QifQ.eyJhenAiOiJodHRwOi8vbG9jYWxob3N0OjMwMDAiLCJleHAiOjE3ODkyMjMwNDAsImZ2YSI6WzMzMzMsLTFdLCJpYXQiOjE3ODkyMjI5ODAsImlzcyI6Imh0dHBzOi8vbmF0aXZlLW1hcmxpbi0xOTYxLmNsZXJrLmFjY291bnRzLmRldiIsIm5iZiI6MTc4OTIyMjk3MCwic2lkIjoic2Vzc18zSjdyVUZaNzRXSzFMbUFMb3ZZSzVvcVVlSmwiLCJzdHMiOiJhY3RpdmUiLCJzdWIiOiJ1c2VyXzNKMlo1bEJmQWt6ZVBnUHE2U2tyd3VRMTFXTiIsInYiOjJ9.P8uTrflF7PDBNCjcwVORtRRRoegpe94fbQqfkYuKNR3ZoVaLKlI2Zs0Otlz3t0PT08fZEMqeVhNyY6z5HzUFHjbc4MsDxxBOqDhU_Se9WyBkw5WyScz9rx8-HX1UgqTABhK-r1j3ShG6I5jJ6KH9MldmWrTKOtZk3yyRgZRDkemM4ifWW7Rv5ah6zRe6T1EZWgw8xDN7HNNdiCwrxp-znRzMSPqCNOEcqRyKOiohDtBtd-1-0jWmbV8lOKghMu2v45JS89YTRJzPdhPpupnq5EW9uqw_i45RX6E0M1KJNN3cG54F7WkjgQGbH5-NC13j4zqCBqL0C3ug0-3bS_TBlQ";
+  "eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zSjJTSnNKbFBSWVBRSHdhN3BWUFViZ2s5Z0QiLCJvaWF0IjoxNzg5MjMyMTYzLCJ0eXAiOiJKV1QifQ.eyJhenAiOiJodHRwOi8vbG9jYWxob3N0OjMwMDAiLCJleHAiOjE3ODkyMzIyMjMsImZ2YSI6WzM0ODYsLTFdLCJpYXQiOjE3ODkyMzIxNjMsImlzcyI6Imh0dHBzOi8vbmF0aXZlLW1hcmxpbi0xOTYxLmNsZXJrLmFjY291bnRzLmRldiIsIm5iZiI6MTc4OTIzMjE1Mywic2lkIjoic2Vzc18zSjdyVUZaNzRXSzFMbUFMb3ZZSzVvcVVlSmwiLCJzdHMiOiJhY3RpdmUiLCJzdWIiOiJ1c2VyXzNKMlo1bEJmQWt6ZVBnUHE2U2tyd3VRMTFXTiIsInYiOjJ9.JbWXcQkdq7bxePcpaSyUT903oHO34l00KoUrw-apfCdPlcXtLX53nvhChpzOW4aA4GI6o8iweDwHIS2WKpmyf6iJKzzV_OFwBvq_tNqzrGwvanFMf4ASh66CtKa0bfwlcWYwAFkWdakSFkv0DbdNLif59QUBNA7BNpRoUngYflTmy94zKu-hfPwIkab6X4pfKlWKlFPlr2P0dWsObmAkzP1ELoD7dFaptaUN5LazL9KSkEUhNt-LLr21_vWErOSCOX58vwxl-2oigZ6KOwwLGJl8V6CaNfAvqfjIFJg8SrEVXzFbx7lXn7t4PnpnwIkutTgpT_8Q5to04Qj0wmIo_w";
 
 const ORGANIZATION_ID = "af0e8191-836d-44e1-8719-8358d16d2571";
 
@@ -38,6 +38,27 @@ socket.on("joined:organization", (data) => {
 
 socket.on("joined:project", (data) => {
   console.log("joined project:", data);
+});
+
+socket.on("task:created", (payload) => {
+  console.log("🚀 task created realtime event:");
+  console.log(payload);
+});
+
+socket.on("task:updated", (payload) => {
+  console.log("📝 task updated:", payload);
+});
+
+socket.on("task:moved", (payload) => {
+  console.log("🔄 task moved:", payload);
+});
+
+socket.on("task:archived", (payload) => {
+  console.log("🗄️ task archived:", payload);
+});
+
+socket.on("task:reordered", (payload) => {
+  console.log("↕️ tasks reordered:", payload);
 });
 
 socket.on("connect_error", (error) => {
