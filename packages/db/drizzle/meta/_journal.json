@@ -78,6 +78,13 @@
       "when": 1789137408008,
       "tag": "0010_jittery_landau",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1789205170375,
+      "tag": "0011_wise_shockwave",
+      "breakpoints": true
     }
   ]
 }
