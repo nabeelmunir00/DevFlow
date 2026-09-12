@@ -14,6 +14,7 @@ import type { UploadedFileType } from './types/uploaded-file.type.js';
 import { DatabaseService } from '../../database/database.service.js';
 import { UsersService } from '../users/users.service.js';
 import { R2StorageService } from '../storage/r2-storage.service.js';
+import { ActivityLogsService } from '../activity-logs/activity-logs.service.js';
 
 @Injectable()
 export class AttachmentsService {
@@ -21,6 +22,7 @@ export class AttachmentsService {
     private readonly databaseService: DatabaseService,
     private readonly usersService: UsersService,
     private readonly r2StorageService: R2StorageService,
+    private readonly activityLogsService: ActivityLogsService,
   ) {}
 
   async upload(
@@ -81,6 +83,21 @@ export class AttachmentsService {
           fileSize: file.size,
         })
         .returning();
+
+      await this.activityLogsService.create({
+        organizationId,
+        projectId,
+        actorId: currentUser.id,
+        action: 'ATTACHMENT_UPLOADED',
+        entityType: 'TASK',
+        entityId: taskId,
+        metadata: {
+          attachmentId: attachment.id,
+          fileName: attachment.fileName,
+          mimeType: attachment.mimeType,
+          fileSize: attachment.fileSize,
+        },
+      });
 
       return {
         message: 'Attachment uploaded successfully',
@@ -227,6 +244,20 @@ export class AttachmentsService {
         ),
       )
       .returning();
+    await this.activityLogsService.create({
+      organizationId,
+      projectId,
+      actorId: currentUser.id,
+      action: 'ATTACHMENT_DELETED',
+      entityType: 'TASK',
+      entityId: taskId,
+      metadata: {
+        attachmentId: attachment.id,
+        fileName: attachment.fileName,
+        mimeType: attachment.mimeType,
+        fileSize: attachment.fileSize,
+      },
+    });
 
     return {
       message: 'Attachment deleted successfully',
