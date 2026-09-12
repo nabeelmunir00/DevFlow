@@ -58,8 +58,9 @@ export class RealtimeGateway
       client.data.userId = payload.sub;
 
       console.log(`Socket authenticated: ${client.id} user=${payload.sub}`);
-    } catch {
-      console.log(`Socket rejected: invalid token (${client.id})`);
+    } catch (error) {
+      console.error(`Socket authentication failed (${client.id}):`, error);
+
       client.disconnect(true);
     }
   }
