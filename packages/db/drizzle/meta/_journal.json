@@ -85,6 +85,13 @@
       "when": 1789205170375,
       "tag": "0011_wise_shockwave",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1789209858280,
+      "tag": "0012_sour_blink",
+      "breakpoints": true
     }
   ]
 }

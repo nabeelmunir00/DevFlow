@@ -12,3 +12,5 @@ export * from "./task-comments.js";
 export * from "./notifications.js";
 export * from "./task-attachments.js";
 export * from "./task-subtasks.js";
+export * from "./labels.js";
+export * from "./task-labels.js";
