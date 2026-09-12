@@ -23,6 +23,7 @@ import { UpdateTaskDto } from './dto/update-task.dto.js';
 import { MoveTaskToSprintDto } from './dto/move-task-to-sprint.dto.js';
 import { MoveTaskDto } from './dto/move-task.dto.js';
 import { ReorderTasksDto } from './dto/reorder-tasks.dto.js';
+import { TaskQueryDto } from './dto/task-query.dto.js';
 
 @Controller('organizations/:organizationId/projects/:projectId/tasks')
 @UseGuards(ClerkAuthGuard)
@@ -57,13 +58,12 @@ export class TasksController {
   // ============================================================
 
   @Get()
-  @UseGuards(RolesGuard)
-  @Roles('OWNER', 'ADMIN', 'PROJECT_MANAGER', 'DEVELOPER', 'MEMBER', 'VIEWER')
   findAll(
     @Param('organizationId') organizationId: string,
     @Param('projectId') projectId: string,
+    @Query() query: TaskQueryDto,
   ) {
-    return this.tasksService.findAll(organizationId, projectId);
+    return this.tasksService.findAll(organizationId, projectId, query);
   }
 
   // ============================================================

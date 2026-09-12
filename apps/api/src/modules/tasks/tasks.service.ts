@@ -11,9 +11,20 @@ import { UsersService } from '../users/users.service.js';
 
 import { CreateTaskDto } from './dto/create-task.dto.js';
 import { UpdateTaskDto } from './dto/update-task.dto.js';
-import { and, eq } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  ilike,
+  inArray,
+  isNull,
+  or,
+} from 'drizzle-orm';
 import { MoveTaskDto } from './dto/move-task.dto.js';
 import { ReorderTasksDto } from './dto/reorder-tasks.dto.js';
+import { TaskQueryDto } from './dto/task-query.dto.js';
 import { ActivityLogsService } from '../activity-logs/activity-logs.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 
@@ -133,7 +144,12 @@ export class TasksService {
       task,
     };
   }
-  async findAll(organizationId: string, projectId: string) {
+  async findAll(
+    organizationId: string,
+    projectId: string,
+    query: TaskQueryDto,
+  ) {
+    // 1. Verify project
     const project = await this.databaseService.db.query.projects.findFirst({
       where: (projects, { and, eq }) =>
         and(
@@ -146,21 +162,122 @@ export class TasksService {
       throw new NotFoundException('Project not found');
     }
 
-    const tasks = await this.databaseService.db.query.tasks.findMany({
-      where: (tasks, { and, eq, isNull }) =>
-        and(
-          eq(tasks.organizationId, organizationId),
-          eq(tasks.projectId, projectId),
-          isNull(tasks.archivedAt),
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    const offset = (page - 1) * limit;
+
+    // 2. Base conditions
+    const conditions = [
+      eq(schema.tasks.organizationId, organizationId),
+      eq(schema.tasks.projectId, projectId),
+      isNull(schema.tasks.archivedAt),
+    ];
+
+    // 3. Search
+    const search = query.search?.trim();
+
+    if (search) {
+      conditions.push(
+        or(
+          ilike(schema.tasks.title, `%${search}%`),
+          ilike(schema.tasks.description, `%${search}%`),
+        )!,
+      );
+    }
+
+    // 4. Status filter
+    if (query.status) {
+      conditions.push(
+        eq(
+          schema.tasks.status,
+          query.status as typeof schema.tasks.$inferSelect.status,
         ),
+      );
+    }
 
-      orderBy: (tasks, { asc, desc }) => [
-        asc(tasks.position),
-        desc(tasks.createdAt),
-      ],
-    });
+    // 5. Priority filter
+    if (query.priority) {
+      conditions.push(
+        eq(
+          schema.tasks.priority,
+          query.priority as typeof schema.tasks.$inferSelect.priority,
+        ),
+      );
+    }
 
-    return tasks;
+    // 6. Assignee filter
+    if (query.assigneeId) {
+      conditions.push(eq(schema.tasks.assigneeId, query.assigneeId));
+    }
+
+    // 7. Sprint filter
+    if (query.sprintId) {
+      conditions.push(eq(schema.tasks.sprintId, query.sprintId));
+    }
+
+    // 8. Label filter
+    if (query.labelId) {
+      const taskIdsWithLabel = this.databaseService.db
+        .select({
+          taskId: schema.taskLabels.taskId,
+        })
+        .from(schema.taskLabels)
+        .where(eq(schema.taskLabels.labelId, query.labelId));
+
+      conditions.push(inArray(schema.tasks.id, taskIdsWithLabel));
+    }
+
+    const whereCondition = and(...conditions);
+
+    // 9. Sorting
+    const sortColumns = {
+      createdAt: schema.tasks.createdAt,
+      updatedAt: schema.tasks.updatedAt,
+      dueDate: schema.tasks.dueDate,
+      priority: schema.tasks.priority,
+      position: schema.tasks.position,
+      title: schema.tasks.title,
+    };
+
+    const sortColumn =
+      sortColumns[query.sortBy as keyof typeof sortColumns] ??
+      schema.tasks.createdAt;
+
+    const orderBy =
+      query.sortOrder === 'asc' ? asc(sortColumn) : desc(sortColumn);
+
+    // 10. Fetch paginated tasks
+    const tasks = await this.databaseService.db
+      .select()
+      .from(schema.tasks)
+      .where(whereCondition)
+      .orderBy(orderBy)
+      .limit(limit)
+      .offset(offset);
+
+    // 11. Count total matching tasks
+    const [totalResult] = await this.databaseService.db
+      .select({
+        total: count(),
+      })
+      .from(schema.tasks)
+      .where(whereCondition);
+
+    const total = Number(totalResult?.total ?? 0);
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data: tasks,
+
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1,
+      },
+    };
   }
   async findOne(organizationId: string, projectId: string, taskId: string) {
     const task = await this.databaseService.db.query.tasks.findFirst({
