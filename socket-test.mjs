@@ -1,7 +1,7 @@
 import { io } from "socket.io-client";
 
 const TOKEN =
-  "eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zSjJTSnNKbFBSWVBRSHdhN3BWUFViZ2s5Z0QiLCJvaWF0IjoxNzg5MjMyMTYzLCJ0eXAiOiJKV1QifQ.eyJhenAiOiJodHRwOi8vbG9jYWxob3N0OjMwMDAiLCJleHAiOjE3ODkyMzIyMjMsImZ2YSI6WzM0ODYsLTFdLCJpYXQiOjE3ODkyMzIxNjMsImlzcyI6Imh0dHBzOi8vbmF0aXZlLW1hcmxpbi0xOTYxLmNsZXJrLmFjY291bnRzLmRldiIsIm5iZiI6MTc4OTIzMjE1Mywic2lkIjoic2Vzc18zSjdyVUZaNzRXSzFMbUFMb3ZZSzVvcVVlSmwiLCJzdHMiOiJhY3RpdmUiLCJzdWIiOiJ1c2VyXzNKMlo1bEJmQWt6ZVBnUHE2U2tyd3VRMTFXTiIsInYiOjJ9.JbWXcQkdq7bxePcpaSyUT903oHO34l00KoUrw-apfCdPlcXtLX53nvhChpzOW4aA4GI6o8iweDwHIS2WKpmyf6iJKzzV_OFwBvq_tNqzrGwvanFMf4ASh66CtKa0bfwlcWYwAFkWdakSFkv0DbdNLif59QUBNA7BNpRoUngYflTmy94zKu-hfPwIkab6X4pfKlWKlFPlr2P0dWsObmAkzP1ELoD7dFaptaUN5LazL9KSkEUhNt-LLr21_vWErOSCOX58vwxl-2oigZ6KOwwLGJl8V6CaNfAvqfjIFJg8SrEVXzFbx7lXn7t4PnpnwIkutTgpT_8Q5to04Qj0wmIo_w";
+  "eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zSjJTSnNKbFBSWVBRSHdhN3BWUFViZ2s5Z0QiLCJvaWF0IjoxNzg5MjMyODk3LCJ0eXAiOiJKV1QifQ.eyJhenAiOiJodHRwOi8vbG9jYWxob3N0OjMwMDAiLCJleHAiOjE3ODkyMzI5NTcsImZ2YSI6WzM0OTgsLTFdLCJpYXQiOjE3ODkyMzI4OTcsImlzcyI6Imh0dHBzOi8vbmF0aXZlLW1hcmxpbi0xOTYxLmNsZXJrLmFjY291bnRzLmRldiIsIm5iZiI6MTc4OTIzMjg4Nywic2lkIjoic2Vzc18zSjdyVUZaNzRXSzFMbUFMb3ZZSzVvcVVlSmwiLCJzdHMiOiJhY3RpdmUiLCJzdWIiOiJ1c2VyXzNKMlo1bEJmQWt6ZVBnUHE2U2tyd3VRMTFXTiIsInYiOjJ9.Emlu4zsNwvjpHLDRDBIw2YACObM4TvEYY0AXOBjXfzipkd_u8Lbn0Ahfn3TVbRNDmTkUnDBO6gtUKJT5vjIi4NofYtQ7i1Wx6lAGqoqOlk7pK-2rro3XjeGymKMw29XWpoVo7NjHVRTp_wZYtVsC88nF1HY7wUX0errs60cFA8qi1Tr42XsJJI2XNaLmzkFk3gLPSZgeK7MYvXOuJAoyeCBtlWZjKGms_iGwuMYjHgAj4yr4eVcy4Q247Tvglyj6saOwrw8xDE8KcFvyK6Ys2wcogwDUKi1Fezn25_gYpIiniauTXLCZtEv_CMl4pRrKYWYuDvKlsfx_4bxojZK22Q";
 
 const ORGANIZATION_ID = "af0e8191-836d-44e1-8719-8358d16d2571";
 
@@ -59,6 +59,18 @@ socket.on("task:archived", (payload) => {
 
 socket.on("task:reordered", (payload) => {
   console.log("↕️ tasks reordered:", payload);
+});
+
+socket.on("comment:created", (payload) => {
+  console.log("💬 comment created:", payload);
+});
+
+socket.on("comment:updated", (payload) => {
+  console.log("✏️ comment updated:", payload);
+});
+
+socket.on("comment:deleted", (payload) => {
+  console.log("🗑️ comment deleted:", payload);
 });
 
 socket.on("connect_error", (error) => {
