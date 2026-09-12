@@ -11,3 +11,4 @@ export * from "./activity-logs.js";
 export * from "./task-comments.js";
 export * from "./notifications.js";
 export * from "./task-attachments.js";
+export * from "./task-subtasks.js";

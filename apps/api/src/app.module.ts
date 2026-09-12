@@ -25,6 +25,8 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { StorageModule } from './modules/storage/storage.module.js';
 import { AttachmentsModule } from './modules/attachments/attachments.module.js';
 
+import { SubtasksModule } from './modules/subtasks/subtasks.module.js';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -51,6 +53,8 @@ import { AttachmentsModule } from './modules/attachments/attachments.module.js';
     NotificationsModule,
     StorageModule,
     AttachmentsModule,
+
+    SubtasksModule,
   ],
   controllers: [AppController],
   providers: [AppService],
