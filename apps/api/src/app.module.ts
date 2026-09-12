@@ -24,8 +24,8 @@ import { CommentsModule } from './modules/comments/comments.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { StorageModule } from './modules/storage/storage.module.js';
 import { AttachmentsModule } from './modules/attachments/attachments.module.js';
-
 import { SubtasksModule } from './modules/subtasks/subtasks.module.js';
+import { LabelsModule } from './modules/labels/labels.module.js';
 
 @Module({
   imports: [
@@ -53,8 +53,8 @@ import { SubtasksModule } from './modules/subtasks/subtasks.module.js';
     NotificationsModule,
     StorageModule,
     AttachmentsModule,
-
     SubtasksModule,
+    LabelsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
