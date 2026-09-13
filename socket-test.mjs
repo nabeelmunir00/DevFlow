@@ -1,7 +1,7 @@
 import { io } from "socket.io-client";
 
 const TOKEN =
-  "eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zSjJTSnNKbFBSWVBRSHdhN3BWUFViZ2s5Z0QiLCJvaWF0IjoxNzg5MjkwMTUyLCJ0eXAiOiJKV1QifQ.eyJhenAiOiJodHRwOi8vbG9jYWxob3N0OjMwMDAiLCJleHAiOjE3ODkyOTAyMTIsImZ2YSI6WzU1NDMsLTFdLCJpYXQiOjE3ODkyOTAxNTIsImlzcyI6Imh0dHBzOi8vbmF0aXZlLW1hcmxpbi0xOTYxLmNsZXJrLmFjY291bnRzLmRldiIsIm5iZiI6MTc4OTI5MDE0Miwic2lkIjoic2Vzc18zSjVpcFhBVm5pNFEwRFBpb2taUVpITWJGbHYiLCJzdHMiOiJhY3RpdmUiLCJzdWIiOiJ1c2VyXzNKNWlwWEpMb05acVVqdnNkN0ZSdVpSZEFMUyIsInYiOjJ9.sJC5jZWNiThKOqz1BQqM7hggFPPGw33F76H7fkiTjYpcbI-ADvDt2GAiV2OES_wilQoULOtMDqBbz4jHrGI-l2EXi3JDdqWueKUlRvtFQKXHvVrrrzM0H0rxdvswOA_wVYXGib0jaLeBA5y0uzKdoE122945kEkGz7Nq6KMzjH16rW5J1tSSVR250N8yWMR_kYOu8-nD9uAxVJdJcTnpPUF3CxirbXFTpZMfQZcPDbZMCKuYrgw_3Iwe66-DKWRl3ODSacS4d4YGjwyZPQvDkfNhUxr77aIzFEMJnkwAKkHGyWRk1cii8PeM6AdP5DZLVFBk2TZwQpd_xmfD35mqzA";
+  "eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zSjJTSnNKbFBSWVBRSHdhN3BWUFViZ2s5Z0QiLCJvaWF0IjoxNzg5MjkxODI4LCJ0eXAiOiJKV1QifQ.eyJhenAiOiJodHRwOi8vbG9jYWxob3N0OjMwMDAiLCJleHAiOjE3ODkyOTE4ODgsImZ2YSI6WzQ0ODEsLTFdLCJpYXQiOjE3ODkyOTE4MjgsImlzcyI6Imh0dHBzOi8vbmF0aXZlLW1hcmxpbi0xOTYxLmNsZXJrLmFjY291bnRzLmRldiIsIm5iZiI6MTc4OTI5MTgxOCwic2lkIjoic2Vzc18zSjdyVUZaNzRXSzFMbUFMb3ZZSzVvcVVlSmwiLCJzdHMiOiJhY3RpdmUiLCJzdWIiOiJ1c2VyXzNKMlo1bEJmQWt6ZVBnUHE2U2tyd3VRMTFXTiIsInYiOjJ9.tINVimP3D0y7OXJBMdXovuNV4fgsU7VbqqBiAv3mlioIL9cPSvBhu4b0yda3kOFKYLP5doH8cQV6g02fr6QCD8a-RyVjBYutoDU8BUIrR_DKX6jQSLYj2t9yqh451xVOUZ2AyyhlnRXH_LuXiRPNN-ygCOi3lq6ckg-CvzzsadOQUngKLrx3-ndDGLtcNhYIaiDW-bwU1xMhduNZ5c7DHWYlrHsC7q2BWC3G7VTetn_CWa1TSU78eySPMkfUDvdhAaOLAnWjoUIqPEDgA_yk2ZKvo1s9W2WJTReUX1K5iKhLG0E_LvTw-z-C4m6Vc07WpS86CZTE2iU8acPjL0OeqQ";
 
 const ORGANIZATION_ID = "af0e8191-836d-44e1-8719-8358d16d2571";
 
@@ -75,6 +75,14 @@ socket.on("comment:deleted", (payload) => {
 
 socket.on("notification:new", (notification) => {
   console.log("🔔 new notification:", notification);
+});
+
+socket.on("attachment:uploaded", (payload) => {
+  console.log("📎 attachment uploaded:", payload);
+});
+
+socket.on("attachment:deleted", (payload) => {
+  console.log("🗑️ attachment deleted:", payload);
 });
 
 socket.on("connect_error", (error) => {

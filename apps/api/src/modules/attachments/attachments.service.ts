@@ -8,13 +8,14 @@ import {
 import { schema } from '@devflow/db';
 import { and, desc, eq, isNull } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
-import type { Multer } from 'multer';
+
 import type { UploadedFileType } from './types/uploaded-file.type.js';
 
 import { DatabaseService } from '../../database/database.service.js';
 import { UsersService } from '../users/users.service.js';
 import { R2StorageService } from '../storage/r2-storage.service.js';
 import { ActivityLogsService } from '../activity-logs/activity-logs.service.js';
+import { RealtimeGateway } from '../realtime/realtime.gateway.js';
 
 @Injectable()
 export class AttachmentsService {
@@ -23,6 +24,7 @@ export class AttachmentsService {
     private readonly usersService: UsersService,
     private readonly r2StorageService: R2StorageService,
     private readonly activityLogsService: ActivityLogsService,
+    private readonly realtimeGateway: RealtimeGateway,
   ) {}
 
   async upload(
@@ -65,7 +67,11 @@ export class AttachmentsService {
       ? `${randomUUID()}.${extension}`
       : randomUUID();
 
-    const storageKey = `organizations/${organizationId}/projects/${projectId}/tasks/${taskId}/${uniqueFileName}`;
+    const storageKey =
+      `organizations/${organizationId}` +
+      `/projects/${projectId}` +
+      `/tasks/${taskId}` +
+      `/${uniqueFileName}`;
 
     await this.r2StorageService.upload(storageKey, file.buffer, file.mimetype);
 
@@ -99,6 +105,17 @@ export class AttachmentsService {
         },
       });
 
+      this.realtimeGateway.emitToProject(
+        organizationId,
+        projectId,
+        'attachment:uploaded',
+        {
+          attachment,
+          taskId,
+          actorId: currentUser.id,
+        },
+      );
+
       return {
         message: 'Attachment uploaded successfully',
         attachment,
@@ -110,6 +127,7 @@ export class AttachmentsService {
       throw error;
     }
   }
+
   async findAll(organizationId: string, projectId: string, taskId: string) {
     const task = await this.databaseService.db.query.tasks.findFirst({
       where: (tasks, { and, eq, isNull }) =>
@@ -244,6 +262,7 @@ export class AttachmentsService {
         ),
       )
       .returning();
+
     await this.activityLogsService.create({
       organizationId,
       projectId,
@@ -258,6 +277,17 @@ export class AttachmentsService {
         fileSize: attachment.fileSize,
       },
     });
+
+    this.realtimeGateway.emitToProject(
+      organizationId,
+      projectId,
+      'attachment:deleted',
+      {
+        attachmentId,
+        taskId,
+        actorId: currentUser.id,
+      },
+    );
 
     return {
       message: 'Attachment deleted successfully',
