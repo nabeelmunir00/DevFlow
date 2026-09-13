@@ -5,6 +5,7 @@ import { schema } from '@devflow/db';
 
 import { DatabaseService } from '../../database/database.service.js';
 import { UsersService } from '../users/users.service.js';
+import { RealtimeGateway } from '../realtime/realtime.gateway.js';
 
 interface CreateNotificationInput {
   organizationId?: string;
@@ -33,6 +34,7 @@ export class NotificationsService {
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly usersService: UsersService,
+    private readonly realtimeGateway: RealtimeGateway,
   ) {}
 
   async create(input: CreateNotificationInput) {
@@ -49,6 +51,18 @@ export class NotificationsService {
         metadata: input.metadata,
       })
       .returning();
+
+    const recipient = await this.databaseService.db.query.users.findFirst({
+      where: (users, { eq }) => eq(users.id, input.userId),
+    });
+
+    if (recipient?.externalAuthId) {
+      this.realtimeGateway.emitToUser(
+        recipient.externalAuthId,
+        'notification:new',
+        notification,
+      );
+    }
 
     return notification;
   }
@@ -140,7 +154,7 @@ export class NotificationsService {
   }
 
   async remove(clerkUserId: string, notificationId: string) {
-    const currentUser = await this.usersService.findByClerkId(clerkUserId);
+    const currentUser = await this.usersService.findByClerkId?.(clerkUserId);
 
     const [deletedNotification] = await this.databaseService.db
       .delete(schema.notifications)

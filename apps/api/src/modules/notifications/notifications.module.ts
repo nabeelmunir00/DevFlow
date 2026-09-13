@@ -4,9 +4,10 @@ import { UsersModule } from '../users/users.module.js';
 
 import { NotificationsController } from './notifications.controller.js';
 import { NotificationsService } from './notifications.service.js';
+import { RealtimeModule } from '../realtime/realtime.module.js';
 
 @Module({
-  imports: [UsersModule],
+  imports: [UsersModule, RealtimeModule],
 
   controllers: [NotificationsController],
 
