@@ -14,3 +14,6 @@ export * from "./task-attachments.js";
 export * from "./task-subtasks.js";
 export * from "./labels.js";
 export * from "./task-labels.js";
+export * from "./github-installations.js";
+
+export * from "./github-repositories.js";

@@ -47,3 +47,6 @@ temp/
 
 # Docker local overrides
 docker-compose.override.yml
+
+*.pem
+apps/api/secrets/
