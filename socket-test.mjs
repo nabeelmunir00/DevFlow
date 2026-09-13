@@ -1,7 +1,7 @@
 import { io } from "socket.io-client";
 
 const TOKEN =
-  "eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zSjJTSnNKbFBSWVBRSHdhN3BWUFViZ2s5Z0QiLCJvaWF0IjoxNzg5MjkzMDE3LCJ0eXAiOiJKV1QifQ.eyJhenAiOiJodHRwOi8vbG9jYWxob3N0OjMwMDAiLCJleHAiOjE3ODkyOTMwNzcsImZ2YSI6WzQ1MDAsLTFdLCJpYXQiOjE3ODkyOTMwMTcsImlzcyI6Imh0dHBzOi8vbmF0aXZlLW1hcmxpbi0xOTYxLmNsZXJrLmFjY291bnRzLmRldiIsIm5iZiI6MTc4OTI5MzAwNywic2lkIjoic2Vzc18zSjdyVUZaNzRXSzFMbUFMb3ZZSzVvcVVlSmwiLCJzdHMiOiJhY3RpdmUiLCJzdWIiOiJ1c2VyXzNKMlo1bEJmQWt6ZVBnUHE2U2tyd3VRMTFXTiIsInYiOjJ9.KB2wULfScWrmzPyyuAMqReEFoM-v62YrbtYVsvGK4-s6MG4F90dSo_6DZRhgG-Jhad7UTbNqYH0TpymAJ5DhpPIJlYYdZ3_UdjDZrJE9bhXnBIwdb-8wfLBEOd4L7CmexslP-QBiJ6Jn0UlPDm09t6jiRAs0DVNXj14rRFuJIadrVh1TCMdeBgdNzDX4EfJu3G-u5upRmqqviqKhF-ohYGjut7wXOpuhuLxsp2aWCXmAwdw73RSuFrqpvAi1aSbIDNg-m818orhPVh4IpEyoG-bMvlaHTQ2QLNXH3vejxNns_Tf9o-cAe3wqz6Fxw_eIiTCfbIrkgeqqdC-2r2aO-g";
+  "eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zSjJTSnNKbFBSWVBRSHdhN3BWUFViZ2s5Z0QiLCJvaWF0IjoxNzg5Mjk5NTM3LCJ0eXAiOiJKV1QifQ.eyJhenAiOiJodHRwOi8vbG9jYWxob3N0OjMwMDAiLCJleHAiOjE3ODkyOTk1OTcsImZ2YSI6WzQ2MDksLTFdLCJpYXQiOjE3ODkyOTk1MzcsImlzcyI6Imh0dHBzOi8vbmF0aXZlLW1hcmxpbi0xOTYxLmNsZXJrLmFjY291bnRzLmRldiIsIm5iZiI6MTc4OTI5OTUyNywic2lkIjoic2Vzc18zSjdyVUZaNzRXSzFMbUFMb3ZZSzVvcVVlSmwiLCJzdHMiOiJhY3RpdmUiLCJzdWIiOiJ1c2VyXzNKMlo1bEJmQWt6ZVBnUHE2U2tyd3VRMTFXTiIsInYiOjJ9.TUerKhZa0UaENiROczVWqCz_Cmdl0AgMswrCGAGO18yoPWT3Y3ncO8v0KJPT3koPD_-YG-CoXD1QpGHIn0-OyJDduD1Dup600NbK6U5iC0SeQW3-jiUjbPNm3ZP_Xyzyx4zI9VnuaY2PIl8Oxqxsd8rllf6hjccCyRAAS5iXOsdmq5LPGA4bpbtNjC8NuuD8GCjzgFmgzBdnx8TT2V0lsb2defglThLoMp4gd8PJZOcE3ZwPBSc6RMxBKURs2oQXKKGb6JnpjDov7WAVM5y2al5_mSVn4BbHPVx0EF_UmVG-nACMJ7WiVM1nBsHmgPV4F9hPz6QdE8D3HV6wvUGKYQ";
 
 const ORGANIZATION_ID = "af0e8191-836d-44e1-8719-8358d16d2571";
 
@@ -94,6 +94,26 @@ socket.on("subtask:updated", (payload) => {
 
 socket.on("subtask:deleted", (payload) => {
   console.log("🗑️ subtask deleted:", payload);
+});
+
+socket.on("label:created", (payload) => {
+  console.log("🏷️ label created:", payload);
+});
+
+socket.on("label:updated", (payload) => {
+  console.log("✏️ label updated:", payload);
+});
+
+socket.on("label:deleted", (payload) => {
+  console.log("🗑️ label deleted:", payload);
+});
+
+socket.on("label:attached", (payload) => {
+  console.log("🔗 label attached:", payload);
+});
+
+socket.on("label:detached", (payload) => {
+  console.log("⛓️ label detached:", payload);
 });
 
 socket.on("connect_error", (error) => {
