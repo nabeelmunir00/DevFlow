@@ -32,6 +32,7 @@
     "@nestjs/platform-express": "^12.0.1",
     "@nestjs/platform-socket.io": "^12.0.1",
     "@nestjs/websockets": "^12.0.1",
+    "@octokit/app": "^16.1.4",
     "bullmq": "^6.3.4",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
