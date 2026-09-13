@@ -26,6 +26,7 @@ import { StorageModule } from './modules/storage/storage.module.js';
 import { AttachmentsModule } from './modules/attachments/attachments.module.js';
 import { SubtasksModule } from './modules/subtasks/subtasks.module.js';
 import { LabelsModule } from './modules/labels/labels.module.js';
+import { RealtimeModule } from './modules/realtime/realtime.module.js';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { LabelsModule } from './modules/labels/labels.module.js';
     AttachmentsModule,
     SubtasksModule,
     LabelsModule,
+    RealtimeModule,
   ],
   controllers: [AppController],
   providers: [AppService],

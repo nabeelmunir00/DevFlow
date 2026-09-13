@@ -13,6 +13,7 @@ export default function Home() {
       console.error("No Clerk token found");
       return;
     }
+    console.log(token);
 
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/api/v1/me`,
@@ -25,7 +26,7 @@ export default function Home() {
 
     const data = await response.json();
 
-    console.log(data);
+    // console.log(data);
   }
 
   return (

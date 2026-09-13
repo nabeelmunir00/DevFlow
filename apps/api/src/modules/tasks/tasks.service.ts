@@ -27,6 +27,7 @@ import { ReorderTasksDto } from './dto/reorder-tasks.dto.js';
 import { TaskQueryDto } from './dto/task-query.dto.js';
 import { ActivityLogsService } from '../activity-logs/activity-logs.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
+import { RealtimeGateway } from '../realtime/realtime.gateway.js';
 
 @Injectable()
 export class TasksService {
@@ -35,6 +36,7 @@ export class TasksService {
     private readonly usersService: UsersService,
     private readonly activityLogsService: ActivityLogsService,
     private readonly notificationsService: NotificationsService,
+    private readonly realtimeGateway: RealtimeGateway,
   ) {}
 
   async create(
@@ -138,6 +140,16 @@ export class TasksService {
         },
       });
     }
+
+    this.realtimeGateway.emitToProject(
+      organizationId,
+      projectId,
+      'task:created',
+      {
+        task,
+        actorId: currentUser.id,
+      },
+    );
 
     return {
       message: 'Task created successfully',
@@ -425,6 +437,16 @@ export class TasksService {
       });
     }
 
+    this.realtimeGateway.emitToProject(
+      organizationId,
+      projectId,
+      'task:updated',
+      {
+        task: updatedTask,
+        actorId: currentUser.id,
+      },
+    );
+
     return {
       message: 'Task updated successfully',
       task: updatedTask,
@@ -488,6 +510,16 @@ export class TasksService {
         sprintId: task.sprintId,
       },
     });
+
+    this.realtimeGateway.emitToProject(
+      organizationId,
+      projectId,
+      'task:archived',
+      {
+        task: archivedTask,
+        actorId: currentUser.id,
+      },
+    );
 
     return {
       message: 'Task archived successfully',
@@ -584,6 +616,18 @@ export class TasksService {
         },
       });
     }
+
+    this.realtimeGateway.emitToProject(
+      organizationId,
+      projectId,
+      'task:moved',
+      {
+        task: updatedTask,
+        actorId: currentUser.id,
+        fromSprintId: previousSprintId,
+        toSprintId: updatedTask.sprintId,
+      },
+    );
 
     return {
       message: updatedTask.sprintId
@@ -693,6 +737,17 @@ export class TasksService {
       });
     }
 
+    this.realtimeGateway.emitToProject(
+      organizationId,
+      projectId,
+      'task:moved',
+      {
+        task: updatedTask,
+        actorId: currentUser.id,
+        fromStatus: task.status,
+        toStatus: updatedTask.status,
+      },
+    );
     return {
       message: 'Task moved successfully',
       task: updatedTask,
@@ -816,6 +871,14 @@ export class TasksService {
           );
       }
     });
+    this.realtimeGateway.emitToProject(
+      organizationId,
+      projectId,
+      'task:reordered',
+      {
+        tasks: dto.tasks,
+      },
+    );
 
     return {
       message: 'Tasks reordered successfully',

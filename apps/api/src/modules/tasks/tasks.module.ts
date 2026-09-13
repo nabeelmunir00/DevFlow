@@ -7,9 +7,16 @@ import { TasksController } from './tasks.controller.js';
 import { TasksService } from './tasks.service.js';
 import { ActivityLogsModule } from '../activity-logs/activity-logs.module.js';
 import { NotificationsModule } from '../notifications/notifications.module.js';
+import { RealtimeModule } from '../realtime/realtime.module.js';
 
 @Module({
-  imports: [UsersModule, RbacModule, ActivityLogsModule, NotificationsModule],
+  imports: [
+    UsersModule,
+    RbacModule,
+    ActivityLogsModule,
+    NotificationsModule,
+    RealtimeModule,
+  ],
   controllers: [TasksController],
   providers: [TasksService],
   exports: [TasksService],

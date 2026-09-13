@@ -9,6 +9,7 @@ import { schema } from '@devflow/db';
 
 import { DatabaseService } from '../../database/database.service.js';
 import { ActivityLogsService } from '../activity-logs/activity-logs.service.js';
+import { RealtimeGateway } from '../realtime/realtime.gateway.js';
 
 import { CreateLabelDto } from './dto/create-label.dto.js';
 import { UpdateLabelDto } from './dto/update-label.dto.js';
@@ -18,6 +19,7 @@ export class LabelsService {
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly activityLogsService: ActivityLogsService,
+    private readonly realtimeGateway: RealtimeGateway,
   ) {}
 
   async create(
@@ -84,6 +86,16 @@ export class LabelsService {
         color: label.color,
       },
     });
+
+    this.realtimeGateway.emitToProject(
+      organizationId,
+      projectId,
+      'label:created',
+      {
+        label,
+        actorId: currentUser.id,
+      },
+    );
 
     return {
       message: 'Label created successfully',
@@ -183,9 +195,17 @@ export class LabelsService {
     const [updatedLabel] = await this.databaseService.db
       .update(schema.labels)
       .set({
-        ...(dto.name !== undefined ? { name: dto.name.trim() } : {}),
+        ...(dto.name !== undefined
+          ? {
+              name: dto.name.trim(),
+            }
+          : {}),
 
-        ...(dto.color !== undefined ? { color: dto.color.toUpperCase() } : {}),
+        ...(dto.color !== undefined
+          ? {
+              color: dto.color.toUpperCase(),
+            }
+          : {}),
 
         updatedAt: new Date(),
       })
@@ -205,6 +225,16 @@ export class LabelsService {
         color: updatedLabel.color,
       },
     });
+
+    this.realtimeGateway.emitToProject(
+      organizationId,
+      projectId,
+      'label:updated',
+      {
+        label: updatedLabel,
+        actorId: currentUser.id,
+      },
+    );
 
     return {
       message: 'Label updated successfully',
@@ -255,6 +285,17 @@ export class LabelsService {
         name: label.name,
       },
     });
+
+    this.realtimeGateway.emitToProject(
+      organizationId,
+      projectId,
+      'label:deleted',
+      {
+        labelId,
+        label,
+        actorId: currentUser.id,
+      },
+    );
 
     return {
       message: 'Label deleted successfully',
@@ -333,6 +374,18 @@ export class LabelsService {
         labelName: label.name,
       },
     });
+
+    this.realtimeGateway.emitToProject(
+      organizationId,
+      projectId,
+      'label:attached',
+      {
+        taskId,
+        label,
+        taskLabel,
+        actorId: currentUser.id,
+      },
+    );
 
     return {
       message: 'Label attached to task successfully',
@@ -447,6 +500,18 @@ export class LabelsService {
         labelName: label.name,
       },
     });
+
+    this.realtimeGateway.emitToProject(
+      organizationId,
+      projectId,
+      'label:detached',
+      {
+        taskId,
+        labelId,
+        label,
+        actorId: currentUser.id,
+      },
+    );
 
     return {
       message: 'Label detached from task successfully',
