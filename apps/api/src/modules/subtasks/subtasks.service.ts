@@ -5,6 +5,7 @@ import { schema } from '@devflow/db';
 
 import { DatabaseService } from '../../database/database.service.js';
 import { ActivityLogsService } from '../activity-logs/activity-logs.service.js';
+import { RealtimeGateway } from '../realtime/realtime.gateway.js';
 
 import { CreateSubtaskDto } from './dto/create-subtask.dto.js';
 import { UpdateSubtaskDto } from './dto/update-subtask.dto.js';
@@ -14,6 +15,7 @@ export class SubtasksService {
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly activityLogsService: ActivityLogsService,
+    private readonly realtimeGateway: RealtimeGateway,
   ) {}
 
   async create(
@@ -69,6 +71,17 @@ export class SubtasksService {
         title: subtask.title,
       },
     });
+
+    this.realtimeGateway.emitToProject(
+      organizationId,
+      projectId,
+      'subtask:created',
+      {
+        subtask,
+        taskId,
+        actorId: currentUser.id,
+      },
+    );
 
     return {
       message: 'Subtask created successfully',
@@ -164,6 +177,7 @@ export class SubtasksService {
     }
 
     const wasCompleted = subtask.isCompleted;
+
     const nowCompleted = dto.isCompleted ?? subtask.isCompleted;
 
     const updateData: {
@@ -220,6 +234,18 @@ export class SubtasksService {
       },
     });
 
+    this.realtimeGateway.emitToProject(
+      organizationId,
+      projectId,
+      'subtask:updated',
+      {
+        subtask: updatedSubtask,
+        taskId,
+        actorId: currentUser.id,
+        action,
+      },
+    );
+
     return {
       message: 'Subtask updated successfully',
       subtask: updatedSubtask,
@@ -272,6 +298,17 @@ export class SubtasksService {
         title: subtask.title,
       },
     });
+
+    this.realtimeGateway.emitToProject(
+      organizationId,
+      projectId,
+      'subtask:deleted',
+      {
+        subtaskId,
+        taskId,
+        actorId: currentUser.id,
+      },
+    );
 
     return {
       message: 'Subtask deleted successfully',

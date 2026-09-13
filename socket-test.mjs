@@ -1,7 +1,7 @@
 import { io } from "socket.io-client";
 
 const TOKEN =
-  "eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zSjJTSnNKbFBSWVBRSHdhN3BWUFViZ2s5Z0QiLCJvaWF0IjoxNzg5MjkxODI4LCJ0eXAiOiJKV1QifQ.eyJhenAiOiJodHRwOi8vbG9jYWxob3N0OjMwMDAiLCJleHAiOjE3ODkyOTE4ODgsImZ2YSI6WzQ0ODEsLTFdLCJpYXQiOjE3ODkyOTE4MjgsImlzcyI6Imh0dHBzOi8vbmF0aXZlLW1hcmxpbi0xOTYxLmNsZXJrLmFjY291bnRzLmRldiIsIm5iZiI6MTc4OTI5MTgxOCwic2lkIjoic2Vzc18zSjdyVUZaNzRXSzFMbUFMb3ZZSzVvcVVlSmwiLCJzdHMiOiJhY3RpdmUiLCJzdWIiOiJ1c2VyXzNKMlo1bEJmQWt6ZVBnUHE2U2tyd3VRMTFXTiIsInYiOjJ9.tINVimP3D0y7OXJBMdXovuNV4fgsU7VbqqBiAv3mlioIL9cPSvBhu4b0yda3kOFKYLP5doH8cQV6g02fr6QCD8a-RyVjBYutoDU8BUIrR_DKX6jQSLYj2t9yqh451xVOUZ2AyyhlnRXH_LuXiRPNN-ygCOi3lq6ckg-CvzzsadOQUngKLrx3-ndDGLtcNhYIaiDW-bwU1xMhduNZ5c7DHWYlrHsC7q2BWC3G7VTetn_CWa1TSU78eySPMkfUDvdhAaOLAnWjoUIqPEDgA_yk2ZKvo1s9W2WJTReUX1K5iKhLG0E_LvTw-z-C4m6Vc07WpS86CZTE2iU8acPjL0OeqQ";
+  "eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zSjJTSnNKbFBSWVBRSHdhN3BWUFViZ2s5Z0QiLCJvaWF0IjoxNzg5MjkzMDE3LCJ0eXAiOiJKV1QifQ.eyJhenAiOiJodHRwOi8vbG9jYWxob3N0OjMwMDAiLCJleHAiOjE3ODkyOTMwNzcsImZ2YSI6WzQ1MDAsLTFdLCJpYXQiOjE3ODkyOTMwMTcsImlzcyI6Imh0dHBzOi8vbmF0aXZlLW1hcmxpbi0xOTYxLmNsZXJrLmFjY291bnRzLmRldiIsIm5iZiI6MTc4OTI5MzAwNywic2lkIjoic2Vzc18zSjdyVUZaNzRXSzFMbUFMb3ZZSzVvcVVlSmwiLCJzdHMiOiJhY3RpdmUiLCJzdWIiOiJ1c2VyXzNKMlo1bEJmQWt6ZVBnUHE2U2tyd3VRMTFXTiIsInYiOjJ9.KB2wULfScWrmzPyyuAMqReEFoM-v62YrbtYVsvGK4-s6MG4F90dSo_6DZRhgG-Jhad7UTbNqYH0TpymAJ5DhpPIJlYYdZ3_UdjDZrJE9bhXnBIwdb-8wfLBEOd4L7CmexslP-QBiJ6Jn0UlPDm09t6jiRAs0DVNXj14rRFuJIadrVh1TCMdeBgdNzDX4EfJu3G-u5upRmqqviqKhF-ohYGjut7wXOpuhuLxsp2aWCXmAwdw73RSuFrqpvAi1aSbIDNg-m818orhPVh4IpEyoG-bMvlaHTQ2QLNXH3vejxNns_Tf9o-cAe3wqz6Fxw_eIiTCfbIrkgeqqdC-2r2aO-g";
 
 const ORGANIZATION_ID = "af0e8191-836d-44e1-8719-8358d16d2571";
 
@@ -83,6 +83,17 @@ socket.on("attachment:uploaded", (payload) => {
 
 socket.on("attachment:deleted", (payload) => {
   console.log("🗑️ attachment deleted:", payload);
+});
+socket.on("subtask:created", (payload) => {
+  console.log("✅ subtask created:", payload);
+});
+
+socket.on("subtask:updated", (payload) => {
+  console.log("📝 subtask updated:", payload);
+});
+
+socket.on("subtask:deleted", (payload) => {
+  console.log("🗑️ subtask deleted:", payload);
 });
 
 socket.on("connect_error", (error) => {
