@@ -108,4 +108,26 @@ export class GithubService implements OnModuleInit {
       );
     }
   }
+
+  async listInstallationRepositories(installationId: number) {
+    try {
+      const installationOctokit =
+        await this.githubApp.getInstallationOctokit(installationId);
+
+      const response = await installationOctokit.request(
+        'GET /installation/repositories',
+        {
+          per_page: 100,
+        },
+      );
+
+      return response.data.repositories;
+    } catch (error) {
+      console.error('Failed to fetch installation repositories:', error);
+
+      throw new InternalServerErrorException(
+        'Failed to fetch GitHub repositories',
+      );
+    }
+  }
 }

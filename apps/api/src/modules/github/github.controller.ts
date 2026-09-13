@@ -42,4 +42,17 @@ export class GithubController {
       expiresAt: auth.expiresAt,
     };
   }
+  @Get('installations/:installationId/repositories')
+  async listInstallationRepositories(
+    @Param('installationId', ParseIntPipe)
+    installationId: number,
+  ) {
+    const repositories =
+      await this.githubService.listInstallationRepositories(installationId);
+
+    return {
+      count: repositories.length,
+      repositories,
+    };
+  }
 }
