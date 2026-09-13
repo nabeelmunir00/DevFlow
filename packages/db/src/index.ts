@@ -20,4 +20,8 @@ export function createDatabase(connectionString: string) {
 
 export type Database = ReturnType<typeof createDatabase>["db"];
 
+// Export complete schema object
 export { schema };
+
+// Export individual tables/enums
+export * from "./schema/index.js";
