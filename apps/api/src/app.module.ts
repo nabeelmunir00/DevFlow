@@ -27,6 +27,7 @@ import { AttachmentsModule } from './modules/attachments/attachments.module.js';
 import { SubtasksModule } from './modules/subtasks/subtasks.module.js';
 import { LabelsModule } from './modules/labels/labels.module.js';
 import { RealtimeModule } from './modules/realtime/realtime.module.js';
+import { GithubModule } from './modules/github/github.module.js';
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import { RealtimeModule } from './modules/realtime/realtime.module.js';
     SubtasksModule,
     LabelsModule,
     RealtimeModule,
+    GithubModule,
   ],
   controllers: [AppController],
   providers: [AppService],
