@@ -19,6 +19,7 @@ import {
   githubInstallations,
   githubRepositories,
   organizationMembers,
+  projects,
   users,
 } from '@devflow/db';
 
@@ -707,5 +708,182 @@ export class GithubService implements OnModuleInit {
     }
 
     this.logger.error(message);
+  }
+  async getOrganizationRepositories(
+    organizationId: string,
+    clerkUserId: string,
+  ) {
+    const currentUser = await this.getCurrentUser(clerkUserId);
+
+    await this.requireOrganizationMembership(organizationId, currentUser.id);
+
+    return this.databaseService.db
+      .select()
+      .from(githubRepositories)
+      .where(
+        and(
+          eq(githubRepositories.organizationId, organizationId),
+          eq(githubRepositories.isActive, true),
+        ),
+      );
+  }
+
+  async linkRepositoryToProject(
+    organizationId: string,
+    repositoryId: string,
+    projectId: string,
+    clerkUserId: string,
+  ) {
+    const db = this.databaseService.db;
+
+    const currentUser = await this.getCurrentUser(clerkUserId);
+
+    const membership = await this.requireOrganizationMembership(
+      organizationId,
+      currentUser.id,
+    );
+
+    if (
+      membership.role !== 'OWNER' &&
+      membership.role !== 'ADMIN' &&
+      membership.role !== 'PROJECT_MANAGER'
+    ) {
+      throw new ForbiddenException(
+        'You do not have permission to link repositories',
+      );
+    }
+
+    const [repository] = await db
+      .select()
+      .from(githubRepositories)
+      .where(
+        and(
+          eq(githubRepositories.id, repositoryId),
+          eq(githubRepositories.organizationId, organizationId),
+          eq(githubRepositories.isActive, true),
+        ),
+      )
+      .limit(1);
+
+    if (!repository) {
+      throw new NotFoundException('GitHub repository not found');
+    }
+
+    const [project] = await db
+      .select()
+      .from(projects)
+      .where(
+        and(
+          eq(projects.id, projectId),
+          eq(projects.organizationId, organizationId),
+        ),
+      )
+      .limit(1);
+
+    if (!project) {
+      throw new NotFoundException('Project not found');
+    }
+
+    const [updatedRepository] = await db
+      .update(githubRepositories)
+      .set({
+        projectId,
+        updatedAt: new Date(),
+      })
+      .where(eq(githubRepositories.id, repository.id))
+      .returning();
+
+    return updatedRepository;
+  }
+
+  async unlinkRepositoryFromProject(
+    organizationId: string,
+    repositoryId: string,
+    clerkUserId: string,
+  ) {
+    const db = this.databaseService.db;
+
+    const currentUser = await this.getCurrentUser(clerkUserId);
+
+    const membership = await this.requireOrganizationMembership(
+      organizationId,
+      currentUser.id,
+    );
+
+    if (
+      membership.role !== 'OWNER' &&
+      membership.role !== 'ADMIN' &&
+      membership.role !== 'PROJECT_MANAGER'
+    ) {
+      throw new ForbiddenException(
+        'You do not have permission to unlink repositories',
+      );
+    }
+
+    const [repository] = await db
+      .select()
+      .from(githubRepositories)
+      .where(
+        and(
+          eq(githubRepositories.id, repositoryId),
+          eq(githubRepositories.organizationId, organizationId),
+        ),
+      )
+      .limit(1);
+
+    if (!repository) {
+      throw new NotFoundException('GitHub repository not found');
+    }
+
+    const [updatedRepository] = await db
+      .update(githubRepositories)
+      .set({
+        projectId: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(githubRepositories.id, repository.id))
+      .returning();
+
+    return updatedRepository;
+  }
+  private async getCurrentUser(clerkUserId: string) {
+    const [user] = await this.databaseService.db
+      .select({
+        id: users.id,
+        externalAuthId: users.externalAuthId,
+      })
+      .from(users)
+      .where(eq(users.externalAuthId, clerkUserId))
+      .limit(1);
+
+    if (!user) {
+      throw new NotFoundException('Current DevFlow user not found');
+    }
+
+    return user;
+  }
+
+  private async requireOrganizationMembership(
+    organizationId: string,
+    userId: string,
+  ) {
+    const [membership] = await this.databaseService.db
+      .select({
+        role: organizationMembers.role,
+      })
+      .from(organizationMembers)
+      .where(
+        and(
+          eq(organizationMembers.organizationId, organizationId),
+          eq(organizationMembers.userId, userId),
+        ),
+      )
+      .limit(1);
+
+    if (!membership) {
+      throw new ForbiddenException('You are not a member of this organization');
+    }
+
+    return membership;
   }
 }
