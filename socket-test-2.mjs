@@ -116,22 +116,6 @@ socket.on("label:detached", (payload) => {
   console.log("⛓️ label detached:", payload);
 });
 
-setTimeout(() => {
-  socket.emit("typing:start", {
-    organizationId: "af0e8191-836d-44e1-8719-8358d16d2571",
-    projectId: "29805c6c-8070-429e-b534-91d4e4908aa0",
-    taskId: "d07d2bbb-6b3f-4ffb-b608-9d9a53cdd472",
-  });
-}, 3000);
-
-setTimeout(() => {
-  socket.emit("typing:stop", {
-    organizationId: "af0e8191-836d-44e1-8719-8358d16d2571",
-    projectId: "29805c6c-8070-429e-b534-91d4e4908aa0",
-    taskId: "d07d2bbb-6b3f-4ffb-b608-9d9a53cdd472",
-  });
-}, 6000);
-
 socket.on("presence:online", (payload) => {
   console.log("🟢 user online:", payload);
 });

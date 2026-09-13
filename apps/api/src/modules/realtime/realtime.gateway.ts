@@ -11,6 +11,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { verifyToken } from '@clerk/backend';
 import { Server, Socket } from 'socket.io';
+
 import { DatabaseService } from '../../database/database.service.js';
 
 @WebSocketGateway({
@@ -25,6 +26,16 @@ export class RealtimeGateway
   @WebSocketServer()
   server: Server;
 
+  /**
+   * Single-instance presence tracking.
+   *
+   * clerkUserId -> active socket count
+   *
+   * Later, when we horizontally scale Socket.IO,
+   * this should move to Redis.
+   */
+  private readonly connectedUsers = new Map<string, number>();
+
   constructor(
     private readonly configService: ConfigService,
     private readonly databaseService: DatabaseService,
@@ -38,6 +49,7 @@ export class RealtimeGateway
 
       if (!token) {
         console.log(`Socket rejected: missing token (${client.id})`);
+
         client.disconnect(true);
         return;
       }
@@ -46,6 +58,7 @@ export class RealtimeGateway
 
       if (!secretKey) {
         console.error('CLERK_SECRET_KEY is not configured');
+
         client.disconnect(true);
         return;
       }
@@ -55,10 +68,17 @@ export class RealtimeGateway
         authorizedParties: ['http://localhost:3000'],
       });
 
-      client.data.userId = payload.sub;
-      await client.join(`user:${payload.sub}`);
+      const clerkUserId = payload.sub;
 
-      console.log(`Socket authenticated: ${client.id} user=${payload.sub}`);
+      client.data.userId = clerkUserId;
+
+      await client.join(`user:${clerkUserId}`);
+
+      const currentConnections = this.connectedUsers.get(clerkUserId) ?? 0;
+
+      this.connectedUsers.set(clerkUserId, currentConnections + 1);
+
+      console.log(`Socket authenticated: ${client.id} user=${clerkUserId}`);
     } catch (error) {
       console.error(`Socket authentication failed (${client.id}):`, error);
 
@@ -67,7 +87,26 @@ export class RealtimeGateway
   }
 
   handleDisconnect(client: Socket) {
-    console.log(`Socket disconnected: ${client.id}`);
+    const clerkUserId = client.data.userId as string | undefined;
+
+    if (!clerkUserId) {
+      console.log(`Socket disconnected: ${client.id}`);
+      return;
+    }
+
+    const currentConnections = this.connectedUsers.get(clerkUserId) ?? 0;
+
+    const remainingConnections = Math.max(currentConnections - 1, 0);
+
+    if (remainingConnections === 0) {
+      this.connectedUsers.delete(clerkUserId);
+
+      this.broadcastOfflineToJoinedRooms(client, clerkUserId);
+    } else {
+      this.connectedUsers.set(clerkUserId, remainingConnections);
+    }
+
+    console.log(`Socket disconnected: ${client.id} user=${clerkUserId}`);
   }
 
   @SubscribeMessage('join:organization')
@@ -117,7 +156,17 @@ export class RealtimeGateway
       };
     }
 
-    await client.join(`organization:${organizationId}`);
+    const room = `organization:${organizationId}`;
+
+    await client.join(room);
+
+    client.to(room).emit('presence:online', {
+      organizationId,
+      userId: user.id,
+      clerkUserId,
+      name: user.name,
+      email: user.email,
+    });
 
     return {
       event: 'joined:organization',
@@ -200,14 +249,133 @@ export class RealtimeGateway
 
     await client.join(room);
 
+    client.to(room).emit('presence:online', {
+      organizationId: payload.organizationId,
+      projectId: payload.projectId,
+      userId: user.id,
+      clerkUserId,
+      name: user.name,
+      email: user.email,
+    });
+
     return {
       event: 'joined:project',
       data: {
         organizationId: payload.organizationId,
+
         projectId: payload.projectId,
+
         role: membership.role,
       },
     };
+  }
+
+  @SubscribeMessage('typing:start')
+  async handleTypingStart(
+    @ConnectedSocket() client: Socket,
+    @MessageBody()
+    payload: {
+      organizationId: string;
+      projectId: string;
+      taskId?: string;
+    },
+  ) {
+    const user = await this.getAuthenticatedUser(client);
+
+    if (!user) {
+      return;
+    }
+
+    const room = `project:${payload.organizationId}:${payload.projectId}`;
+
+    if (!client.rooms.has(room)) {
+      return {
+        event: 'error',
+        data: {
+          message: 'Join project room before sending typing events',
+        },
+      };
+    }
+
+    client.to(room).emit('typing:start', {
+      organizationId: payload.organizationId,
+
+      projectId: payload.projectId,
+
+      taskId: payload.taskId,
+
+      user: {
+        id: user.id,
+        clerkUserId: user.externalAuthId,
+
+        name: user.name,
+      },
+    });
+  }
+
+  @SubscribeMessage('typing:stop')
+  async handleTypingStop(
+    @ConnectedSocket() client: Socket,
+    @MessageBody()
+    payload: {
+      organizationId: string;
+      projectId: string;
+      taskId?: string;
+    },
+  ) {
+    const user = await this.getAuthenticatedUser(client);
+
+    if (!user) {
+      return;
+    }
+
+    const room = `project:${payload.organizationId}:${payload.projectId}`;
+
+    if (!client.rooms.has(room)) {
+      return {
+        event: 'error',
+        data: {
+          message: 'Join project room before sending typing events',
+        },
+      };
+    }
+
+    client.to(room).emit('typing:stop', {
+      organizationId: payload.organizationId,
+
+      projectId: payload.projectId,
+
+      taskId: payload.taskId,
+
+      user: {
+        id: user.id,
+        clerkUserId: user.externalAuthId,
+
+        name: user.name,
+      },
+    });
+  }
+
+  private async getAuthenticatedUser(client: Socket) {
+    const clerkUserId = client.data.userId as string | undefined;
+
+    if (!clerkUserId) {
+      return null;
+    }
+
+    return this.databaseService.db.query.users.findFirst({
+      where: (users, { eq }) => eq(users.externalAuthId, clerkUserId),
+    });
+  }
+
+  private broadcastOfflineToJoinedRooms(client: Socket, clerkUserId: string) {
+    for (const room of client.rooms) {
+      if (room.startsWith('organization:') || room.startsWith('project:')) {
+        client.to(room).emit('presence:offline', {
+          clerkUserId,
+        });
+      }
+    }
   }
 
   private extractBearerToken(authorization?: string): string | undefined {
@@ -223,6 +391,7 @@ export class RealtimeGateway
 
     return token;
   }
+
   emitToProject(
     organizationId: string,
     projectId: string,
