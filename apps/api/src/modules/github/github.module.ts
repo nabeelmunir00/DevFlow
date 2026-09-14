@@ -7,9 +7,10 @@ import { GithubWebhookController } from './github-webhook.controller.js';
 import { GithubService } from './github.service.js';
 import { GithubWebhookService } from './github-webhook.service.js';
 import { ActivityLogsModule } from '../activity-logs/activity-logs.module.js';
+import { RealtimeModule } from '../realtime/realtime.module.js';
 
 @Module({
-  imports: [ActivityLogsModule],
+  imports: [ActivityLogsModule, RealtimeModule],
   controllers: [
     GithubController,
     GithubIntegrationController,

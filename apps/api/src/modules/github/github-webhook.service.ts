@@ -11,6 +11,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 
 import { GithubService } from './github.service.js';
 import { ActivityLogsService } from '../activity-logs/activity-logs.service.js';
+import { RealtimeGateway } from '../realtime/realtime.gateway.js';
 
 type GithubInstallationRepositoriesPayload = {
   action: 'added' | 'removed';
@@ -77,6 +78,7 @@ export class GithubWebhookService {
     private readonly configService: ConfigService,
     private readonly githubService: GithubService,
     private readonly activityLogsService: ActivityLogsService,
+    private readonly realtimeGateway: RealtimeGateway,
   ) {
     const webhookSecret = this.configService.get<string>(
       'GITHUB_WEBHOOK_SECRET',
@@ -272,6 +274,45 @@ export class GithubWebhookService {
             })) ?? [],
         },
       });
+    }
+    if (repository.projectId && activity) {
+      this.realtimeGateway.emitToProject(
+        repository.organizationId,
+        repository.projectId,
+        'github:push',
+        {
+          activityId: activity.id,
+
+          repository: {
+            id: repository.id,
+            githubRepositoryId,
+            fullName: payload.repository.full_name,
+          },
+
+          branch,
+          sender: payload.sender?.login ?? null,
+
+          before: payload.before,
+          after: payload.after,
+
+          commitCount: payload.commits?.length ?? 0,
+
+          commits:
+            payload.commits?.map((commit) => ({
+              id: commit.id,
+              message: commit.message,
+              timestamp: commit.timestamp,
+              url: commit.url,
+              author: commit.author?.name ?? null,
+            })) ?? [],
+
+          createdAt: activity.createdAt,
+        },
+      );
+
+      this.logger.log(
+        `Realtime github:push emitted project=${repository.projectId}`,
+      );
     }
 
     return {
