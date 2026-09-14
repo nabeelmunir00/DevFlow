@@ -6,8 +6,10 @@ import { GithubWebhookController } from './github-webhook.controller.js';
 
 import { GithubService } from './github.service.js';
 import { GithubWebhookService } from './github-webhook.service.js';
+import { ActivityLogsModule } from '../activity-logs/activity-logs.module.js';
 
 @Module({
+  imports: [ActivityLogsModule],
   controllers: [
     GithubController,
     GithubIntegrationController,

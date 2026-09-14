@@ -1009,4 +1009,23 @@ export class GithubService implements OnModuleInit {
       repositoryCount: repositories.length,
     };
   }
+  async findActiveRepositoryByGithubId(githubRepositoryId: number) {
+    const normalizedId = this.normalizeGithubId(
+      githubRepositoryId,
+      'githubRepositoryId',
+    );
+
+    const [repository] = await this.databaseService.db
+      .select()
+      .from(githubRepositories)
+      .where(
+        and(
+          eq(githubRepositories.githubRepositoryId, normalizedId),
+          eq(githubRepositories.isActive, true),
+        ),
+      )
+      .limit(1);
+
+    return repository ?? null;
+  }
 }

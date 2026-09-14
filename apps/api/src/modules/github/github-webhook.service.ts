@@ -10,6 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
 import { GithubService } from './github.service.js';
+import { ActivityLogsService } from '../activity-logs/activity-logs.service.js';
 
 type GithubInstallationRepositoriesPayload = {
   action: 'added' | 'removed';
@@ -75,6 +76,7 @@ export class GithubWebhookService {
   constructor(
     private readonly configService: ConfigService,
     private readonly githubService: GithubService,
+    private readonly activityLogsService: ActivityLogsService,
   ) {
     const webhookSecret = this.configService.get<string>(
       'GITHUB_WEBHOOK_SECRET',
@@ -196,17 +198,81 @@ export class GithubWebhookService {
     };
   }
   private async handlePush(deliveryId: string, payload: GithubPushPayload) {
-    const repositoryId = payload.repository?.id;
+    const githubRepositoryId = payload.repository?.id;
 
-    if (!repositoryId) {
+    if (!githubRepositoryId) {
       throw new BadRequestException('GitHub repository ID missing');
     }
 
     const branch = payload.ref?.replace('refs/heads/', '') ?? null;
 
+    const repository =
+      await this.githubService.findActiveRepositoryByGithubId(
+        githubRepositoryId,
+      );
+
+    if (!repository) {
+      this.logger.warn(
+        `Push ignored: GitHub repository ${githubRepositoryId} is not connected to DevFlow`,
+      );
+
+      return {
+        received: true,
+        event: 'push',
+        deliveryId,
+        ignored: true,
+        reason: 'repository_not_connected',
+      };
+    }
+
     this.logger.log(
       `GitHub push repo=${payload.repository.full_name} branch=${branch} commits=${payload.commits?.length ?? 0}`,
     );
+
+    let activity = null;
+
+    if (repository.projectId) {
+      activity = await this.activityLogsService.create({
+        organizationId: repository.organizationId,
+        projectId: repository.projectId,
+
+        // GitHub is the actor, not a DevFlow user
+        actorId: null,
+
+        action: 'GITHUB_PUSH',
+        entityType: 'GITHUB_REPOSITORY',
+
+        // DevFlow repository UUID
+        entityId: repository.id,
+
+        metadata: {
+          deliveryId,
+
+          githubRepositoryId,
+          repositoryName: payload.repository.name,
+          repositoryFullName: payload.repository.full_name,
+
+          branch,
+          ref: payload.ref,
+
+          before: payload.before,
+          after: payload.after,
+
+          sender: payload.sender?.login ?? null,
+
+          commitCount: payload.commits?.length ?? 0,
+
+          commits:
+            payload.commits?.map((commit) => ({
+              id: commit.id,
+              message: commit.message,
+              timestamp: commit.timestamp,
+              url: commit.url,
+              author: commit.author?.name ?? null,
+            })) ?? [],
+        },
+      });
+    }
 
     return {
       received: true,
@@ -214,28 +280,18 @@ export class GithubWebhookService {
       deliveryId,
 
       repository: {
-        githubRepositoryId: repositoryId,
-        name: payload.repository.name,
+        id: repository.id,
+        githubRepositoryId,
         fullName: payload.repository.full_name,
+        projectId: repository.projectId,
       },
 
       branch,
-
-      before: payload.before,
-      after: payload.after,
-
       sender: payload.sender?.login ?? null,
-
       commitCount: payload.commits?.length ?? 0,
 
-      commits:
-        payload.commits?.map((commit) => ({
-          id: commit.id,
-          message: commit.message,
-          timestamp: commit.timestamp,
-          url: commit.url,
-          author: commit.author?.name ?? null,
-        })) ?? [],
+      activityCreated: Boolean(activity),
+      activityId: activity?.id ?? null,
     };
   }
   generateTestSignature(payload: string) {
