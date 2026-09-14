@@ -430,61 +430,101 @@ export class GithubWebhookService {
       `GitHub installation action=${action} installation=${installationId}`,
     );
 
-    /*
-     * For actions such as:
-     * - created
-     * - unsuspend
-     * - new_permissions_accepted
-     *
-     * we can sync repositories if this installation
-     * has already been connected to a DevFlow organization.
-     */
-    if (
-      action === 'created' ||
-      action === 'unsuspend' ||
-      action === 'new_permissions_accepted'
-    ) {
-      const result =
-        await this.githubService.syncInstallationFromWebhook(installationId);
+    switch (action) {
+      case 'created': {
+        /*
+         * Usually the installation is not connected to a DevFlow
+         * organization yet, so syncInstallationFromWebhook may
+         * return installation_not_connected.
+         */
+        const result =
+          await this.githubService.syncInstallationFromWebhook(installationId);
 
-      return {
-        received: true,
-        event: 'installation',
-        deliveryId,
-        action,
-        installationId,
+        return {
+          received: true,
+          event: 'installation',
+          deliveryId,
+          action,
+          installationId,
+          ...result,
+        };
+      }
 
-        account: {
-          id: payload.installation.account?.id ?? null,
-          login: payload.installation.account?.login ?? null,
-          type: payload.installation.account?.type ?? null,
-        },
+      case 'suspend': {
+        const result =
+          await this.githubService.suspendInstallationFromWebhook(
+            installationId,
+          );
 
-        sender: payload.sender?.login ?? null,
+        return {
+          received: true,
+          event: 'installation',
+          deliveryId,
+          action,
+          installationId,
+          ...result,
+        };
+      }
 
-        ...result,
-      };
+      case 'unsuspend': {
+        const result =
+          await this.githubService.unsuspendInstallationFromWebhook(
+            installationId,
+          );
+
+        return {
+          received: true,
+          event: 'installation',
+          deliveryId,
+          action,
+          installationId,
+          ...result,
+        };
+      }
+
+      case 'deleted': {
+        const result =
+          await this.githubService.disconnectInstallationFromWebhook(
+            installationId,
+          );
+
+        return {
+          received: true,
+          event: 'installation',
+          deliveryId,
+          action,
+          installationId,
+          ...result,
+        };
+      }
+
+      case 'new_permissions_accepted': {
+        const result =
+          await this.githubService.syncInstallationFromWebhook(installationId);
+
+        return {
+          received: true,
+          event: 'installation',
+          deliveryId,
+          action,
+          installationId,
+          ...result,
+        };
+      }
+
+      default:
+        this.logger.log(
+          `GitHub installation action=${action} acknowledged without additional processing`,
+        );
+
+        return {
+          received: true,
+          event: 'installation',
+          deliveryId,
+          action,
+          installationId,
+        };
     }
-
-    /*
-     * deleted/suspend events need a dedicated DB state method
-     * later. For now we acknowledge the webhook safely.
-     */
-    return {
-      received: true,
-      event: 'installation',
-      deliveryId,
-      action,
-      installationId,
-
-      account: {
-        id: payload.installation.account?.id ?? null,
-        login: payload.installation.account?.login ?? null,
-        type: payload.installation.account?.type ?? null,
-      },
-
-      sender: payload.sender?.login ?? null,
-    };
   }
 
   /* ------------------------------------------------------------------------ */

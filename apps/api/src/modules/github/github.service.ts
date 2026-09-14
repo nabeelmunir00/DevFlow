@@ -1028,4 +1028,160 @@ export class GithubService implements OnModuleInit {
 
     return repository ?? null;
   }
+
+  async suspendInstallationFromWebhook(githubInstallationId: number) {
+    this.validateInstallationId(githubInstallationId);
+
+    const db = this.databaseService.db;
+
+    const [installation] = await db
+      .select()
+      .from(githubInstallations)
+      .where(eq(githubInstallations.githubInstallationId, githubInstallationId))
+      .limit(1);
+
+    if (!installation) {
+      this.logger.warn(
+        `GitHub installation ${githubInstallationId} cannot be suspended because it is not connected`,
+      );
+
+      return {
+        suspended: false,
+        reason: 'installation_not_connected',
+      };
+    }
+
+    const now = new Date();
+
+    await db.transaction(async (tx) => {
+      await tx
+        .update(githubInstallations)
+        .set({
+          disconnectedAt: now,
+          updatedAt: now,
+        })
+        .where(eq(githubInstallations.id, installation.id));
+
+      await tx
+        .update(githubRepositories)
+        .set({
+          isActive: false,
+          removedAt: now,
+          updatedAt: now,
+        })
+        .where(eq(githubRepositories.installationId, installation.id));
+    });
+
+    this.logger.warn(
+      `GitHub installation ${githubInstallationId} suspended for organization ${installation.organizationId}`,
+    );
+
+    return {
+      suspended: true,
+      installationId: githubInstallationId,
+      organizationId: installation.organizationId,
+    };
+  }
+
+  async disconnectInstallationFromWebhook(githubInstallationId: number) {
+    this.validateInstallationId(githubInstallationId);
+
+    const db = this.databaseService.db;
+
+    const [installation] = await db
+      .select()
+      .from(githubInstallations)
+      .where(eq(githubInstallations.githubInstallationId, githubInstallationId))
+      .limit(1);
+
+    if (!installation) {
+      this.logger.warn(
+        `GitHub installation ${githubInstallationId} cannot be disconnected because it is not connected`,
+      );
+
+      return {
+        disconnected: false,
+        reason: 'installation_not_connected',
+      };
+    }
+
+    const now = new Date();
+
+    await db.transaction(async (tx) => {
+      await tx
+        .update(githubInstallations)
+        .set({
+          disconnectedAt: now,
+          updatedAt: now,
+        })
+        .where(eq(githubInstallations.id, installation.id));
+
+      await tx
+        .update(githubRepositories)
+        .set({
+          isActive: false,
+          removedAt: now,
+          updatedAt: now,
+        })
+        .where(eq(githubRepositories.installationId, installation.id));
+    });
+
+    this.logger.warn(
+      `GitHub installation ${githubInstallationId} disconnected from organization ${installation.organizationId}`,
+    );
+
+    return {
+      disconnected: true,
+      installationId: githubInstallationId,
+      organizationId: installation.organizationId,
+    };
+  }
+  async unsuspendInstallationFromWebhook(githubInstallationId: number) {
+    this.validateInstallationId(githubInstallationId);
+
+    const db = this.databaseService.db;
+
+    const [installation] = await db
+      .select()
+      .from(githubInstallations)
+      .where(eq(githubInstallations.githubInstallationId, githubInstallationId))
+      .limit(1);
+
+    if (!installation) {
+      this.logger.warn(
+        `GitHub installation ${githubInstallationId} cannot be unsuspended because it is not connected`,
+      );
+
+      return {
+        unsuspended: false,
+        reason: 'installation_not_connected',
+      };
+    }
+
+    await db
+      .update(githubInstallations)
+      .set({
+        disconnectedAt: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(githubInstallations.id, installation.id));
+
+    /*
+     * Fetch latest repository access from GitHub and reactivate
+     * only repositories that are actually accessible.
+     */
+    const syncResult =
+      await this.syncInstallationFromWebhook(githubInstallationId);
+
+    this.logger.log(
+      `GitHub installation ${githubInstallationId} unsuspended for organization ${installation.organizationId}`,
+    );
+
+    return {
+      unsuspended: true,
+      installationId: githubInstallationId,
+      organizationId: installation.organizationId,
+      ...syncResult,
+    };
+  }
 }
