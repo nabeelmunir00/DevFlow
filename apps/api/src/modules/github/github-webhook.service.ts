@@ -13,21 +13,49 @@ import { GithubService } from './github.service.js';
 import { ActivityLogsService } from '../activity-logs/activity-logs.service.js';
 import { RealtimeGateway } from '../realtime/realtime.gateway.js';
 
+/* -------------------------------------------------------------------------- */
+/*                                   TYPES                                    */
+/* -------------------------------------------------------------------------- */
+
 type GithubInstallationRepositoriesPayload = {
   action: 'added' | 'removed';
+
   installation: {
     id: number;
   };
+
   repositories_added?: Array<{
     id: number;
     name: string;
     full_name: string;
   }>;
+
   repositories_removed?: Array<{
     id: number;
     name: string;
     full_name: string;
   }>;
+};
+
+type GithubInstallationPayload = {
+  action: string;
+
+  installation: {
+    id: number;
+
+    account?: {
+      id?: number;
+      login?: string;
+      type?: string;
+    };
+
+    repository_selection?: string;
+  };
+
+  sender?: {
+    id?: number;
+    login?: string;
+  };
 };
 
 type GithubPushPayload = {
@@ -61,6 +89,7 @@ type GithubPushPayload = {
     message: string;
     timestamp: string;
     url: string;
+
     author?: {
       name?: string;
       email?: string;
@@ -103,9 +132,11 @@ type GithubPullRequestPayload = {
     title: string;
     body?: string | null;
     state: string;
+
     draft?: boolean;
     merged?: boolean;
     merged_at?: string | null;
+
     html_url: string;
 
     user?: {
@@ -130,6 +161,112 @@ type GithubPullRequestPayload = {
   };
 };
 
+type GithubIssuePayload = {
+  action: string;
+
+  installation?: {
+    id: number;
+  };
+
+  repository: {
+    id: number;
+    name: string;
+    full_name: string;
+    html_url: string;
+  };
+
+  sender?: {
+    id?: number;
+    login?: string;
+  };
+
+  issue: {
+    id: number;
+    number: number;
+    title: string;
+    body?: string | null;
+    state: string;
+    state_reason?: string | null;
+    html_url: string;
+
+    user?: {
+      id?: number;
+      login?: string;
+    };
+
+    assignee?: {
+      id?: number;
+      login?: string;
+    } | null;
+
+    assignees?: Array<{
+      id?: number;
+      login?: string;
+    }>;
+
+    labels?: Array<{
+      id?: number;
+      name?: string;
+      color?: string;
+    }>;
+
+    created_at?: string;
+    updated_at?: string;
+    closed_at?: string | null;
+  };
+};
+
+type GithubIssueCommentPayload = {
+  action: 'created' | 'edited' | 'deleted' | string;
+
+  installation?: {
+    id: number;
+  };
+
+  repository: {
+    id: number;
+    name: string;
+    full_name: string;
+    html_url: string;
+  };
+
+  sender?: {
+    id?: number;
+    login?: string;
+  };
+
+  issue: {
+    id: number;
+    number: number;
+    title: string;
+    state: string;
+    html_url: string;
+
+    pull_request?: {
+      url?: string;
+      html_url?: string;
+    };
+  };
+
+  comment: {
+    id: number;
+    body?: string | null;
+    html_url: string;
+
+    user?: {
+      id?: number;
+      login?: string;
+    };
+
+    created_at?: string;
+    updated_at?: string;
+  };
+};
+
+/* -------------------------------------------------------------------------- */
+/*                                  SERVICE                                   */
+/* -------------------------------------------------------------------------- */
+
 @Injectable()
 export class GithubWebhookService {
   private readonly logger = new Logger(GithubWebhookService.name);
@@ -153,6 +290,10 @@ export class GithubWebhookService {
     this.webhookSecret = webhookSecret;
   }
 
+  /* ------------------------------------------------------------------------ */
+  /*                           SIGNATURE VERIFICATION                         */
+  /* ------------------------------------------------------------------------ */
+
   verifySignature(rawBody: Buffer, signature: string | undefined): void {
     if (!signature) {
       throw new UnauthorizedException('Missing GitHub webhook signature');
@@ -169,7 +310,6 @@ export class GithubWebhookService {
       .digest('hex')}`;
 
     const expectedBuffer = Buffer.from(expectedSignature);
-
     const receivedBuffer = Buffer.from(signature);
 
     if (expectedBuffer.length !== receivedBuffer.length) {
@@ -182,6 +322,10 @@ export class GithubWebhookService {
       throw new UnauthorizedException('Invalid GitHub webhook signature');
     }
   }
+
+  /* ------------------------------------------------------------------------ */
+  /*                              EVENT ROUTER                                */
+  /* ------------------------------------------------------------------------ */
 
   async handleEvent(event: string, deliveryId: string, payload: unknown) {
     this.logger.log(
@@ -196,32 +340,28 @@ export class GithubWebhookService {
         );
 
       case 'installation':
-        this.logger.log(`Installation event received delivery=${deliveryId}`);
-
-        return {
-          received: true,
-          event,
+        return this.handleInstallation(
           deliveryId,
-        };
+          payload as GithubInstallationPayload,
+        );
 
       case 'push':
         return this.handlePush(deliveryId, payload as GithubPushPayload);
+
       case 'pull_request':
         return this.handlePullRequest(
           deliveryId,
           payload as GithubPullRequestPayload,
         );
-      case 'issues':
-      case 'issue_comment':
-        this.logger.log(
-          `GitHub event ${event} received but processing is not implemented yet`,
-        );
 
-        return {
-          received: true,
-          event,
+      case 'issues':
+        return this.handleIssue(deliveryId, payload as GithubIssuePayload);
+
+      case 'issue_comment':
+        return this.handleIssueComment(
           deliveryId,
-        };
+          payload as GithubIssueCommentPayload,
+        );
 
       default:
         this.logger.warn(`Unhandled GitHub event: ${event}`);
@@ -234,6 +374,10 @@ export class GithubWebhookService {
         };
     }
   }
+
+  /* ------------------------------------------------------------------------ */
+  /*                         INSTALLATION REPOSITORIES                        */
+  /* ------------------------------------------------------------------------ */
 
   private async handleInstallationRepositories(
     deliveryId: string,
@@ -265,6 +409,88 @@ export class GithubWebhookService {
       ...result,
     };
   }
+
+  /* ------------------------------------------------------------------------ */
+  /*                              INSTALLATION                                */
+  /* ------------------------------------------------------------------------ */
+
+  private async handleInstallation(
+    deliveryId: string,
+    payload: GithubInstallationPayload,
+  ) {
+    const installationId = payload.installation?.id;
+
+    if (!installationId) {
+      throw new BadRequestException('GitHub installation ID missing');
+    }
+
+    const action = payload.action;
+
+    this.logger.log(
+      `GitHub installation action=${action} installation=${installationId}`,
+    );
+
+    /*
+     * For actions such as:
+     * - created
+     * - unsuspend
+     * - new_permissions_accepted
+     *
+     * we can sync repositories if this installation
+     * has already been connected to a DevFlow organization.
+     */
+    if (
+      action === 'created' ||
+      action === 'unsuspend' ||
+      action === 'new_permissions_accepted'
+    ) {
+      const result =
+        await this.githubService.syncInstallationFromWebhook(installationId);
+
+      return {
+        received: true,
+        event: 'installation',
+        deliveryId,
+        action,
+        installationId,
+
+        account: {
+          id: payload.installation.account?.id ?? null,
+          login: payload.installation.account?.login ?? null,
+          type: payload.installation.account?.type ?? null,
+        },
+
+        sender: payload.sender?.login ?? null,
+
+        ...result,
+      };
+    }
+
+    /*
+     * deleted/suspend events need a dedicated DB state method
+     * later. For now we acknowledge the webhook safely.
+     */
+    return {
+      received: true,
+      event: 'installation',
+      deliveryId,
+      action,
+      installationId,
+
+      account: {
+        id: payload.installation.account?.id ?? null,
+        login: payload.installation.account?.login ?? null,
+        type: payload.installation.account?.type ?? null,
+      },
+
+      sender: payload.sender?.login ?? null,
+    };
+  }
+
+  /* ------------------------------------------------------------------------ */
+  /*                                  PUSH                                    */
+  /* ------------------------------------------------------------------------ */
+
   private async handlePush(deliveryId: string, payload: GithubPushPayload) {
     const githubRepositoryId = payload.repository?.id;
 
@@ -302,28 +528,32 @@ export class GithubWebhookService {
     if (repository.projectId) {
       activity = await this.activityLogsService.create({
         organizationId: repository.organizationId,
+
         projectId: repository.projectId,
 
-        // GitHub is the actor, not a DevFlow user
         actorId: null,
 
         action: 'GITHUB_PUSH',
+
         entityType: 'GITHUB_REPOSITORY',
 
-        // DevFlow repository UUID
         entityId: repository.id,
 
         metadata: {
           deliveryId,
 
           githubRepositoryId,
+
           repositoryName: payload.repository.name,
+
           repositoryFullName: payload.repository.full_name,
 
           branch,
+
           ref: payload.ref,
 
           before: payload.before,
+
           after: payload.after,
 
           sender: payload.sender?.login ?? null,
@@ -341,6 +571,7 @@ export class GithubWebhookService {
         },
       });
     }
+
     if (repository.projectId && activity) {
       this.realtimeGateway.emitToProject(
         repository.organizationId,
@@ -351,14 +582,18 @@ export class GithubWebhookService {
 
           repository: {
             id: repository.id,
+
             githubRepositoryId,
+
             fullName: payload.repository.full_name,
           },
 
           branch,
+
           sender: payload.sender?.login ?? null,
 
           before: payload.before,
+
           after: payload.after,
 
           commitCount: payload.commits?.length ?? 0,
@@ -366,9 +601,13 @@ export class GithubWebhookService {
           commits:
             payload.commits?.map((commit) => ({
               id: commit.id,
+
               message: commit.message,
+
               timestamp: commit.timestamp,
+
               url: commit.url,
+
               author: commit.author?.name ?? null,
             })) ?? [],
 
@@ -388,19 +627,30 @@ export class GithubWebhookService {
 
       repository: {
         id: repository.id,
+
         githubRepositoryId,
+
         fullName: payload.repository.full_name,
+
         projectId: repository.projectId,
       },
 
       branch,
+
       sender: payload.sender?.login ?? null,
+
       commitCount: payload.commits?.length ?? 0,
 
       activityCreated: Boolean(activity),
+
       activityId: activity?.id ?? null,
     };
   }
+
+  /* ------------------------------------------------------------------------ */
+  /*                             PULL REQUEST                                 */
+  /* ------------------------------------------------------------------------ */
+
   private async handlePullRequest(
     deliveryId: string,
     payload: GithubPullRequestPayload,
@@ -438,11 +688,17 @@ export class GithubWebhookService {
 
     const actionMap: Record<string, string> = {
       opened: 'GITHUB_PR_OPENED',
+
       closed: pr.merged ? 'GITHUB_PR_MERGED' : 'GITHUB_PR_CLOSED',
+
       reopened: 'GITHUB_PR_REOPENED',
+
       synchronize: 'GITHUB_PR_UPDATED',
+
       edited: 'GITHUB_PR_EDITED',
+
       ready_for_review: 'GITHUB_PR_READY_FOR_REVIEW',
+
       converted_to_draft: 'GITHUB_PR_DRAFTED',
     };
 
@@ -453,31 +709,41 @@ export class GithubWebhookService {
     if (repository.projectId) {
       activity = await this.activityLogsService.create({
         organizationId: repository.organizationId,
+
         projectId: repository.projectId,
 
         actorId: null,
 
         action: activityAction,
+
         entityType: 'GITHUB_REPOSITORY',
+
         entityId: repository.id,
 
         metadata: {
           deliveryId,
 
           githubRepositoryId,
+
           repositoryFullName: payload.repository.full_name,
 
           action: payload.action,
 
           pullRequest: {
             githubId: pr.id,
+
             number: pr.number,
+
             title: pr.title,
+
             body: pr.body ?? null,
+
             state: pr.state,
 
             draft: pr.draft ?? false,
+
             merged: pr.merged ?? false,
+
             mergedAt: pr.merged_at ?? null,
 
             url: pr.html_url,
@@ -485,14 +751,19 @@ export class GithubWebhookService {
             author: pr.user?.login ?? null,
 
             headBranch: pr.head?.ref ?? null,
+
             headSha: pr.head?.sha ?? null,
 
             baseBranch: pr.base?.ref ?? null,
+
             baseSha: pr.base?.sha ?? null,
 
             additions: pr.additions ?? null,
+
             deletions: pr.deletions ?? null,
+
             changedFiles: pr.changed_files ?? null,
+
             commits: pr.commits ?? null,
           },
 
@@ -513,22 +784,46 @@ export class GithubWebhookService {
 
           repository: {
             id: repository.id,
+
             githubRepositoryId,
+
             fullName: payload.repository.full_name,
           },
 
           pullRequest: {
+            githubId: pr.id,
+
             number: pr.number,
+
             title: pr.title,
+
             state: pr.state,
+
             draft: pr.draft ?? false,
+
             merged: pr.merged ?? false,
+
+            mergedAt: pr.merged_at ?? null,
+
             url: pr.html_url,
 
             author: pr.user?.login ?? null,
 
             headBranch: pr.head?.ref ?? null,
+
+            headSha: pr.head?.sha ?? null,
+
             baseBranch: pr.base?.ref ?? null,
+
+            baseSha: pr.base?.sha ?? null,
+
+            additions: pr.additions ?? null,
+
+            deletions: pr.deletions ?? null,
+
+            changedFiles: pr.changed_files ?? null,
+
+            commits: pr.commits ?? null,
           },
 
           sender: payload.sender?.login ?? null,
@@ -548,35 +843,490 @@ export class GithubWebhookService {
 
     return {
       received: true,
+
       event: 'pull_request',
+
       deliveryId,
 
       action: payload.action,
 
       repository: {
         id: repository.id,
+
         githubRepositoryId,
+
         fullName: payload.repository.full_name,
+
         projectId: repository.projectId,
       },
 
       pullRequest: {
         number: pr.number,
+
         title: pr.title,
+
         state: pr.state,
+
         draft: pr.draft ?? false,
+
         merged: pr.merged ?? false,
+
         url: pr.html_url,
       },
 
       activityCreated: Boolean(activity),
+
       activityId: activity?.id ?? null,
     };
   }
+
+  /* ------------------------------------------------------------------------ */
+  /*                                  ISSUE                                   */
+  /* ------------------------------------------------------------------------ */
+
+  private async handleIssue(deliveryId: string, payload: GithubIssuePayload) {
+    const githubRepositoryId = payload.repository?.id;
+
+    if (!githubRepositoryId) {
+      throw new BadRequestException('GitHub repository ID missing');
+    }
+
+    if (!payload.issue) {
+      throw new BadRequestException('GitHub issue payload missing');
+    }
+
+    const repository =
+      await this.githubService.findActiveRepositoryByGithubId(
+        githubRepositoryId,
+      );
+
+    if (!repository) {
+      this.logger.warn(
+        `Issue ignored: repository ${githubRepositoryId} is not connected`,
+      );
+
+      return {
+        received: true,
+        event: 'issues',
+        deliveryId,
+        ignored: true,
+        reason: 'repository_not_connected',
+      };
+    }
+
+    const issue = payload.issue;
+
+    const actionMap: Record<string, string> = {
+      opened: 'GITHUB_ISSUE_OPENED',
+
+      closed: 'GITHUB_ISSUE_CLOSED',
+
+      reopened: 'GITHUB_ISSUE_REOPENED',
+
+      edited: 'GITHUB_ISSUE_EDITED',
+
+      deleted: 'GITHUB_ISSUE_DELETED',
+
+      assigned: 'GITHUB_ISSUE_ASSIGNED',
+
+      unassigned: 'GITHUB_ISSUE_UNASSIGNED',
+
+      labeled: 'GITHUB_ISSUE_LABELED',
+
+      unlabeled: 'GITHUB_ISSUE_UNLABELED',
+
+      pinned: 'GITHUB_ISSUE_PINNED',
+
+      unpinned: 'GITHUB_ISSUE_UNPINNED',
+
+      transferred: 'GITHUB_ISSUE_TRANSFERRED',
+    };
+
+    const activityAction = actionMap[payload.action] ?? 'GITHUB_ISSUE_EVENT';
+
+    let activity = null;
+
+    if (repository.projectId) {
+      activity = await this.activityLogsService.create({
+        organizationId: repository.organizationId,
+
+        projectId: repository.projectId,
+
+        actorId: null,
+
+        action: activityAction,
+
+        entityType: 'GITHUB_REPOSITORY',
+
+        entityId: repository.id,
+
+        metadata: {
+          deliveryId,
+
+          githubRepositoryId,
+
+          repositoryFullName: payload.repository.full_name,
+
+          action: payload.action,
+
+          issue: {
+            githubId: issue.id,
+
+            number: issue.number,
+
+            title: issue.title,
+
+            body: issue.body ?? null,
+
+            state: issue.state,
+
+            stateReason: issue.state_reason ?? null,
+
+            url: issue.html_url,
+
+            author: issue.user?.login ?? null,
+
+            assignee: issue.assignee?.login ?? null,
+
+            assignees: issue.assignees?.map((assignee) => assignee.login) ?? [],
+
+            labels:
+              issue.labels?.map((label) => ({
+                id: label.id ?? null,
+
+                name: label.name ?? null,
+
+                color: label.color ?? null,
+              })) ?? [],
+
+            createdAt: issue.created_at ?? null,
+
+            updatedAt: issue.updated_at ?? null,
+
+            closedAt: issue.closed_at ?? null,
+          },
+
+          sender: payload.sender?.login ?? null,
+        },
+      });
+    }
+
+    if (repository.projectId && activity) {
+      this.realtimeGateway.emitToProject(
+        repository.organizationId,
+        repository.projectId,
+        'github:issue',
+        {
+          activityId: activity.id,
+
+          action: payload.action,
+
+          repository: {
+            id: repository.id,
+
+            githubRepositoryId,
+
+            fullName: payload.repository.full_name,
+          },
+
+          issue: {
+            githubId: issue.id,
+
+            number: issue.number,
+
+            title: issue.title,
+
+            state: issue.state,
+
+            stateReason: issue.state_reason ?? null,
+
+            url: issue.html_url,
+
+            author: issue.user?.login ?? null,
+
+            assignee: issue.assignee?.login ?? null,
+
+            labels:
+              issue.labels?.map((label) => ({
+                name: label.name ?? null,
+
+                color: label.color ?? null,
+              })) ?? [],
+          },
+
+          sender: payload.sender?.login ?? null,
+
+          createdAt: activity.createdAt,
+        },
+      );
+
+      this.logger.log(
+        `Realtime github:issue emitted project=${repository.projectId} issue=#${issue.number} action=${payload.action}`,
+      );
+    }
+
+    this.logger.log(
+      `GitHub issue repo=${payload.repository.full_name} issue=#${issue.number} action=${payload.action}`,
+    );
+
+    return {
+      received: true,
+
+      event: 'issues',
+
+      deliveryId,
+
+      action: payload.action,
+
+      repository: {
+        id: repository.id,
+
+        githubRepositoryId,
+
+        fullName: payload.repository.full_name,
+
+        projectId: repository.projectId,
+      },
+
+      issue: {
+        number: issue.number,
+
+        title: issue.title,
+
+        state: issue.state,
+
+        url: issue.html_url,
+      },
+
+      activityCreated: Boolean(activity),
+
+      activityId: activity?.id ?? null,
+    };
+  }
+
+  /* ------------------------------------------------------------------------ */
+  /*                             ISSUE COMMENT                                */
+  /* ------------------------------------------------------------------------ */
+
+  private async handleIssueComment(
+    deliveryId: string,
+    payload: GithubIssueCommentPayload,
+  ) {
+    const githubRepositoryId = payload.repository?.id;
+
+    if (!githubRepositoryId) {
+      throw new BadRequestException('GitHub repository ID missing');
+    }
+
+    if (!payload.issue) {
+      throw new BadRequestException(
+        'GitHub issue missing from issue_comment payload',
+      );
+    }
+
+    if (!payload.comment) {
+      throw new BadRequestException(
+        'GitHub comment missing from issue_comment payload',
+      );
+    }
+
+    const repository =
+      await this.githubService.findActiveRepositoryByGithubId(
+        githubRepositoryId,
+      );
+
+    if (!repository) {
+      this.logger.warn(
+        `Issue comment ignored: repository ${githubRepositoryId} is not connected`,
+      );
+
+      return {
+        received: true,
+        event: 'issue_comment',
+        deliveryId,
+        ignored: true,
+        reason: 'repository_not_connected',
+      };
+    }
+
+    const issue = payload.issue;
+
+    const comment = payload.comment;
+
+    const actionMap: Record<string, string> = {
+      created: 'GITHUB_ISSUE_COMMENT_CREATED',
+
+      edited: 'GITHUB_ISSUE_COMMENT_EDITED',
+
+      deleted: 'GITHUB_ISSUE_COMMENT_DELETED',
+    };
+
+    const activityAction =
+      actionMap[payload.action] ?? 'GITHUB_ISSUE_COMMENT_EVENT';
+
+    const isPullRequest = Boolean(issue.pull_request);
+
+    let activity = null;
+
+    if (repository.projectId) {
+      activity = await this.activityLogsService.create({
+        organizationId: repository.organizationId,
+
+        projectId: repository.projectId,
+
+        actorId: null,
+
+        action: activityAction,
+
+        entityType: 'GITHUB_REPOSITORY',
+
+        entityId: repository.id,
+
+        metadata: {
+          deliveryId,
+
+          githubRepositoryId,
+
+          repositoryFullName: payload.repository.full_name,
+
+          action: payload.action,
+
+          issue: {
+            githubId: issue.id,
+
+            number: issue.number,
+
+            title: issue.title,
+
+            state: issue.state,
+
+            url: issue.html_url,
+
+            isPullRequest,
+          },
+
+          comment: {
+            githubId: comment.id,
+
+            body: comment.body ?? null,
+
+            url: comment.html_url,
+
+            author: comment.user?.login ?? null,
+
+            createdAt: comment.created_at ?? null,
+
+            updatedAt: comment.updated_at ?? null,
+          },
+
+          sender: payload.sender?.login ?? null,
+        },
+      });
+    }
+
+    if (repository.projectId && activity) {
+      this.realtimeGateway.emitToProject(
+        repository.organizationId,
+        repository.projectId,
+        'github:issue_comment',
+        {
+          activityId: activity.id,
+
+          action: payload.action,
+
+          repository: {
+            id: repository.id,
+
+            githubRepositoryId,
+
+            fullName: payload.repository.full_name,
+          },
+
+          issue: {
+            number: issue.number,
+
+            title: issue.title,
+
+            state: issue.state,
+
+            url: issue.html_url,
+
+            isPullRequest,
+          },
+
+          comment: {
+            githubId: comment.id,
+
+            body: comment.body ?? null,
+
+            url: comment.html_url,
+
+            author: comment.user?.login ?? null,
+          },
+
+          sender: payload.sender?.login ?? null,
+
+          createdAt: activity.createdAt,
+        },
+      );
+
+      this.logger.log(
+        `Realtime github:issue_comment emitted project=${repository.projectId} issue=#${issue.number} action=${payload.action}`,
+      );
+    }
+
+    this.logger.log(
+      `GitHub issue_comment repo=${payload.repository.full_name} issue=#${issue.number} action=${payload.action}`,
+    );
+
+    return {
+      received: true,
+
+      event: 'issue_comment',
+
+      deliveryId,
+
+      action: payload.action,
+
+      repository: {
+        id: repository.id,
+
+        githubRepositoryId,
+
+        fullName: payload.repository.full_name,
+
+        projectId: repository.projectId,
+      },
+
+      issue: {
+        number: issue.number,
+
+        title: issue.title,
+
+        isPullRequest,
+      },
+
+      comment: {
+        id: comment.id,
+
+        author: comment.user?.login ?? null,
+
+        url: comment.html_url,
+      },
+
+      activityCreated: Boolean(activity),
+
+      activityId: activity?.id ?? null,
+    };
+  }
+
+  /* ------------------------------------------------------------------------ */
+  /*                         DEVELOPMENT TEST HELPER                          */
+  /* ------------------------------------------------------------------------ */
+
   generateTestSignature(payload: string) {
-    const expectedSignature = `sha256=${createHmac('sha256', this.webhookSecret)
+    return `sha256=${createHmac('sha256', this.webhookSecret)
       .update(payload)
       .digest('hex')}`;
-    return expectedSignature;
   }
 }
