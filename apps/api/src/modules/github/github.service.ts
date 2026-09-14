@@ -886,4 +886,127 @@ export class GithubService implements OnModuleInit {
 
     return membership;
   }
+  async syncInstallationFromWebhook(githubInstallationId: number) {
+    this.logger.log(
+      `Webhook repository sync started for installation ${githubInstallationId}`,
+    );
+
+    // 1. Find which DevFlow organization owns this GitHub installation
+    const [installation] = await this.databaseService.db
+      .select()
+      .from(githubInstallations)
+      .where(eq(githubInstallations.githubInstallationId, githubInstallationId))
+      .limit(1);
+
+    if (!installation) {
+      this.logger.warn(
+        `GitHub installation ${githubInstallationId} is not connected to any DevFlow organization`,
+      );
+
+      return {
+        synced: false,
+        reason: 'installation_not_connected',
+      };
+    }
+
+    // 2. Fetch authoritative repository list from GitHub
+    const repositories =
+      await this.listInstallationRepositories(githubInstallationId);
+
+    const githubRepositoryIds = repositories.map((repo) =>
+      this.normalizeGithubId(repo.id, 'githubRepositoryId'),
+    );
+
+    // 3. Sync everything atomically
+    await this.databaseService.db.transaction(async (tx) => {
+      for (const repo of repositories) {
+        const githubRepositoryId = this.normalizeGithubId(
+          repo.id,
+          'githubRepositoryId',
+        );
+
+        await tx
+          .insert(githubRepositories)
+          .values({
+            organizationId: installation.organizationId,
+            installationId: installation.id,
+
+            githubRepositoryId,
+
+            ownerLogin: repo.ownerLogin,
+            name: repo.name,
+            fullName: repo.fullName,
+            defaultBranch: repo.defaultBranch ?? 'main',
+            htmlUrl: repo.htmlUrl,
+
+            isPrivate: repo.isPrivate,
+            isArchived: repo.isArchived,
+            isActive: true,
+
+            removedAt: null,
+            updatedAt: new Date(),
+          })
+          .onConflictDoUpdate({
+            target: githubRepositories.githubRepositoryId,
+            set: {
+              organizationId: installation.organizationId,
+              installationId: installation.id,
+
+              ownerLogin: repo.ownerLogin,
+              name: repo.name,
+              fullName: repo.fullName,
+              defaultBranch: repo.defaultBranch ?? 'main',
+              htmlUrl: repo.htmlUrl,
+
+              isPrivate: repo.isPrivate,
+              isArchived: repo.isArchived,
+              isActive: true,
+
+              removedAt: null,
+              updatedAt: new Date(),
+            },
+          });
+      }
+
+      // Mark repositories removed from installation as inactive
+      const existingRepositories = await tx
+        .select()
+        .from(githubRepositories)
+        .where(eq(githubRepositories.installationId, installation.id));
+
+      for (const existingRepository of existingRepositories) {
+        const stillExists = githubRepositoryIds.includes(
+          existingRepository.githubRepositoryId,
+        );
+
+        if (!stillExists && existingRepository.isActive) {
+          await tx
+            .update(githubRepositories)
+            .set({
+              isActive: false,
+              removedAt: new Date(),
+              updatedAt: new Date(),
+            })
+            .where(eq(githubRepositories.id, existingRepository.id));
+        }
+      }
+
+      await tx
+        .update(githubInstallations)
+        .set({
+          updatedAt: new Date(),
+        })
+        .where(eq(githubInstallations.id, installation.id));
+    });
+
+    this.logger.log(
+      `Webhook repository sync completed for installation ${githubInstallationId}. Repositories=${repositories.length}`,
+    );
+
+    return {
+      synced: true,
+      organizationId: installation.organizationId,
+      repositoryCount: repositories.length,
+    };
+  }
 }

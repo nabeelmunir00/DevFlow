@@ -1,6 +1,6 @@
 import {
+  BadRequestException,
   Injectable,
-  InternalServerErrorException,
   Logger,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -9,13 +9,38 @@ import { ConfigService } from '@nestjs/config';
 
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
+import { githubInstallations, githubRepositories } from '@devflow/db';
+
+import { eq } from 'drizzle-orm';
+import { GithubService } from './github.service.js';
+
+type GithubInstallationRepositoriesPayload = {
+  action: 'added' | 'removed';
+  installation: {
+    id: number;
+  };
+  repositories_added?: Array<{
+    id: number;
+    name: string;
+    full_name: string;
+  }>;
+  repositories_removed?: Array<{
+    id: number;
+    name: string;
+    full_name: string;
+  }>;
+};
+
 @Injectable()
 export class GithubWebhookService {
   private readonly logger = new Logger(GithubWebhookService.name);
 
   private readonly webhookSecret: string;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly githubService: GithubService,
+  ) {
     const webhookSecret = this.configService.get<string>(
       'GITHUB_WEBHOOK_SECRET',
     );
@@ -58,29 +83,80 @@ export class GithubWebhookService {
   }
 
   async handleEvent(event: string, deliveryId: string, payload: unknown) {
-    if (!event) {
-      throw new InternalServerErrorException('GitHub event name is missing');
+    this.logger.log(
+      `GitHub webhook received event=${event} delivery=${deliveryId}`,
+    );
+
+    switch (event) {
+      case 'installation_repositories':
+        return this.handleInstallationRepositories(
+          deliveryId,
+          payload as GithubInstallationRepositoriesPayload,
+        );
+
+      case 'installation':
+        this.logger.log(`Installation event received delivery=${deliveryId}`);
+
+        return {
+          received: true,
+          event,
+          deliveryId,
+        };
+
+      case 'push':
+      case 'pull_request':
+      case 'issues':
+      case 'issue_comment':
+        this.logger.log(
+          `GitHub event ${event} received but processing is not implemented yet`,
+        );
+
+        return {
+          received: true,
+          event,
+          deliveryId,
+        };
+
+      default:
+        this.logger.warn(`Unhandled GitHub event: ${event}`);
+
+        return {
+          received: true,
+          ignored: true,
+          event,
+          deliveryId,
+        };
+    }
+  }
+
+  private async handleInstallationRepositories(
+    deliveryId: string,
+    payload: GithubInstallationRepositoriesPayload,
+  ) {
+    const installationId = payload.installation?.id;
+
+    if (!installationId) {
+      throw new BadRequestException('GitHub installation ID missing');
     }
 
     this.logger.log(
-      `GitHub webhook received: event=${event}, delivery=${deliveryId}`,
+      `installation_repositories action=${payload.action} installation=${installationId}`,
     );
 
-    /*
-     * Next phase:
-     *
-     * installation
-     * installation_repositories
-     * push
-     * pull_request
-     * issues
-     * issue_comment
-     */
+    this.logger.log(
+      `Repositories added=${payload.repositories_added?.length ?? 0}, removed=${payload.repositories_removed?.length ?? 0}`,
+    );
+
+    const result =
+      await this.githubService.syncInstallationFromWebhook(installationId);
 
     return {
       received: true,
-      event,
+      event: 'installation_repositories',
       deliveryId,
+      action: payload.action,
+      installationId,
+      ...result,
     };
   }
 }

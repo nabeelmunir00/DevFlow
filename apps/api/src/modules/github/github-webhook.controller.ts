@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Controller,
+  Get,
   Headers,
   Post,
   Req,
