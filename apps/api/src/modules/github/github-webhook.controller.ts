@@ -51,4 +51,13 @@ export class GithubWebhookController {
       request.body,
     );
   }
+  @Get('test-signature')
+  getTestSignature() {
+    const payload = '{"test":true}';
+
+    return {
+      payload,
+      signature: this.githubWebhookService.generateTestSignature(payload),
+    };
+  }
 }
