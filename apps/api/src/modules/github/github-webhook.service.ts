@@ -68,6 +68,68 @@ type GithubPushPayload = {
   }>;
 };
 
+type GithubPullRequestPayload = {
+  action:
+    | 'opened'
+    | 'closed'
+    | 'reopened'
+    | 'synchronize'
+    | 'edited'
+    | 'ready_for_review'
+    | 'converted_to_draft'
+    | string;
+
+  number: number;
+
+  installation?: {
+    id: number;
+  };
+
+  repository: {
+    id: number;
+    name: string;
+    full_name: string;
+    html_url: string;
+  };
+
+  sender?: {
+    id?: number;
+    login?: string;
+  };
+
+  pull_request: {
+    id: number;
+    number: number;
+    title: string;
+    body?: string | null;
+    state: string;
+    draft?: boolean;
+    merged?: boolean;
+    merged_at?: string | null;
+    html_url: string;
+
+    user?: {
+      id?: number;
+      login?: string;
+    };
+
+    head?: {
+      ref?: string;
+      sha?: string;
+    };
+
+    base?: {
+      ref?: string;
+      sha?: string;
+    };
+
+    additions?: number;
+    deletions?: number;
+    changed_files?: number;
+    commits?: number;
+  };
+};
+
 @Injectable()
 export class GithubWebhookService {
   private readonly logger = new Logger(GithubWebhookService.name);
@@ -145,6 +207,10 @@ export class GithubWebhookService {
       case 'push':
         return this.handlePush(deliveryId, payload as GithubPushPayload);
       case 'pull_request':
+        return this.handlePullRequest(
+          deliveryId,
+          payload as GithubPullRequestPayload,
+        );
       case 'issues':
       case 'issue_comment':
         this.logger.log(
@@ -330,6 +396,178 @@ export class GithubWebhookService {
       branch,
       sender: payload.sender?.login ?? null,
       commitCount: payload.commits?.length ?? 0,
+
+      activityCreated: Boolean(activity),
+      activityId: activity?.id ?? null,
+    };
+  }
+  private async handlePullRequest(
+    deliveryId: string,
+    payload: GithubPullRequestPayload,
+  ) {
+    const githubRepositoryId = payload.repository?.id;
+
+    if (!githubRepositoryId) {
+      throw new BadRequestException('GitHub repository ID missing');
+    }
+
+    if (!payload.pull_request) {
+      throw new BadRequestException('GitHub pull request payload missing');
+    }
+
+    const repository =
+      await this.githubService.findActiveRepositoryByGithubId(
+        githubRepositoryId,
+      );
+
+    if (!repository) {
+      this.logger.warn(
+        `PR ignored: repository ${githubRepositoryId} is not connected`,
+      );
+
+      return {
+        received: true,
+        event: 'pull_request',
+        deliveryId,
+        ignored: true,
+        reason: 'repository_not_connected',
+      };
+    }
+
+    const pr = payload.pull_request;
+
+    const actionMap: Record<string, string> = {
+      opened: 'GITHUB_PR_OPENED',
+      closed: pr.merged ? 'GITHUB_PR_MERGED' : 'GITHUB_PR_CLOSED',
+      reopened: 'GITHUB_PR_REOPENED',
+      synchronize: 'GITHUB_PR_UPDATED',
+      edited: 'GITHUB_PR_EDITED',
+      ready_for_review: 'GITHUB_PR_READY_FOR_REVIEW',
+      converted_to_draft: 'GITHUB_PR_DRAFTED',
+    };
+
+    const activityAction = actionMap[payload.action] ?? 'GITHUB_PR_EVENT';
+
+    let activity = null;
+
+    if (repository.projectId) {
+      activity = await this.activityLogsService.create({
+        organizationId: repository.organizationId,
+        projectId: repository.projectId,
+
+        actorId: null,
+
+        action: activityAction,
+        entityType: 'GITHUB_REPOSITORY',
+        entityId: repository.id,
+
+        metadata: {
+          deliveryId,
+
+          githubRepositoryId,
+          repositoryFullName: payload.repository.full_name,
+
+          action: payload.action,
+
+          pullRequest: {
+            githubId: pr.id,
+            number: pr.number,
+            title: pr.title,
+            body: pr.body ?? null,
+            state: pr.state,
+
+            draft: pr.draft ?? false,
+            merged: pr.merged ?? false,
+            mergedAt: pr.merged_at ?? null,
+
+            url: pr.html_url,
+
+            author: pr.user?.login ?? null,
+
+            headBranch: pr.head?.ref ?? null,
+            headSha: pr.head?.sha ?? null,
+
+            baseBranch: pr.base?.ref ?? null,
+            baseSha: pr.base?.sha ?? null,
+
+            additions: pr.additions ?? null,
+            deletions: pr.deletions ?? null,
+            changedFiles: pr.changed_files ?? null,
+            commits: pr.commits ?? null,
+          },
+
+          sender: payload.sender?.login ?? null,
+        },
+      });
+    }
+
+    if (repository.projectId && activity) {
+      this.realtimeGateway.emitToProject(
+        repository.organizationId,
+        repository.projectId,
+        'github:pull_request',
+        {
+          activityId: activity.id,
+
+          action: payload.action,
+
+          repository: {
+            id: repository.id,
+            githubRepositoryId,
+            fullName: payload.repository.full_name,
+          },
+
+          pullRequest: {
+            number: pr.number,
+            title: pr.title,
+            state: pr.state,
+            draft: pr.draft ?? false,
+            merged: pr.merged ?? false,
+            url: pr.html_url,
+
+            author: pr.user?.login ?? null,
+
+            headBranch: pr.head?.ref ?? null,
+            baseBranch: pr.base?.ref ?? null,
+          },
+
+          sender: payload.sender?.login ?? null,
+
+          createdAt: activity.createdAt,
+        },
+      );
+
+      this.logger.log(
+        `Realtime github:pull_request emitted project=${repository.projectId} PR=#${pr.number} action=${payload.action}`,
+      );
+    }
+
+    this.logger.log(
+      `GitHub PR repo=${payload.repository.full_name} PR=#${pr.number} action=${payload.action}`,
+    );
+
+    return {
+      received: true,
+      event: 'pull_request',
+      deliveryId,
+
+      action: payload.action,
+
+      repository: {
+        id: repository.id,
+        githubRepositoryId,
+        fullName: payload.repository.full_name,
+        projectId: repository.projectId,
+      },
+
+      pullRequest: {
+        number: pr.number,
+        title: pr.title,
+        state: pr.state,
+        draft: pr.draft ?? false,
+        merged: pr.merged ?? false,
+        url: pr.html_url,
+      },
 
       activityCreated: Boolean(activity),
       activityId: activity?.id ?? null,
