@@ -8,6 +8,7 @@ import { GithubService } from './github.service.js';
 import { GithubWebhookService } from './github-webhook.service.js';
 import { ActivityLogsModule } from '../activity-logs/activity-logs.module.js';
 import { RealtimeModule } from '../realtime/realtime.module.js';
+import { GithubWebhookDeliveryService } from './github-webhook-delivery.service.js';
 
 @Module({
   imports: [ActivityLogsModule, RealtimeModule],
@@ -17,7 +18,11 @@ import { RealtimeModule } from '../realtime/realtime.module.js';
     GithubWebhookController,
   ],
 
-  providers: [GithubService, GithubWebhookService],
+  providers: [
+    GithubService,
+    GithubWebhookService,
+    GithubWebhookDeliveryService,
+  ],
 
   exports: [GithubService, GithubWebhookService],
 })
