@@ -15,6 +15,8 @@ import { ActivityLogsModule } from '../activity-logs/activity-logs.module.js';
 import { RealtimeModule } from '../realtime/realtime.module.js';
 import { GithubWebhookProcessor } from './queue/github-webhook.processor.js';
 import { GithubEntityPersistenceService } from './persistence/github-entity-persistence.service.js';
+import { GithubTaskLinksService } from './task-links/github-task-links.service.js';
+import { GithubTaskLinksController } from './task-links/github-task-links.controller.js';
 @Module({
   imports: [ActivityLogsModule, RealtimeModule],
 
@@ -22,6 +24,7 @@ import { GithubEntityPersistenceService } from './persistence/github-entity-pers
     GithubController,
     GithubIntegrationController,
     GithubWebhookController,
+    GithubTaskLinksController,
   ],
 
   providers: [
@@ -31,6 +34,7 @@ import { GithubEntityPersistenceService } from './persistence/github-entity-pers
     GithubWebhookQueueService,
     GithubWebhookProcessor,
     GithubEntityPersistenceService,
+    GithubTaskLinksService,
   ],
 
   exports: [GithubService, GithubWebhookService],
