@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { githubWebhookDeliveries } from '@devflow/db';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 import { DatabaseService } from '../../database/database.service.js';
 
@@ -17,7 +17,8 @@ export class GithubWebhookDeliveryService {
   ) {
     const db = this.databaseService.db;
 
-    const [delivery] = await db
+    // 1. First attempt: atomically insert a new delivery.
+    const [newDelivery] = await db
       .insert(githubWebhookDeliveries)
       .values({
         deliveryId,
@@ -30,24 +31,58 @@ export class GithubWebhookDeliveryService {
       })
       .returning();
 
-    if (!delivery) {
-      this.logger.warn(
-        `Duplicate GitHub webhook ignored: delivery=${deliveryId}`,
+    if (newDelivery) {
+      this.logger.log(
+        `GitHub webhook claimed: delivery=${deliveryId} event=${event}`,
       );
 
       return {
-        claimed: false as const,
-        delivery: null,
+        claimed: true as const,
+        delivery: newDelivery,
+        retry: false,
       };
     }
 
-    this.logger.log(
-      `GitHub webhook claimed: delivery=${deliveryId} event=${event}`,
+    // 2. Existing FAILED delivery can be reclaimed atomically.
+    const [retriedDelivery] = await db
+      .update(githubWebhookDeliveries)
+      .set({
+        status: 'PROCESSING',
+        event,
+        action: action ?? null,
+        failedAt: null,
+        processedAt: null,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(githubWebhookDeliveries.deliveryId, deliveryId),
+          eq(githubWebhookDeliveries.status, 'FAILED'),
+        ),
+      )
+      .returning();
+
+    if (retriedDelivery) {
+      this.logger.warn(
+        `Retrying failed GitHub webhook: delivery=${deliveryId}`,
+      );
+
+      return {
+        claimed: true as const,
+        delivery: retriedDelivery,
+        retry: true,
+      };
+    }
+
+    // 3. PROCESSING / COMPLETED delivery = duplicate.
+    this.logger.warn(
+      `Duplicate GitHub webhook ignored: delivery=${deliveryId}`,
     );
 
     return {
-      claimed: true as const,
-      delivery,
+      claimed: false as const,
+      delivery: null,
+      retry: false,
     };
   }
 
