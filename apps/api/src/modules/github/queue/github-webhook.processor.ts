@@ -1,6 +1,13 @@
-import { Processor, WorkerHost } from '@nestjs/bullmq';
-import { Injectable, Logger } from '@nestjs/common';
-import type { Job } from 'bullmq';
+import {
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
+
+import { Job, Worker } from 'bullmq';
+
+import { RedisService } from '../../../redis/redis.service.js';
 
 import { GithubWebhookService } from '../github-webhook.service.js';
 import { GithubWebhookDeliveryService } from '../github-webhook-delivery.service.js';
@@ -13,57 +20,87 @@ import {
 import type { GithubWebhookJobData } from './github-webhook-queue.service.js';
 
 @Injectable()
-@Processor(GITHUB_WEBHOOK_QUEUE)
-export class GithubWebhookProcessor extends WorkerHost {
+export class GithubWebhookProcessor implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(GithubWebhookProcessor.name);
 
+  private worker?: Worker<GithubWebhookJobData>;
+
   constructor(
+    private readonly redisService: RedisService,
     private readonly githubWebhookService: GithubWebhookService,
     private readonly githubWebhookDeliveryService: GithubWebhookDeliveryService,
-  ) {
-    super();
-  }
+  ) {}
 
-  async process(job: Job<GithubWebhookJobData>) {
-    if (job.name !== GITHUB_WEBHOOK_JOB) {
-      this.logger.warn(`Unknown GitHub webhook job ignored: ${job.name}`);
+  onModuleInit() {
+    this.worker = new Worker<GithubWebhookJobData>(
+      GITHUB_WEBHOOK_QUEUE,
 
-      return;
-    }
+      async (job: Job<GithubWebhookJobData>) => {
+        if (job.name !== GITHUB_WEBHOOK_JOB) {
+          throw new Error(`Unknown GitHub webhook job: ${job.name}`);
+        }
 
-    const { event, deliveryId, body } = job.data;
+        const { event, deliveryId, body } = job.data;
+        if (event === 'devflow_retry_test') {
+          throw new Error('Intentional GitHub webhook retry test failure');
+        }
 
-    this.logger.log(
-      `Processing GitHub webhook: event=${event} delivery=${deliveryId} attempt=${job.attemptsMade + 1}`,
+        this.logger.log(
+          `Processing GitHub webhook: event=${event} delivery=${deliveryId} attempt=${job.attemptsMade + 1}`,
+        );
+
+        const result = await this.githubWebhookService.handleEvent(
+          event,
+          deliveryId,
+          body,
+        );
+
+        await this.githubWebhookDeliveryService.markCompleted(deliveryId);
+
+        return result;
+      },
+
+      {
+        connection: this.redisService.getClient(),
+        concurrency: 5,
+      },
     );
 
-    try {
-      const result = await this.githubWebhookService.handleEvent(
-        event,
-        deliveryId,
-        body,
+    this.worker.on('completed', (job) => {
+      this.logger.log(
+        `GitHub webhook completed: delivery=${job.data.deliveryId}`,
       );
+    });
 
-      await this.githubWebhookDeliveryService.markCompleted(deliveryId);
+    this.worker.on('failed', async (job, error) => {
+      if (!job) {
+        this.logger.error(`GitHub webhook job failed: ${error.message}`);
 
-      this.logger.log(`GitHub webhook completed: delivery=${deliveryId}`);
+        return;
+      }
 
-      return result;
-    } catch (error) {
-      /*
-       * BullMQ will retry the job according to:
-       * attempts: 3
-       * exponential backoff: 3000ms
-       *
-       * Do NOT mark FAILED here yet because another BullMQ
-       * attempt may still process this same job.
-       */
+      const maxAttempts =
+        typeof job.opts.attempts === 'number' ? job.opts.attempts : 1;
+
+      const attemptsUsed = job.attemptsMade;
+
       this.logger.error(
-        `GitHub webhook processing failed: delivery=${deliveryId} attempt=${job.attemptsMade + 1}`,
-        error instanceof Error ? error.stack : String(error),
+        `GitHub webhook failed: delivery=${job.data.deliveryId} attempt=${attemptsUsed}/${maxAttempts}: ${error.message}`,
       );
 
-      throw error;
-    }
+      if (attemptsUsed >= maxAttempts) {
+        await this.githubWebhookDeliveryService.markFailed(job.data.deliveryId);
+
+        this.logger.error(
+          `GitHub webhook permanently failed: delivery=${job.data.deliveryId}`,
+        );
+      }
+    });
+
+    this.logger.log('GitHub webhook worker started');
+  }
+
+  async onModuleDestroy() {
+    await this.worker?.close();
   }
 }

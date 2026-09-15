@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { BullModule } from '@nestjs/bullmq';
 
 import { GithubController } from './github.controller.js';
 import { GithubIntegrationController } from './github-integration.controller.js';
@@ -16,14 +15,7 @@ import { ActivityLogsModule } from '../activity-logs/activity-logs.module.js';
 import { RealtimeModule } from '../realtime/realtime.module.js';
 import { GithubWebhookProcessor } from './queue/github-webhook.processor.js';
 @Module({
-  imports: [
-    ActivityLogsModule,
-    RealtimeModule,
-
-    BullModule.registerQueue({
-      name: GITHUB_WEBHOOK_QUEUE,
-    }),
-  ],
+  imports: [ActivityLogsModule, RealtimeModule],
 
   controllers: [
     GithubController,

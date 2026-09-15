@@ -1,6 +1,8 @@
-import { Injectable } from '@nestjs/common';
-import { InjectQueue } from '@nestjs/bullmq';
-import type { Queue } from 'bullmq';
+import { Injectable, OnModuleDestroy } from '@nestjs/common';
+
+import { Queue } from 'bullmq';
+
+import { RedisService } from '../../../redis/redis.service.js';
 
 import {
   GITHUB_WEBHOOK_JOB,
@@ -14,11 +16,14 @@ export interface GithubWebhookJobData {
 }
 
 @Injectable()
-export class GithubWebhookQueueService {
-  constructor(
-    @InjectQueue(GITHUB_WEBHOOK_QUEUE)
-    private readonly queue: Queue<GithubWebhookJobData>,
-  ) {}
+export class GithubWebhookQueueService implements OnModuleDestroy {
+  private readonly queue: Queue<GithubWebhookJobData>;
+
+  constructor(private readonly redisService: RedisService) {
+    this.queue = new Queue<GithubWebhookJobData>(GITHUB_WEBHOOK_QUEUE, {
+      connection: this.redisService.getClient(),
+    });
+  }
 
   async enqueue(data: GithubWebhookJobData) {
     return this.queue.add(GITHUB_WEBHOOK_JOB, data, {
@@ -41,5 +46,9 @@ export class GithubWebhookQueueService {
         count: 5000,
       },
     });
+  }
+
+  async onModuleDestroy() {
+    await this.queue.close();
   }
 }
