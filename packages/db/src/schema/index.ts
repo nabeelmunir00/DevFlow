@@ -17,3 +17,5 @@ export * from "./task-labels.js";
 export * from "./github-installations.js";
 export * from "./github-repositories.js";
 export * from "./github-webhook-deliveries.js";
+export * from "./github-pull-requests.js";
+export * from "./github-issues.js";
