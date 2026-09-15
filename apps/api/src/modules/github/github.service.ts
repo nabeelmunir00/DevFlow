@@ -1154,7 +1154,11 @@ export class GithubService implements OnModuleInit {
 
       return {
         unsuspended: false,
+        synced: false,
         reason: 'installation_not_connected',
+        installationId: githubInstallationId,
+        organizationId: null,
+        repositoryCount: 0,
       };
     }
 
@@ -1166,10 +1170,6 @@ export class GithubService implements OnModuleInit {
       })
       .where(eq(githubInstallations.id, installation.id));
 
-    /*
-     * Fetch latest repository access from GitHub and reactivate
-     * only repositories that are actually accessible.
-     */
     const syncResult =
       await this.syncInstallationFromWebhook(githubInstallationId);
 
@@ -1179,9 +1179,12 @@ export class GithubService implements OnModuleInit {
 
     return {
       unsuspended: true,
+      synced: syncResult.synced,
+      reason: 'reason' in syncResult ? syncResult.reason : undefined,
       installationId: githubInstallationId,
       organizationId: installation.organizationId,
-      ...syncResult,
+      repositoryCount:
+        'repositoryCount' in syncResult ? (syncResult.repositoryCount ?? 0) : 0,
     };
   }
 }

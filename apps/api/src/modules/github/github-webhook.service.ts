@@ -432,11 +432,6 @@ export class GithubWebhookService {
 
     switch (action) {
       case 'created': {
-        /*
-         * Usually the installation is not connected to a DevFlow
-         * organization yet, so syncInstallationFromWebhook may
-         * return installation_not_connected.
-         */
         const result =
           await this.githubService.syncInstallationFromWebhook(installationId);
 
@@ -456,6 +451,19 @@ export class GithubWebhookService {
             installationId,
           );
 
+        if (result.suspended && result.organizationId) {
+          this.realtimeGateway.emitToOrganization(
+            result.organizationId,
+            'github:installation_suspended',
+            {
+              installationId,
+              organizationId: result.organizationId,
+              action,
+              occurredAt: new Date().toISOString(),
+            },
+          );
+        }
+
         return {
           received: true,
           event: 'installation',
@@ -472,12 +480,25 @@ export class GithubWebhookService {
             installationId,
           );
 
+        if (result.unsuspended && result.organizationId) {
+          this.realtimeGateway.emitToOrganization(
+            result.organizationId,
+            'github:installation_unsuspended',
+            {
+              installationId,
+              organizationId: result.organizationId,
+              action,
+              repositoryCount: result.repositoryCount,
+              occurredAt: new Date().toISOString(),
+            },
+          );
+        }
+
         return {
           received: true,
           event: 'installation',
           deliveryId,
           action,
-          installationId,
           ...result,
         };
       }
@@ -487,6 +508,19 @@ export class GithubWebhookService {
           await this.githubService.disconnectInstallationFromWebhook(
             installationId,
           );
+
+        if (result.disconnected && result.organizationId) {
+          this.realtimeGateway.emitToOrganization(
+            result.organizationId,
+            'github:installation_disconnected',
+            {
+              installationId,
+              organizationId: result.organizationId,
+              action,
+              occurredAt: new Date().toISOString(),
+            },
+          );
+        }
 
         return {
           received: true,
@@ -501,6 +535,20 @@ export class GithubWebhookService {
       case 'new_permissions_accepted': {
         const result =
           await this.githubService.syncInstallationFromWebhook(installationId);
+
+        if (result.synced && result.organizationId) {
+          this.realtimeGateway.emitToOrganization(
+            result.organizationId,
+            'github:installation_updated',
+            {
+              installationId,
+              organizationId: result.organizationId,
+              action,
+              repositoryCount: result.repositoryCount ?? 0,
+              occurredAt: new Date().toISOString(),
+            },
+          );
+        }
 
         return {
           received: true,
