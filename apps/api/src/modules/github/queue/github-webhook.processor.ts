@@ -41,9 +41,6 @@ export class GithubWebhookProcessor implements OnModuleInit, OnModuleDestroy {
         }
 
         const { event, deliveryId, body } = job.data;
-        if (event === 'devflow_retry_test') {
-          throw new Error('Intentional GitHub webhook retry test failure');
-        }
 
         this.logger.log(
           `Processing GitHub webhook: event=${event} delivery=${deliveryId} attempt=${job.attemptsMade + 1}`,
