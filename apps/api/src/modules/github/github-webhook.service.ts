@@ -13,6 +13,7 @@ import { GithubService } from './github.service.js';
 import { ActivityLogsService } from '../activity-logs/activity-logs.service.js';
 import { RealtimeGateway } from '../realtime/realtime.gateway.js';
 import { GithubEntityPersistenceService } from './persistence/github-entity-persistence.service.js';
+import { GithubTaskAutomationService } from './automation/github-task-automation.service.js';
 
 /* -------------------------------------------------------------------------- */
 /*                                   TYPES                                    */
@@ -284,6 +285,7 @@ export class GithubWebhookService {
     private readonly activityLogsService: ActivityLogsService,
     private readonly realtimeGateway: RealtimeGateway,
     private readonly githubEntityPersistenceService: GithubEntityPersistenceService,
+    private readonly githubTaskAutomationService: GithubTaskAutomationService,
   ) {
     const webhookSecret = this.configService.get<string>(
       'GITHUB_WEBHOOK_SECRET',
@@ -823,6 +825,11 @@ export class GithubWebhookService {
         githubMergedAt: pr.merged_at ?? null,
       });
 
+    await this.githubTaskAutomationService.handlePullRequestChange(
+      persistedPullRequest.id,
+      payload.action,
+    );
+
     const actionMap: Record<string, string> = {
       opened: 'GITHUB_PR_OPENED',
 
@@ -1101,6 +1108,10 @@ export class GithubWebhookService {
         githubClosedAt: issue.closed_at ?? null,
       });
 
+    await this.githubTaskAutomationService.handleIssueChange(
+      persistedIssue.id,
+      payload.action,
+    );
     const actionMap: Record<string, string> = {
       opened: 'GITHUB_ISSUE_OPENED',
 

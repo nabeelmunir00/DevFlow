@@ -18,6 +18,7 @@ import { GithubEntityPersistenceService } from './persistence/github-entity-pers
 import { GithubTaskLinksService } from './task-links/github-task-links.service.js';
 import { GithubTaskLinksController } from './task-links/github-task-links.controller.js';
 import { RbacModule } from '../../common/rbac/rbac.module.js';
+import { GithubTaskAutomationService } from './automation/github-task-automation.service.js';
 @Module({
   imports: [ActivityLogsModule, RealtimeModule, RbacModule],
 
@@ -36,6 +37,7 @@ import { RbacModule } from '../../common/rbac/rbac.module.js';
     GithubWebhookProcessor,
     GithubEntityPersistenceService,
     GithubTaskLinksService,
+    GithubTaskAutomationService,
   ],
 
   exports: [GithubService, GithubWebhookService],
