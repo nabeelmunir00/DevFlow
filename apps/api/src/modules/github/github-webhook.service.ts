@@ -12,6 +12,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 import { GithubService } from './github.service.js';
 import { ActivityLogsService } from '../activity-logs/activity-logs.service.js';
 import { RealtimeGateway } from '../realtime/realtime.gateway.js';
+import { GithubEntityPersistenceService } from './persistence/github-entity-persistence.service.js';
 
 /* -------------------------------------------------------------------------- */
 /*                                   TYPES                                    */
@@ -136,6 +137,10 @@ type GithubPullRequestPayload = {
     draft?: boolean;
     merged?: boolean;
     merged_at?: string | null;
+
+    created_at?: string;
+    updated_at?: string;
+    closed_at?: string | null;
 
     html_url: string;
 
@@ -278,6 +283,7 @@ export class GithubWebhookService {
     private readonly githubService: GithubService,
     private readonly activityLogsService: ActivityLogsService,
     private readonly realtimeGateway: RealtimeGateway,
+    private readonly githubEntityPersistenceService: GithubEntityPersistenceService,
   ) {
     const webhookSecret = this.configService.get<string>(
       'GITHUB_WEBHOOK_SECRET',
@@ -774,6 +780,49 @@ export class GithubWebhookService {
 
     const pr = payload.pull_request;
 
+    /*
+     * Persist first.
+     *
+     * The DevFlow PR row now becomes the canonical internal
+     * representation of this GitHub PR.
+     */
+    const persistedPullRequest =
+      await this.githubEntityPersistenceService.upsertPullRequest({
+        organizationId: repository.organizationId,
+
+        repositoryId: repository.id,
+
+        githubPullRequestId: pr.id,
+
+        githubNumber: pr.number,
+
+        title: pr.title,
+
+        body: pr.body ?? null,
+
+        state: pr.state,
+
+        isDraft: pr.draft ?? false,
+
+        authorLogin: pr.user?.login ?? null,
+
+        headRef: pr.head?.ref ?? null,
+
+        baseRef: pr.base?.ref ?? null,
+
+        htmlUrl: pr.html_url,
+
+        merged: pr.merged ?? false,
+
+        githubCreatedAt: pr.created_at ?? null,
+
+        githubUpdatedAt: pr.updated_at ?? null,
+
+        githubClosedAt: pr.closed_at ?? null,
+
+        githubMergedAt: pr.merged_at ?? null,
+      });
+
     const actionMap: Record<string, string> = {
       opened: 'GITHUB_PR_OPENED',
 
@@ -804,20 +853,24 @@ export class GithubWebhookService {
 
         action: activityAction,
 
-        entityType: 'GITHUB_REPOSITORY',
+        entityType: 'GITHUB_PULL_REQUEST',
 
-        entityId: repository.id,
+        entityId: persistedPullRequest.id,
 
         metadata: {
           deliveryId,
 
           githubRepositoryId,
 
+          repositoryId: repository.id,
+
           repositoryFullName: payload.repository.full_name,
 
           action: payload.action,
 
           pullRequest: {
+            id: persistedPullRequest.id,
+
             githubId: pr.id,
 
             number: pr.number,
@@ -879,6 +932,11 @@ export class GithubWebhookService {
           },
 
           pullRequest: {
+            /*
+             * DevFlow database UUID.
+             */
+            id: persistedPullRequest.id,
+
             githubId: pr.id,
 
             number: pr.number,
@@ -926,7 +984,7 @@ export class GithubWebhookService {
     }
 
     this.logger.log(
-      `GitHub PR repo=${payload.repository.full_name} PR=#${pr.number} action=${payload.action}`,
+      `GitHub PR persisted repo=${payload.repository.full_name} PR=#${pr.number} action=${payload.action}`,
     );
 
     return {
@@ -949,6 +1007,13 @@ export class GithubWebhookService {
       },
 
       pullRequest: {
+        /*
+         * DevFlow database UUID.
+         */
+        id: persistedPullRequest.id,
+
+        githubId: pr.id,
+
         number: pr.number,
 
         title: pr.title,
@@ -1004,6 +1069,38 @@ export class GithubWebhookService {
 
     const issue = payload.issue;
 
+    /*
+     * Persist first.
+     */
+    const persistedIssue =
+      await this.githubEntityPersistenceService.upsertIssue({
+        organizationId: repository.organizationId,
+
+        repositoryId: repository.id,
+
+        githubIssueId: issue.id,
+
+        githubNumber: issue.number,
+
+        title: issue.title,
+
+        body: issue.body ?? null,
+
+        state: issue.state,
+
+        authorLogin: issue.user?.login ?? null,
+
+        assigneeLogin: issue.assignee?.login ?? null,
+
+        htmlUrl: issue.html_url,
+
+        githubCreatedAt: issue.created_at ?? null,
+
+        githubUpdatedAt: issue.updated_at ?? null,
+
+        githubClosedAt: issue.closed_at ?? null,
+      });
+
     const actionMap: Record<string, string> = {
       opened: 'GITHUB_ISSUE_OPENED',
 
@@ -1044,20 +1141,24 @@ export class GithubWebhookService {
 
         action: activityAction,
 
-        entityType: 'GITHUB_REPOSITORY',
+        entityType: 'GITHUB_ISSUE',
 
-        entityId: repository.id,
+        entityId: persistedIssue.id,
 
         metadata: {
           deliveryId,
 
           githubRepositoryId,
 
+          repositoryId: repository.id,
+
           repositoryFullName: payload.repository.full_name,
 
           action: payload.action,
 
           issue: {
+            id: persistedIssue.id,
+
             githubId: issue.id,
 
             number: issue.number,
@@ -1118,6 +1219,11 @@ export class GithubWebhookService {
           },
 
           issue: {
+            /*
+             * DevFlow database UUID.
+             */
+            id: persistedIssue.id,
+
             githubId: issue.id,
 
             number: issue.number,
@@ -1154,7 +1260,7 @@ export class GithubWebhookService {
     }
 
     this.logger.log(
-      `GitHub issue repo=${payload.repository.full_name} issue=#${issue.number} action=${payload.action}`,
+      `GitHub issue persisted repo=${payload.repository.full_name} issue=#${issue.number} action=${payload.action}`,
     );
 
     return {
@@ -1177,6 +1283,13 @@ export class GithubWebhookService {
       },
 
       issue: {
+        /*
+         * DevFlow database UUID.
+         */
+        id: persistedIssue.id,
+
+        githubId: issue.id,
+
         number: issue.number,
 
         title: issue.title,
