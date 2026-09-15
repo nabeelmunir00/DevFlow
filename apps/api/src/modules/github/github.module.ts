@@ -14,7 +14,7 @@ import { GITHUB_WEBHOOK_QUEUE } from './queue/github-webhook-queue.constants.js'
 
 import { ActivityLogsModule } from '../activity-logs/activity-logs.module.js';
 import { RealtimeModule } from '../realtime/realtime.module.js';
-
+import { GithubWebhookProcessor } from './queue/github-webhook.processor.js';
 @Module({
   imports: [
     ActivityLogsModule,
@@ -36,6 +36,7 @@ import { RealtimeModule } from '../realtime/realtime.module.js';
     GithubWebhookService,
     GithubWebhookDeliveryService,
     GithubWebhookQueueService,
+    GithubWebhookProcessor,
   ],
 
   exports: [GithubService, GithubWebhookService],
