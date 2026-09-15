@@ -9,17 +9,41 @@ import { and, eq } from 'drizzle-orm';
 import { schema } from '@devflow/db';
 
 import { DatabaseService } from '../../../database/database.service.js';
+import { ActivityLogsService } from '../../activity-logs/activity-logs.service.js';
+import { RealtimeGateway } from '../../realtime/realtime.gateway.js';
 
 @Injectable()
 export class GithubTaskLinksService {
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(
+    private readonly databaseService: DatabaseService,
+    private readonly activityLogsService: ActivityLogsService,
+    private readonly realtimeGateway: RealtimeGateway,
+  ) {}
 
   private get db() {
     return this.databaseService.db;
   }
 
   // =====================================================
-  // COMMON VALIDATION
+  // CURRENT USER
+  // =====================================================
+
+  private async getCurrentUser(clerkUserId: string) {
+    const [user] = await this.db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.externalAuthId, clerkUserId))
+      .limit(1);
+
+    if (!user) {
+      throw new NotFoundException('Current DevFlow user not found');
+    }
+
+    return user;
+  }
+
+  // =====================================================
+  // TASK
   // =====================================================
 
   private async getTask(organizationId: string, taskId: string) {
@@ -46,7 +70,7 @@ export class GithubTaskLinksService {
   // =====================================================
 
   async getTaskGithubLinks(organizationId: string, taskId: string) {
-    await this.getTask(organizationId, taskId);
+    const task = await this.getTask(organizationId, taskId);
 
     const pullRequests = await this.db
       .select({
@@ -114,7 +138,8 @@ export class GithubTaskLinksService {
       .where(eq(schema.taskGithubIssues.taskId, taskId));
 
     return {
-      taskId,
+      taskId: task.id,
+      projectId: task.projectId,
       pullRequests,
       issues,
     };
@@ -128,8 +153,10 @@ export class GithubTaskLinksService {
     organizationId: string,
     taskId: string,
     pullRequestId: string,
-    userId: string,
+    clerkUserId: string,
   ) {
+    const currentUser = await this.getCurrentUser(clerkUserId);
+
     const task = await this.getTask(organizationId, taskId);
 
     const [pullRequest] = await this.db
@@ -147,17 +174,15 @@ export class GithubTaskLinksService {
       throw new NotFoundException('GitHub pull request not found');
     }
 
-    /*
-     * Prevent cross-project repository links.
-     *
-     * GitHub repository must either:
-     * - belong to this task's project
-     * - or be unlinked from a project.
-     */
     const [repository] = await this.db
       .select()
       .from(schema.githubRepositories)
-      .where(eq(schema.githubRepositories.id, pullRequest.repositoryId))
+      .where(
+        and(
+          eq(schema.githubRepositories.id, pullRequest.repositoryId),
+          eq(schema.githubRepositories.organizationId, organizationId),
+        ),
+      )
       .limit(1);
 
     if (!repository) {
@@ -188,7 +213,7 @@ export class GithubTaskLinksService {
         'Pull request is already linked to this task',
       );
     }
-    const currentUser = await this.getCurrentUser(userId);
+
     const [link] = await this.db
       .insert(schema.taskGithubPullRequests)
       .values({
@@ -198,10 +223,80 @@ export class GithubTaskLinksService {
       })
       .returning();
 
+    const activity = await this.activityLogsService.create({
+      organizationId,
+      projectId: task.projectId,
+
+      actorId: currentUser.id,
+
+      action: 'GITHUB_PULL_REQUEST_LINKED',
+
+      entityType: 'TASK',
+
+      entityId: task.id,
+
+      metadata: {
+        taskId: task.id,
+
+        pullRequestId: pullRequest.id,
+
+        githubPullRequestId: pullRequest.githubPullRequestId,
+
+        githubNumber: pullRequest.githubNumber,
+
+        title: pullRequest.title,
+
+        repositoryId: repository.id,
+
+        repositoryFullName: repository.fullName,
+
+        linkId: link.id,
+      },
+    });
+
+    this.realtimeGateway.emitToProject(
+      organizationId,
+      task.projectId,
+      'github:pr_linked',
+      {
+        taskId: task.id,
+
+        pullRequest: {
+          id: pullRequest.id,
+
+          githubId: pullRequest.githubPullRequestId,
+
+          number: pullRequest.githubNumber,
+
+          title: pullRequest.title,
+
+          state: pullRequest.state,
+
+          htmlUrl: pullRequest.htmlUrl,
+        },
+
+        repository: {
+          id: repository.id,
+
+          fullName: repository.fullName,
+        },
+
+        link,
+
+        actorId: currentUser.id,
+
+        activityId: activity.id,
+      },
+    );
+
     return {
       message: 'GitHub pull request linked successfully',
+
       link,
+
       pullRequest,
+
+      activityId: activity.id,
     };
   }
 
@@ -213,8 +308,26 @@ export class GithubTaskLinksService {
     organizationId: string,
     taskId: string,
     pullRequestId: string,
+    clerkUserId: string,
   ) {
-    await this.getTask(organizationId, taskId);
+    const currentUser = await this.getCurrentUser(clerkUserId);
+
+    const task = await this.getTask(organizationId, taskId);
+
+    const [pullRequest] = await this.db
+      .select()
+      .from(schema.githubPullRequests)
+      .where(
+        and(
+          eq(schema.githubPullRequests.id, pullRequestId),
+          eq(schema.githubPullRequests.organizationId, organizationId),
+        ),
+      )
+      .limit(1);
+
+    if (!pullRequest) {
+      throw new NotFoundException('GitHub pull request not found');
+    }
 
     const [deleted] = await this.db
       .delete(schema.taskGithubPullRequests)
@@ -230,9 +343,64 @@ export class GithubTaskLinksService {
       throw new NotFoundException('Pull request link not found');
     }
 
+    const activity = await this.activityLogsService.create({
+      organizationId,
+      projectId: task.projectId,
+
+      actorId: currentUser.id,
+
+      action: 'GITHUB_PULL_REQUEST_UNLINKED',
+
+      entityType: 'TASK',
+
+      entityId: task.id,
+
+      metadata: {
+        taskId: task.id,
+
+        pullRequestId: pullRequest.id,
+
+        githubPullRequestId: pullRequest.githubPullRequestId,
+
+        githubNumber: pullRequest.githubNumber,
+
+        title: pullRequest.title,
+
+        linkId: deleted.id,
+      },
+    });
+
+    this.realtimeGateway.emitToProject(
+      organizationId,
+      task.projectId,
+      'github:pr_unlinked',
+      {
+        taskId: task.id,
+
+        pullRequest: {
+          id: pullRequest.id,
+
+          githubId: pullRequest.githubPullRequestId,
+
+          number: pullRequest.githubNumber,
+
+          title: pullRequest.title,
+        },
+
+        linkId: deleted.id,
+
+        actorId: currentUser.id,
+
+        activityId: activity.id,
+      },
+    );
+
     return {
       message: 'GitHub pull request unlinked successfully',
+
       link: deleted,
+
+      activityId: activity.id,
     };
   }
 
@@ -244,8 +412,10 @@ export class GithubTaskLinksService {
     organizationId: string,
     taskId: string,
     issueId: string,
-    userId: string,
+    clerkUserId: string,
   ) {
+    const currentUser = await this.getCurrentUser(clerkUserId);
+
     const task = await this.getTask(organizationId, taskId);
 
     const [issue] = await this.db
@@ -266,7 +436,12 @@ export class GithubTaskLinksService {
     const [repository] = await this.db
       .select()
       .from(schema.githubRepositories)
-      .where(eq(schema.githubRepositories.id, issue.repositoryId))
+      .where(
+        and(
+          eq(schema.githubRepositories.id, issue.repositoryId),
+          eq(schema.githubRepositories.organizationId, organizationId),
+        ),
+      )
       .limit(1);
 
     if (!repository) {
@@ -301,14 +476,85 @@ export class GithubTaskLinksService {
       .values({
         taskId,
         issueId,
-        linkedById: userId,
+        linkedById: currentUser.id,
       })
       .returning();
 
+    const activity = await this.activityLogsService.create({
+      organizationId,
+
+      projectId: task.projectId,
+
+      actorId: currentUser.id,
+
+      action: 'GITHUB_ISSUE_LINKED',
+
+      entityType: 'TASK',
+
+      entityId: task.id,
+
+      metadata: {
+        taskId: task.id,
+
+        issueId: issue.id,
+
+        githubIssueId: issue.githubIssueId,
+
+        githubNumber: issue.githubNumber,
+
+        title: issue.title,
+
+        repositoryId: repository.id,
+
+        repositoryFullName: repository.fullName,
+
+        linkId: link.id,
+      },
+    });
+
+    this.realtimeGateway.emitToProject(
+      organizationId,
+      task.projectId,
+      'github:issue_linked',
+      {
+        taskId: task.id,
+
+        issue: {
+          id: issue.id,
+
+          githubId: issue.githubIssueId,
+
+          number: issue.githubNumber,
+
+          title: issue.title,
+
+          state: issue.state,
+
+          htmlUrl: issue.htmlUrl,
+        },
+
+        repository: {
+          id: repository.id,
+
+          fullName: repository.fullName,
+        },
+
+        link,
+
+        actorId: currentUser.id,
+
+        activityId: activity.id,
+      },
+    );
+
     return {
       message: 'GitHub issue linked successfully',
+
       link,
+
       issue,
+
+      activityId: activity.id,
     };
   }
 
@@ -316,8 +562,30 @@ export class GithubTaskLinksService {
   // UNLINK ISSUE
   // =====================================================
 
-  async unlinkIssue(organizationId: string, taskId: string, issueId: string) {
-    await this.getTask(organizationId, taskId);
+  async unlinkIssue(
+    organizationId: string,
+    taskId: string,
+    issueId: string,
+    clerkUserId: string,
+  ) {
+    const currentUser = await this.getCurrentUser(clerkUserId);
+
+    const task = await this.getTask(organizationId, taskId);
+
+    const [issue] = await this.db
+      .select()
+      .from(schema.githubIssues)
+      .where(
+        and(
+          eq(schema.githubIssues.id, issueId),
+          eq(schema.githubIssues.organizationId, organizationId),
+        ),
+      )
+      .limit(1);
+
+    if (!issue) {
+      throw new NotFoundException('GitHub issue not found');
+    }
 
     const [deleted] = await this.db
       .delete(schema.taskGithubIssues)
@@ -333,25 +601,65 @@ export class GithubTaskLinksService {
       throw new NotFoundException('Issue link not found');
     }
 
+    const activity = await this.activityLogsService.create({
+      organizationId,
+
+      projectId: task.projectId,
+
+      actorId: currentUser.id,
+
+      action: 'GITHUB_ISSUE_UNLINKED',
+
+      entityType: 'TASK',
+
+      entityId: task.id,
+
+      metadata: {
+        taskId: task.id,
+
+        issueId: issue.id,
+
+        githubIssueId: issue.githubIssueId,
+
+        githubNumber: issue.githubNumber,
+
+        title: issue.title,
+
+        linkId: deleted.id,
+      },
+    });
+
+    this.realtimeGateway.emitToProject(
+      organizationId,
+      task.projectId,
+      'github:issue_unlinked',
+      {
+        taskId: task.id,
+
+        issue: {
+          id: issue.id,
+
+          githubId: issue.githubIssueId,
+
+          number: issue.githubNumber,
+
+          title: issue.title,
+        },
+
+        linkId: deleted.id,
+
+        actorId: currentUser.id,
+
+        activityId: activity.id,
+      },
+    );
+
     return {
       message: 'GitHub issue unlinked successfully',
+
       link: deleted,
+
+      activityId: activity.id,
     };
-  }
-  private async getCurrentUser(clerkUserId: string) {
-    const [user] = await this.db
-      .select({
-        id: schema.users.id,
-        externalAuthId: schema.users.externalAuthId,
-      })
-      .from(schema.users)
-      .where(eq(schema.users.externalAuthId, clerkUserId))
-      .limit(1);
-
-    if (!user) {
-      throw new NotFoundException('Current DevFlow user not found');
-    }
-
-    return user;
   }
 }

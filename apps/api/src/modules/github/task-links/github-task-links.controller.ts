@@ -10,6 +10,9 @@ import {
 import { ClerkAuthGuard } from '../../auth/guards/clerk-auth.guard.js';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator.js';
 
+import { RolesGuard } from '../../../common/rbac/roles.guard.js';
+import { Roles } from '../../../common/rbac/roles.decorator.js';
+
 import { GithubTaskLinksService } from './github-task-links.service.js';
 
 @Controller('organizations/:organizationId/tasks/:taskId/github')
@@ -24,6 +27,8 @@ export class GithubTaskLinksController {
   // =====================================================
 
   @Get()
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'PROJECT_MANAGER', 'DEVELOPER', 'MEMBER', 'VIEWER')
   getLinks(
     @Param('organizationId')
     organizationId: string,
@@ -42,6 +47,8 @@ export class GithubTaskLinksController {
   // =====================================================
 
   @Post('pull-requests/:pullRequestId')
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'PROJECT_MANAGER', 'DEVELOPER')
   linkPullRequest(
     @Param('organizationId')
     organizationId: string,
@@ -68,6 +75,8 @@ export class GithubTaskLinksController {
   // =====================================================
 
   @Delete('pull-requests/:pullRequestId')
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'PROJECT_MANAGER', 'DEVELOPER')
   unlinkPullRequest(
     @Param('organizationId')
     organizationId: string,
@@ -77,11 +86,15 @@ export class GithubTaskLinksController {
 
     @Param('pullRequestId')
     pullRequestId: string,
+
+    @CurrentUser()
+    clerkUserId: { userId: string },
   ) {
     return this.githubTaskLinksService.unlinkPullRequest(
       organizationId,
       taskId,
       pullRequestId,
+      clerkUserId.userId,
     );
   }
 
@@ -90,6 +103,8 @@ export class GithubTaskLinksController {
   // =====================================================
 
   @Post('issues/:issueId')
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'PROJECT_MANAGER', 'DEVELOPER')
   linkIssue(
     @Param('organizationId')
     organizationId: string,
@@ -116,6 +131,8 @@ export class GithubTaskLinksController {
   // =====================================================
 
   @Delete('issues/:issueId')
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'PROJECT_MANAGER', 'DEVELOPER')
   unlinkIssue(
     @Param('organizationId')
     organizationId: string,
@@ -125,11 +142,15 @@ export class GithubTaskLinksController {
 
     @Param('issueId')
     issueId: string,
+
+    @CurrentUser()
+    clerkUserId: { userId: string },
   ) {
     return this.githubTaskLinksService.unlinkIssue(
       organizationId,
       taskId,
       issueId,
+      clerkUserId.userId,
     );
   }
 }

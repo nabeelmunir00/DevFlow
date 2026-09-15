@@ -14,7 +14,7 @@ import { io } from 'socket.io-client';
  *   to fresh token generate karna.
  */
 const token =
-  'eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zSjJTSnNKbFBSWVBRSHdhN3BWUFViZ2s5Z0QiLCJvaWF0IjoxNzg5NDY2MzI3LCJ0eXAiOiJKV1QifQ.eyJhenAiOiJodHRwOi8vbG9jYWxob3N0OjMwMDAiLCJleHAiOjE3ODk0NjYzODcsImZ2YSI6WzczODksLTFdLCJpYXQiOjE3ODk0NjYzMjcsImlzcyI6Imh0dHBzOi8vbmF0aXZlLW1hcmxpbi0xOTYxLmNsZXJrLmFjY291bnRzLmRldiIsIm5iZiI6MTc4OTQ2NjMxNywic2lkIjoic2Vzc18zSjdyVUZaNzRXSzFMbUFMb3ZZSzVvcVVlSmwiLCJzdHMiOiJhY3RpdmUiLCJzdWIiOiJ1c2VyXzNKMlo1bEJmQWt6ZVBnUHE2U2tyd3VRMTFXTiIsInYiOjJ9.cWZrFaKrlFN7UMebQBuUeBN3luxG27A_DffsrIe44C1roZY62AXk8wWYge6KE7xQAh2eyPzolc6BI73d00IKmadQDgQQs83WiLVnbJJUp56JevJdon9TXgFeRXtJfcPol59FFDVwozWhk8Z_ZtEPZJdMPap1QpK3w-KJJ0KjNlDroYLmiBxCeq2Ol0xkrzWfRiCqjyZGmufXl59VjZ9YiQ-MOIonGW3W3XvavnJsT-VihFK1zYV0M5rAxFK62UICdy5-CTfrve6hEwRKUxdVzraYMDJ40JRTBdzdzeWzt9yuiYonN8y3hAD_bvWkiCtJ-Vjb8Cwkt0NVb_O3Cx5Cbg';
+  'eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zSjJTSnNKbFBSWVBRSHdhN3BWUFViZ2s5Z0QiLCJvaWF0IjoxNzg5NDgxMTIxLCJ0eXAiOiJKV1QifQ.eyJhenAiOiJodHRwOi8vbG9jYWxob3N0OjMwMDAiLCJleHAiOjE3ODk0ODExODEsImZ2YSI6Wzc2MzUsLTFdLCJpYXQiOjE3ODk0ODExMjEsImlzcyI6Imh0dHBzOi8vbmF0aXZlLW1hcmxpbi0xOTYxLmNsZXJrLmFjY291bnRzLmRldiIsIm5iZiI6MTc4OTQ4MTExMSwic2lkIjoic2Vzc18zSjdyVUZaNzRXSzFMbUFMb3ZZSzVvcVVlSmwiLCJzdHMiOiJhY3RpdmUiLCJzdWIiOiJ1c2VyXzNKMlo1bEJmQWt6ZVBnUHE2U2tyd3VRMTFXTiIsInYiOjJ9.kr94rs9dvMPuc43z8dQtW5ncNHULNCTfdT3yEPYKXbw7ikFYuEEHeet9KoCfZysa1J7lQdz_mATmr4R8R9eZY41jOZOC_P8U597350magDsT9OOC9p2jHLqQzfV0W4sgz8LqITdLhYpHtW4DP-wehh3gQqbri3iuDFD3eYh-s7Kxv6tv5GsC1O6B9ZO0cpDtVT942Sf3oLA6K7rZgPkDlFx_1lRsrXI8PwEiTrCe4FE2ilTWj3iKkh4dsT6pK8EaENlENrn1wtK6mBrQ2Gd-ct8uTJ_xFHfgz2Thlx81yEsL6wOWGcm-Ach4-40Zhdlb6toUL1059i5c9ym86EaEkQ';
 
 const organizationId = 'af0e8191-836d-44e1-8719-8358d16d2571';
 
@@ -367,6 +367,38 @@ socket.on('presence:online', (data) => {
 socket.on('presence:offline', (data) => {
   console.log('\n⚫ PRESENCE OFFLINE');
 
+  console.dir(data, {
+    depth: null,
+    colors: true,
+  });
+});
+
+socket.on('github:pr_linked', (data) => {
+  console.log('\n🔗 GITHUB PR LINKED');
+  console.dir(data, {
+    depth: null,
+    colors: true,
+  });
+});
+
+socket.on('github:pr_unlinked', (data) => {
+  console.log('\n🔓 GITHUB PR UNLINKED');
+  console.dir(data, {
+    depth: null,
+    colors: true,
+  });
+});
+
+socket.on('github:issue_linked', (data) => {
+  console.log('\n🔗 GITHUB ISSUE LINKED');
+  console.dir(data, {
+    depth: null,
+    colors: true,
+  });
+});
+
+socket.on('github:issue_unlinked', (data) => {
+  console.log('\n🔓 GITHUB ISSUE UNLINKED');
   console.dir(data, {
     depth: null,
     colors: true,

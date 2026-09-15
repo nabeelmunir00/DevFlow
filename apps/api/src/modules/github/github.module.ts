@@ -17,8 +17,9 @@ import { GithubWebhookProcessor } from './queue/github-webhook.processor.js';
 import { GithubEntityPersistenceService } from './persistence/github-entity-persistence.service.js';
 import { GithubTaskLinksService } from './task-links/github-task-links.service.js';
 import { GithubTaskLinksController } from './task-links/github-task-links.controller.js';
+import { RbacModule } from '../../common/rbac/rbac.module.js';
 @Module({
-  imports: [ActivityLogsModule, RealtimeModule],
+  imports: [ActivityLogsModule, RealtimeModule, RbacModule],
 
   controllers: [
     GithubController,
