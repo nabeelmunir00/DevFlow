@@ -19,8 +19,15 @@ import { GithubTaskLinksService } from './task-links/github-task-links.service.j
 import { GithubTaskLinksController } from './task-links/github-task-links.controller.js';
 import { RbacModule } from '../../common/rbac/rbac.module.js';
 import { GithubTaskAutomationService } from './automation/github-task-automation.service.js';
+import { NotificationsModule } from '../notifications/notifications.module.js';
+import { GithubNotificationService } from './notifications/github-notification.service.js';
 @Module({
-  imports: [ActivityLogsModule, RealtimeModule, RbacModule],
+  imports: [
+    ActivityLogsModule,
+    RealtimeModule,
+    RbacModule,
+    NotificationsModule,
+  ],
 
   controllers: [
     GithubController,
@@ -38,6 +45,7 @@ import { GithubTaskAutomationService } from './automation/github-task-automation
     GithubEntityPersistenceService,
     GithubTaskLinksService,
     GithubTaskAutomationService,
+    GithubNotificationService,
   ],
 
   exports: [GithubService, GithubWebhookService],

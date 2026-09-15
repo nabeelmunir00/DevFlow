@@ -5,6 +5,7 @@ import { schema } from '@devflow/db';
 import { DatabaseService } from '../../../database/database.service.js';
 import { ActivityLogsService } from '../../activity-logs/activity-logs.service.js';
 import { RealtimeGateway } from '../../realtime/realtime.gateway.js';
+import { GithubNotificationService } from '../notifications/github-notification.service.js';
 
 type GithubAutomationSource =
   | {
@@ -30,15 +31,12 @@ export class GithubTaskAutomationService {
     private readonly databaseService: DatabaseService,
     private readonly activityLogsService: ActivityLogsService,
     private readonly realtimeGateway: RealtimeGateway,
+    private readonly githubNotificationService: GithubNotificationService,
   ) {}
 
   private get db() {
     return this.databaseService.db;
   }
-
-  // =====================================================
-  // PULL REQUEST AUTOMATION
-  // =====================================================
 
   async handlePullRequestChange(pullRequestId: string, action: string) {
     const [pullRequest] = await this.db
@@ -75,10 +73,6 @@ export class GithubTaskAutomationService {
     }
   }
 
-  // =====================================================
-  // ISSUE AUTOMATION
-  // =====================================================
-
   async handleIssueChange(issueId: string, action: string) {
     const [issue] = await this.db
       .select()
@@ -114,10 +108,6 @@ export class GithubTaskAutomationService {
     }
   }
 
-  // =====================================================
-  // PROCESS LINKED TASK
-  // =====================================================
-
   private async processTask(
     taskId: string,
     source: GithubAutomationSource,
@@ -133,20 +123,13 @@ export class GithubTaskAutomationService {
       return;
     }
 
-    // Archived tasks must never be modified automatically.
     if (task.archivedAt) {
       return;
     }
 
-    /*
-     * First emit an activity describing that a linked
-     * GitHub entity changed.
-     */
     await this.activityLogsService.create({
       organizationId: task.organizationId,
-
       projectId: task.projectId,
-
       actorId: null,
 
       action:
@@ -155,52 +138,34 @@ export class GithubTaskAutomationService {
           : 'TASK_LINKED_GITHUB_ISSUE_UPDATED',
 
       entityType: 'TASK',
-
       entityId: task.id,
 
       metadata: {
         source: 'GITHUB',
-
         githubEntityType: source.type,
-
         githubEntityId: source.id,
-
         githubId: source.githubId,
-
         githubNumber: source.number,
-
         title: source.title,
-
         githubAction: action,
       },
     });
 
-    /*
-     * We only consider automatic completion for:
-     *
-     * PR merged
-     * Issue closed
-     */
-    const completionCandidate =
-      source.type === 'PULL_REQUEST'
-        ? action === 'closed'
-        : action === 'closed';
+    const completionCandidate = action === 'closed';
 
     if (!completionCandidate) {
+      await this.githubNotificationService.notifyLinkedTaskUsers(
+        task,
+        source,
+        action,
+        false,
+      );
+
       this.emitGithubTaskActivity(task, source, action);
 
       return;
     }
 
-    /*
-     * For PRs, "closed" can mean:
-     *
-     * merged=true
-     * OR
-     * simply closed without merge.
-     *
-     * Verify persisted state before changing task.
-     */
     if (source.type === 'PULL_REQUEST') {
       const [pullRequest] = await this.db
         .select({
@@ -211,16 +176,27 @@ export class GithubTaskAutomationService {
         .limit(1);
 
       if (!pullRequest?.merged) {
+        await this.githubNotificationService.notifyLinkedTaskUsers(
+          task,
+          source,
+          action,
+          false,
+        );
+
         this.emitGithubTaskActivity(task, source, action);
 
         return;
       }
     }
 
-    /*
-     * Don't repeatedly update an already completed task.
-     */
     if (task.status === 'DONE') {
+      await this.githubNotificationService.notifyLinkedTaskUsers(
+        task,
+        source,
+        action,
+        false,
+      );
+
       this.emitGithubTaskActivity(task, source, action);
 
       return;
@@ -231,6 +207,13 @@ export class GithubTaskAutomationService {
     if (hasOpenGithubWork) {
       this.logger.log(
         `Task ${task.id} not completed: linked GitHub work is still open`,
+      );
+
+      await this.githubNotificationService.notifyLinkedTaskUsers(
+        task,
+        source,
+        action,
+        false,
       );
 
       this.emitGithubTaskActivity(task, source, action);
@@ -262,34 +245,21 @@ export class GithubTaskAutomationService {
 
     const activity = await this.activityLogsService.create({
       organizationId: task.organizationId,
-
       projectId: task.projectId,
-
       actorId: null,
-
       action: 'TASK_STATUS_CHANGED',
-
       entityType: 'TASK',
-
       entityId: task.id,
 
       metadata: {
         source: 'GITHUB',
-
         from: task.status,
-
         to: 'DONE',
-
         githubEntityType: source.type,
-
         githubEntityId: source.id,
-
         githubId: source.githubId,
-
         githubNumber: source.number,
-
         githubAction: action,
-
         automatic: true,
       },
     });
@@ -300,22 +270,15 @@ export class GithubTaskAutomationService {
       'task:updated',
       {
         task: updatedTask,
-
         actorId: null,
-
         source: 'GITHUB',
-
         automatic: true,
 
         github: {
           type: source.type,
-
           id: source.id,
-
           githubId: source.githubId,
-
           number: source.number,
-
           action,
         },
 
@@ -323,20 +286,22 @@ export class GithubTaskAutomationService {
       },
     );
 
+    await this.githubNotificationService.notifyLinkedTaskUsers(
+      updatedTask,
+      source,
+      action,
+      true,
+    );
+
     this.logger.log(
       `Task ${task.id} automatically completed from GitHub ${source.type} #${source.number}`,
     );
   }
 
-  // =====================================================
-  // CHECK OPEN GITHUB WORK
-  // =====================================================
-
   private async hasOpenGithubWork(taskId: string) {
     const pullRequests = await this.db
       .select({
         state: schema.githubPullRequests.state,
-
         merged: schema.githubPullRequests.merged,
       })
       .from(schema.taskGithubPullRequests)
@@ -369,10 +334,6 @@ export class GithubTaskAutomationService {
     return hasOpenPullRequest || hasOpenIssue;
   }
 
-  // =====================================================
-  // REALTIME GITHUB TASK ACTIVITY
-  // =====================================================
-
   private emitGithubTaskActivity(
     task: typeof schema.tasks.$inferSelect,
     source: GithubAutomationSource,
@@ -384,20 +345,14 @@ export class GithubTaskAutomationService {
       'task:github_updated',
       {
         taskId: task.id,
-
         source: 'GITHUB',
 
         github: {
           type: source.type,
-
           id: source.id,
-
           githubId: source.githubId,
-
           number: source.number,
-
           title: source.title,
-
           action,
         },
       },
