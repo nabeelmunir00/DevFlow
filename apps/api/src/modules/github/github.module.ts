@@ -6,12 +6,17 @@ import { GithubWebhookController } from './github-webhook.controller.js';
 
 import { GithubService } from './github.service.js';
 import { GithubWebhookService } from './github-webhook.service.js';
-import { ActivityLogsModule } from '../activity-logs/activity-logs.module.js';
-import { RealtimeModule } from '../realtime/realtime.module.js';
 import { GithubWebhookDeliveryService } from './github-webhook-delivery.service.js';
 
+import { GithubWebhookQueueService } from './queue/github-webhook-queue.service.js';
+import { GITHUB_WEBHOOK_QUEUE } from './queue/github-webhook-queue.constants.js';
+
+import { ActivityLogsModule } from '../activity-logs/activity-logs.module.js';
+import { RealtimeModule } from '../realtime/realtime.module.js';
+import { GithubWebhookProcessor } from './queue/github-webhook.processor.js';
 @Module({
   imports: [ActivityLogsModule, RealtimeModule],
+
   controllers: [
     GithubController,
     GithubIntegrationController,
@@ -22,6 +27,8 @@ import { GithubWebhookDeliveryService } from './github-webhook-delivery.service.
     GithubService,
     GithubWebhookService,
     GithubWebhookDeliveryService,
+    GithubWebhookQueueService,
+    GithubWebhookProcessor,
   ],
 
   exports: [GithubService, GithubWebhookService],
