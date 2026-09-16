@@ -23,3 +23,4 @@ export * from "./task-github-pull-requests.js";
 export * from "./task-github-issues.js";
 export * from "./github-pull-request-files.js";
 export * from "./github-pull-request-commits.js";
+export * from "./github-pull-request-reviews.js";

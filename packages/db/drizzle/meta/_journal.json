@@ -141,6 +141,13 @@
       "when": 1789556481201,
       "tag": "0019_polite_senator_kelly",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1789560391852,
+      "tag": "0020_moaning_chimera",
+      "breakpoints": true
     }
   ]
 }
