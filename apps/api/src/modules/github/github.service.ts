@@ -1187,4 +1187,101 @@ export class GithubService implements OnModuleInit {
         'repositoryCount' in syncResult ? (syncResult.repositoryCount ?? 0) : 0,
     };
   }
+  // =====================================================
+  // GET PULL REQUEST FILES
+  // =====================================================
+
+  async getPullRequestFiles(
+    installationId: number,
+    owner: string,
+    repo: string,
+    pullNumber: number,
+  ) {
+    this.validateInstallationId(installationId);
+
+    if (!owner?.trim()) {
+      throw new BadRequestException('GitHub repository owner is required');
+    }
+
+    if (!repo?.trim()) {
+      throw new BadRequestException('GitHub repository name is required');
+    }
+
+    if (!Number.isSafeInteger(pullNumber) || pullNumber <= 0) {
+      throw new BadRequestException('Invalid GitHub pull request number');
+    }
+
+    try {
+      const installationOctokit =
+        await this.githubApp.getInstallationOctokit(installationId);
+
+      const files = [];
+
+      let page = 1;
+
+      while (true) {
+        const response = await installationOctokit.request(
+          'GET /repos/{owner}/{repo}/pulls/{pull_number}/files',
+          {
+            owner: owner.trim(),
+
+            repo: repo.trim(),
+
+            pull_number: pullNumber,
+
+            per_page: 100,
+
+            page,
+          },
+        );
+
+        const currentFiles = response.data;
+
+        for (const file of currentFiles) {
+          files.push({
+            filename: file.filename,
+
+            status: file.status,
+
+            additions: file.additions ?? 0,
+
+            deletions: file.deletions ?? 0,
+
+            changes: file.changes ?? 0,
+
+            patch: file.patch ?? null,
+
+            previousFilename: file.previous_filename ?? null,
+
+            blobUrl: file.blob_url ?? null,
+
+            rawUrl: file.raw_url ?? null,
+
+            contentsUrl: file.contents_url ?? null,
+          });
+        }
+
+        if (currentFiles.length < 100) {
+          break;
+        }
+
+        page += 1;
+      }
+
+      this.logger.log(
+        `Fetched ${files.length} files for GitHub PR ${owner}/${repo}#${pullNumber}`,
+      );
+
+      return files;
+    } catch (error) {
+      this.logGithubError(
+        `Failed to fetch files for GitHub PR ${owner}/${repo}#${pullNumber}`,
+        error,
+      );
+
+      throw new InternalServerErrorException(
+        'Failed to fetch GitHub pull request files',
+      );
+    }
+  }
 }

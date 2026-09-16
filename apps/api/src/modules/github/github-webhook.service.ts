@@ -786,10 +786,10 @@ export class GithubWebhookService {
     const pr = payload.pull_request;
 
     /*
-     * Persist first.
+     * Persist PR first.
      *
-     * The DevFlow PR row becomes the canonical internal
-     * representation of this GitHub PR.
+     * This creates/updates the canonical DevFlow PR row
+     * before related files are persisted.
      */
     const persistedPullRequest =
       await this.githubEntityPersistenceService.upsertPullRequest({
@@ -828,9 +828,52 @@ export class GithubWebhookService {
         githubMergedAt: pr.merged_at ?? null,
       });
 
+    // =====================================================
+    // PR FILES / DIFF SNAPSHOT
+    // =====================================================
+
+    let pullRequestFilesSynced = false;
+    let persistedFilesCount = 0;
+
+    const githubInstallationId = payload.installation?.id;
+
     /*
-     * Run task automation after persistence so automation always
-     * reads the latest PR state from the DevFlow database.
+     * Real GitHub App pull_request webhooks contain
+     * installation.id.
+     *
+     * Synthetic/local webhook payloads may omit it.
+     * In that case we keep processing the PR but skip
+     * the remote GitHub files fetch.
+     */
+    if (githubInstallationId) {
+      const pullRequestFiles = await this.githubService.getPullRequestFiles(
+        githubInstallationId,
+        repository.ownerLogin,
+        repository.name,
+        pr.number,
+      );
+
+      const persistedFiles =
+        await this.githubEntityPersistenceService.replacePullRequestFiles(
+          persistedPullRequest.id,
+          pullRequestFiles,
+        );
+
+      persistedFilesCount = persistedFiles.length;
+
+      pullRequestFilesSynced = true;
+
+      this.logger.log(
+        `GitHub PR files synced repo=${payload.repository.full_name} PR=#${pr.number} files=${persistedFilesCount}`,
+      );
+    } else {
+      this.logger.warn(
+        `GitHub PR files not synced repo=${payload.repository.full_name} PR=#${pr.number}: installation ID missing`,
+      );
+    }
+
+    /*
+     * Run automation after PR and file persistence.
      */
     await this.githubTaskAutomationService.handlePullRequestChange(
       persistedPullRequest.id,
@@ -857,10 +900,10 @@ export class GithubWebhookService {
 
     let activity = null;
 
-    /*
-     * Create project activity when the GitHub repository
-     * is connected to a DevFlow project.
-     */
+    // =====================================================
+    // ACTIVITY LOG
+    // =====================================================
+
     if (repository.projectId) {
       activity = await this.activityLogsService.create({
         organizationId: repository.organizationId,
@@ -928,6 +971,10 @@ export class GithubWebhookService {
             comments: pr.comments ?? 0,
 
             reviewComments: pr.review_comments ?? 0,
+
+            filesSynced: pullRequestFilesSynced,
+
+            persistedFiles: persistedFilesCount,
           },
 
           sender: payload.sender?.login ?? null,
@@ -935,9 +982,10 @@ export class GithubWebhookService {
       });
     }
 
-    /*
-     * Broadcast the updated PR to connected project clients.
-     */
+    // =====================================================
+    // REALTIME
+    // =====================================================
+
     if (repository.projectId && activity) {
       this.realtimeGateway.emitToProject(
         repository.organizationId,
@@ -957,7 +1005,6 @@ export class GithubWebhookService {
           },
 
           pullRequest: {
-            // DevFlow database UUID
             id: persistedPullRequest.id,
 
             githubId: pr.id,
@@ -997,6 +1044,10 @@ export class GithubWebhookService {
             comments: pr.comments ?? 0,
 
             reviewComments: pr.review_comments ?? 0,
+
+            filesSynced: pullRequestFilesSynced,
+
+            persistedFiles: persistedFilesCount,
           },
 
           sender: payload.sender?.login ?? null,
@@ -1010,9 +1061,17 @@ export class GithubWebhookService {
       );
     }
 
+    // =====================================================
+    // FINAL LOG
+    // =====================================================
+
     this.logger.log(
-      `GitHub PR persisted repo=${payload.repository.full_name} PR=#${pr.number} action=${payload.action} additions=${pr.additions ?? 0} deletions=${pr.deletions ?? 0} files=${pr.changed_files ?? 0} commits=${pr.commits ?? 0}`,
+      `GitHub PR persisted repo=${payload.repository.full_name} PR=#${pr.number} action=${payload.action} additions=${pr.additions ?? 0} deletions=${pr.deletions ?? 0} files=${pr.changed_files ?? 0} persistedFiles=${persistedFilesCount} commits=${pr.commits ?? 0}`,
     );
+
+    // =====================================================
+    // RESPONSE
+    // =====================================================
 
     return {
       received: true,
@@ -1034,7 +1093,6 @@ export class GithubWebhookService {
       },
 
       pullRequest: {
-        // DevFlow database UUID
         id: persistedPullRequest.id,
 
         githubId: pr.id,
@@ -1063,6 +1121,12 @@ export class GithubWebhookService {
           comments: persistedPullRequest.commentsCount,
 
           reviewComments: persistedPullRequest.reviewCommentsCount,
+        },
+
+        files: {
+          synced: pullRequestFilesSynced,
+
+          count: persistedFilesCount,
         },
       },
 
