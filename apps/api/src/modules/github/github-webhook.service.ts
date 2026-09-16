@@ -272,6 +272,120 @@ type GithubIssueCommentPayload = {
   };
 };
 
+type GithubPullRequestReviewPayload = {
+  action: 'submitted' | 'edited' | 'dismissed' | string;
+
+  installation?: {
+    id: number;
+  };
+
+  repository: {
+    id: number;
+    name: string;
+    full_name: string;
+    html_url: string;
+  };
+
+  sender?: {
+    id?: number;
+    login?: string;
+  };
+
+  pull_request: {
+    id: number;
+    number: number;
+    title: string;
+    state: string;
+    html_url: string;
+
+    user?: {
+      id?: number;
+      login?: string;
+    };
+  };
+
+  review: {
+    id: number;
+    body?: string | null;
+    state: string;
+    html_url?: string | null;
+    commit_id?: string | null;
+    submitted_at?: string | null;
+
+    user?: {
+      id?: number;
+      login?: string;
+    };
+  };
+};
+
+type GithubPullRequestReviewCommentPayload = {
+  action: 'created' | 'edited' | 'deleted' | string;
+
+  installation?: {
+    id: number;
+  };
+
+  repository: {
+    id: number;
+    name: string;
+    full_name: string;
+    html_url: string;
+  };
+
+  sender?: {
+    id?: number;
+    login?: string;
+  };
+
+  pull_request: {
+    id: number;
+    number: number;
+    title: string;
+    state: string;
+    html_url: string;
+
+    user?: {
+      id?: number;
+      login?: string;
+    };
+  };
+
+  comment: {
+    id: number;
+
+    pull_request_review_id?: number | null;
+
+    body?: string | null;
+
+    path: string;
+
+    line?: number | null;
+    original_line?: number | null;
+
+    start_line?: number | null;
+    original_start_line?: number | null;
+
+    side?: string | null;
+    start_side?: string | null;
+
+    commit_id?: string | null;
+    original_commit_id?: string | null;
+
+    diff_hunk?: string | null;
+
+    html_url?: string | null;
+
+    created_at?: string | null;
+    updated_at?: string | null;
+
+    user?: {
+      id?: number;
+      login?: string;
+    };
+  };
+};
+
 /* -------------------------------------------------------------------------- */
 /*                                  SERVICE                                   */
 /* -------------------------------------------------------------------------- */
@@ -789,7 +903,8 @@ export class GithubWebhookService {
      * Persist PR first.
      *
      * This creates/updates the canonical DevFlow PR row
-     * before related files, commits and reviews are persisted.
+     * before related files, commits, reviews and review
+     * comments are persisted.
      */
     const persistedPullRequest =
       await this.githubEntityPersistenceService.upsertPullRequest({
@@ -829,7 +944,8 @@ export class GithubWebhookService {
       });
 
     // =====================================================
-    // PR FILES / DIFF + COMMITS + REVIEWS SNAPSHOT
+    // PR ENRICHMENT SNAPSHOT
+    // FILES + COMMITS + REVIEWS + REVIEW COMMENTS
     // =====================================================
 
     let pullRequestFilesSynced = false;
@@ -841,6 +957,9 @@ export class GithubWebhookService {
     let pullRequestReviewsSynced = false;
     let persistedReviewsCount = 0;
 
+    let pullRequestReviewCommentsSynced = false;
+    let persistedReviewCommentsCount = 0;
+
     const githubInstallationId = payload.installation?.id;
 
     /*
@@ -849,7 +968,7 @@ export class GithubWebhookService {
      *
      * Synthetic/local webhook payloads may omit it.
      * In that case we keep processing the PR but skip
-     * remote GitHub files, commits and reviews fetching.
+     * remote GitHub enrichment fetching.
      */
     if (githubInstallationId) {
       // -------------------------------------------------
@@ -923,14 +1042,41 @@ export class GithubWebhookService {
       this.logger.log(
         `GitHub PR reviews synced repo=${payload.repository.full_name} PR=#${pr.number} reviews=${persistedReviewsCount}`,
       );
+
+      // -------------------------------------------------
+      // Sync PR review comments
+      // -------------------------------------------------
+
+      const pullRequestReviewComments =
+        await this.githubService.getPullRequestReviewComments(
+          githubInstallationId,
+          repository.ownerLogin,
+          repository.name,
+          pr.number,
+        );
+
+      const persistedReviewComments =
+        await this.githubEntityPersistenceService.replacePullRequestReviewComments(
+          persistedPullRequest.id,
+          pullRequestReviewComments,
+        );
+
+      persistedReviewCommentsCount = persistedReviewComments.length;
+
+      pullRequestReviewCommentsSynced = true;
+
+      this.logger.log(
+        `GitHub PR review comments synced repo=${payload.repository.full_name} PR=#${pr.number} reviewComments=${persistedReviewCommentsCount}`,
+      );
     } else {
       this.logger.warn(
-        `GitHub PR files, commits and reviews not synced repo=${payload.repository.full_name} PR=#${pr.number}: installation ID missing`,
+        `GitHub PR files, commits, reviews and review comments not synced repo=${payload.repository.full_name} PR=#${pr.number}: installation ID missing`,
       );
     }
 
     /*
-     * Run automation after PR, files, commits and reviews persistence.
+     * Run automation only after the complete PR enrichment
+     * snapshot has been persisted.
      */
     await this.githubTaskAutomationService.handlePullRequestChange(
       persistedPullRequest.id,
@@ -1040,6 +1186,10 @@ export class GithubWebhookService {
             reviewsSynced: pullRequestReviewsSynced,
 
             persistedReviews: persistedReviewsCount,
+
+            reviewCommentsSynced: pullRequestReviewCommentsSynced,
+
+            persistedReviewComments: persistedReviewCommentsCount,
           },
 
           sender: payload.sender?.login ?? null,
@@ -1121,6 +1271,10 @@ export class GithubWebhookService {
             reviewsSynced: pullRequestReviewsSynced,
 
             persistedReviews: persistedReviewsCount,
+
+            reviewCommentsSynced: pullRequestReviewCommentsSynced,
+
+            persistedReviewComments: persistedReviewCommentsCount,
           },
 
           sender: payload.sender?.login ?? null,
@@ -1139,7 +1293,7 @@ export class GithubWebhookService {
     // =====================================================
 
     this.logger.log(
-      `GitHub PR persisted repo=${payload.repository.full_name} PR=#${pr.number} action=${payload.action} additions=${pr.additions ?? 0} deletions=${pr.deletions ?? 0} files=${pr.changed_files ?? 0} persistedFiles=${persistedFilesCount} commits=${pr.commits ?? 0} persistedCommits=${persistedCommitsCount} persistedReviews=${persistedReviewsCount}`,
+      `GitHub PR persisted repo=${payload.repository.full_name} PR=#${pr.number} action=${payload.action} additions=${pr.additions ?? 0} deletions=${pr.deletions ?? 0} files=${pr.changed_files ?? 0} persistedFiles=${persistedFilesCount} commits=${pr.commits ?? 0} persistedCommits=${persistedCommitsCount} persistedReviews=${persistedReviewsCount} persistedReviewComments=${persistedReviewCommentsCount}`,
     );
 
     // =====================================================
@@ -1212,6 +1366,12 @@ export class GithubWebhookService {
           synced: pullRequestReviewsSynced,
 
           count: persistedReviewsCount,
+        },
+
+        reviewComments: {
+          synced: pullRequestReviewCommentsSynced,
+
+          count: persistedReviewCommentsCount,
         },
       },
 

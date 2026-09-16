@@ -1468,4 +1468,118 @@ export class GithubService implements OnModuleInit {
       );
     }
   }
+  // =====================================================
+  // GET PULL REQUEST REVIEW COMMENTS
+  // =====================================================
+
+  async getPullRequestReviewComments(
+    installationId: number,
+    owner: string,
+    repo: string,
+    pullNumber: number,
+  ) {
+    this.validateInstallationId(installationId);
+
+    if (!owner?.trim()) {
+      throw new BadRequestException('GitHub repository owner is required');
+    }
+
+    if (!repo?.trim()) {
+      throw new BadRequestException('GitHub repository name is required');
+    }
+
+    if (!Number.isSafeInteger(pullNumber) || pullNumber <= 0) {
+      throw new BadRequestException('Invalid GitHub pull request number');
+    }
+
+    try {
+      const installationOctokit =
+        await this.githubApp.getInstallationOctokit(installationId);
+
+      const reviewComments = [];
+
+      let page = 1;
+
+      while (true) {
+        const response = await installationOctokit.request(
+          'GET /repos/{owner}/{repo}/pulls/{pull_number}/comments',
+          {
+            owner: owner.trim(),
+            repo: repo.trim(),
+            pull_number: pullNumber,
+            per_page: 100,
+            page,
+          },
+        );
+
+        const currentComments = response.data;
+
+        for (const comment of currentComments) {
+          reviewComments.push({
+            githubCommentId: String(comment.id),
+
+            githubReviewId:
+              comment.pull_request_review_id != null
+                ? String(comment.pull_request_review_id)
+                : null,
+
+            authorLogin: comment.user?.login ?? null,
+
+            body: comment.body ?? '',
+
+            path: comment.path,
+
+            line: comment.line ?? null,
+
+            originalLine: comment.original_line ?? null,
+
+            startLine: comment.start_line ?? null,
+
+            originalStartLine: comment.original_start_line ?? null,
+
+            side: comment.side ?? null,
+
+            startSide: comment.start_side ?? null,
+
+            commitSha: comment.commit_id ?? null,
+
+            originalCommitSha: comment.original_commit_id ?? null,
+
+            diffHunk: comment.diff_hunk ?? null,
+
+            htmlUrl: comment.html_url ?? null,
+
+            githubCreatedAt: comment.created_at
+              ? new Date(comment.created_at)
+              : null,
+
+            githubUpdatedAt: comment.updated_at
+              ? new Date(comment.updated_at)
+              : null,
+          });
+        }
+
+        if (currentComments.length < 100) {
+          break;
+        }
+
+        page += 1;
+      }
+
+      this.logger.log(
+        `Fetched ${reviewComments.length} review comments for GitHub PR ${owner}/${repo}#${pullNumber}`,
+      );
+
+      return reviewComments;
+    } catch (error) {
+      this.logGithubError(
+        `Failed to fetch review comments for GitHub PR ${owner}/${repo}#${pullNumber}`,
+        error,
+      );
+
+      throw new InternalServerErrorException(
+        'Failed to fetch GitHub pull request review comments',
+      );
+    }
+  }
 }

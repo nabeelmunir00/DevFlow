@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import {
   githubPullRequestCommits,
+  githubPullRequestReviewComments,
   githubPullRequestReviews,
   schema,
 } from '@devflow/db';
@@ -510,6 +511,95 @@ export class GithubEntityPersistenceService {
       );
 
       return persistedReviews;
+    });
+  }
+  async replacePullRequestReviewComments(
+    pullRequestId: string,
+    comments: Array<{
+      githubCommentId: string;
+      githubReviewId: string | null;
+      authorLogin: string | null;
+      body: string;
+      path: string;
+      line: number | null;
+      originalLine: number | null;
+      startLine: number | null;
+      originalStartLine: number | null;
+      side: string | null;
+      startSide: string | null;
+      commitSha: string | null;
+      originalCommitSha: string | null;
+      diffHunk: string | null;
+      htmlUrl: string | null;
+      githubCreatedAt: Date | null;
+      githubUpdatedAt: Date | null;
+    }>,
+  ) {
+    return this.databaseService.db.transaction(async (tx) => {
+      await tx
+        .delete(githubPullRequestReviewComments)
+        .where(
+          eq(githubPullRequestReviewComments.pullRequestId, pullRequestId),
+        );
+
+      if (comments.length === 0) {
+        this.logger.log(
+          `GitHub PR review comments cleared: pullRequest=${pullRequestId}`,
+        );
+
+        return [];
+      }
+
+      const persistedComments = await tx
+        .insert(githubPullRequestReviewComments)
+        .values(
+          comments.map((comment) => ({
+            pullRequestId,
+
+            githubCommentId: comment.githubCommentId,
+
+            githubReviewId: comment.githubReviewId,
+
+            authorLogin: comment.authorLogin,
+
+            body: comment.body,
+
+            path: comment.path,
+
+            line: comment.line,
+
+            originalLine: comment.originalLine,
+
+            startLine: comment.startLine,
+
+            originalStartLine: comment.originalStartLine,
+
+            side: comment.side,
+
+            startSide: comment.startSide,
+
+            commitSha: comment.commitSha,
+
+            originalCommitSha: comment.originalCommitSha,
+
+            diffHunk: comment.diffHunk,
+
+            htmlUrl: comment.htmlUrl,
+
+            githubCreatedAt: comment.githubCreatedAt,
+
+            githubUpdatedAt: comment.githubUpdatedAt,
+
+            updatedAt: new Date(),
+          })),
+        )
+        .returning();
+
+      this.logger.log(
+        `GitHub PR review comments persisted: pullRequest=${pullRequestId} comments=${persistedComments.length}`,
+      );
+
+      return persistedComments;
     });
   }
 }
