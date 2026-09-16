@@ -1,8 +1,6 @@
 import {
   BadRequestException,
-  Body,
   Controller,
-  Get,
   Headers,
   Post,
   Req,
@@ -50,8 +48,8 @@ export class GithubWebhookController {
     }
 
     /*
-     * Verify the GitHub HMAC signature against the exact
-     * raw request body before processing the webhook.
+     * Verify GitHub HMAC signature against the exact raw
+     * request body before accepting the webhook.
      */
     this.githubWebhookService.verifySignature(request.rawBody, signature);
 
@@ -63,10 +61,10 @@ export class GithubWebhookController {
     const action = typeof body?.action === 'string' ? body.action : null;
 
     /*
-     * Claim the delivery before enqueueing it.
+     * Claim delivery before enqueueing.
      *
-     * GitHub may retry the same webhook delivery, therefore
-     * the delivery ID is used for idempotency.
+     * GitHub can retry the same delivery, therefore
+     * X-GitHub-Delivery acts as the idempotency key.
      */
     const claim = await this.githubWebhookDeliveryService.claimDelivery(
       deliveryId,
@@ -85,8 +83,8 @@ export class GithubWebhookController {
 
     try {
       /*
-       * Webhook processing happens asynchronously through
-       * the GitHub webhook BullMQ queue.
+       * Actual webhook processing happens asynchronously
+       * through the GitHub BullMQ queue.
        */
       await this.githubWebhookQueueService.enqueue({
         event,
@@ -102,54 +100,13 @@ export class GithubWebhookController {
         event,
       };
     } catch (error) {
+      /*
+       * If enqueueing fails, mark the delivery as failed
+       * so the failure is visible/recoverable.
+       */
       await this.githubWebhookDeliveryService.markFailed(deliveryId);
 
       throw error;
     }
-  }
-
-  /*
-   * Development helper.
-   *
-   * Generates a valid GitHub-style HMAC signature for an
-   * arbitrary JSON payload.
-   *
-   * IMPORTANT:
-   * This endpoint is only for local development/testing
-   * and must be removed before production deployment.
-   */
-  @Post('test-signature')
-  getTestSignature(
-    @Body()
-    body: {
-      payload?: string;
-    },
-  ) {
-    if (!body.payload || typeof body.payload !== 'string') {
-      throw new BadRequestException('payload must be a JSON string');
-    }
-
-    return {
-      payload: body.payload,
-
-      signature: this.githubWebhookService.generateTestSignature(body.payload),
-    };
-  }
-
-  /*
-   * Legacy simple signature helper.
-   *
-   * Can still be useful for quickly checking whether the
-   * webhook secret/signature system is configured correctly.
-   */
-  @Get('test-signature')
-  getSimpleTestSignature() {
-    const payload = '{"test":true}';
-
-    return {
-      payload,
-
-      signature: this.githubWebhookService.generateTestSignature(payload),
-    };
   }
 }
