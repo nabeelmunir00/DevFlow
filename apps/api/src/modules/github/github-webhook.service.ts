@@ -2568,14 +2568,4 @@ export class GithubWebhookService {
       activityId: activity?.id ?? null,
     };
   }
-
-  /* ------------------------------------------------------------------------ */
-  /*                         DEVELOPMENT TEST HELPER                          */
-  /* ------------------------------------------------------------------------ */
-
-  generateTestSignature(payload: string) {
-    return `sha256=${createHmac('sha256', this.webhookSecret)
-      .update(payload)
-      .digest('hex')}`;
-  }
 }
