@@ -479,6 +479,18 @@ export class GithubWebhookService {
           payload as GithubPullRequestPayload,
         );
 
+      case 'pull_request_review':
+        return this.handlePullRequestReview(
+          deliveryId,
+          payload as GithubPullRequestReviewPayload,
+        );
+
+      case 'pull_request_review_comment':
+        return this.handlePullRequestReviewComment(
+          deliveryId,
+          payload as GithubPullRequestReviewCommentPayload,
+        );
+
       case 'issues':
         return this.handleIssue(deliveryId, payload as GithubIssuePayload);
 
@@ -1373,6 +1385,690 @@ export class GithubWebhookService {
 
           count: persistedReviewCommentsCount,
         },
+      },
+
+      activityCreated: Boolean(activity),
+
+      activityId: activity?.id ?? null,
+    };
+  }
+
+  /* ------------------------------------------------------------------------ */
+  /*                         PULL REQUEST REVIEW                              */
+  /* ------------------------------------------------------------------------ */
+
+  private async handlePullRequestReview(
+    deliveryId: string,
+    payload: GithubPullRequestReviewPayload,
+  ) {
+    const githubRepositoryId = payload.repository?.id;
+
+    if (!githubRepositoryId) {
+      throw new BadRequestException('GitHub repository ID missing');
+    }
+
+    if (!payload.pull_request) {
+      throw new BadRequestException(
+        'GitHub pull request missing from pull_request_review payload',
+      );
+    }
+
+    if (!payload.review) {
+      throw new BadRequestException(
+        'GitHub review missing from pull_request_review payload',
+      );
+    }
+
+    const githubInstallationId = payload.installation?.id;
+
+    if (!githubInstallationId) {
+      throw new BadRequestException(
+        'GitHub installation ID missing from pull_request_review payload',
+      );
+    }
+
+    const repository =
+      await this.githubService.findActiveRepositoryByGithubId(
+        githubRepositoryId,
+      );
+
+    if (!repository) {
+      this.logger.warn(
+        `PR review ignored: repository ${githubRepositoryId} is not connected`,
+      );
+
+      return {
+        received: true,
+        event: 'pull_request_review',
+        deliveryId,
+        ignored: true,
+        reason: 'repository_not_connected',
+      };
+    }
+
+    const pr = payload.pull_request;
+    const review = payload.review;
+
+    /*
+     * The canonical PR should already exist because GitHub sends
+     * pull_request events before review events.
+     *
+     * We resolve it using repository + GitHub PR number.
+     */
+    const persistedPullRequest =
+      await this.githubEntityPersistenceService.findPullRequestByRepositoryAndNumber(
+        repository.id,
+        pr.number,
+      );
+
+    if (!persistedPullRequest) {
+      this.logger.warn(
+        `PR review ignored: canonical PR not found repo=${payload.repository.full_name} PR=#${pr.number}`,
+      );
+
+      return {
+        received: true,
+        event: 'pull_request_review',
+        deliveryId,
+        ignored: true,
+        reason: 'pull_request_not_found',
+      };
+    }
+
+    // =====================================================
+    // REFRESH REVIEWS FROM GITHUB
+    // =====================================================
+
+    const pullRequestReviews = await this.githubService.getPullRequestReviews(
+      githubInstallationId,
+      repository.ownerLogin,
+      repository.name,
+      pr.number,
+    );
+
+    const persistedReviews =
+      await this.githubEntityPersistenceService.replacePullRequestReviews(
+        persistedPullRequest.id,
+        pullRequestReviews,
+      );
+
+    /*
+     * A submitted review may also contain code-line comments,
+     * therefore refresh review comments as part of the same event.
+     */
+    const pullRequestReviewComments =
+      await this.githubService.getPullRequestReviewComments(
+        githubInstallationId,
+        repository.ownerLogin,
+        repository.name,
+        pr.number,
+      );
+
+    const persistedReviewComments =
+      await this.githubEntityPersistenceService.replacePullRequestReviewComments(
+        persistedPullRequest.id,
+        pullRequestReviewComments,
+      );
+
+    this.logger.log(
+      `GitHub PR review synced repo=${payload.repository.full_name} PR=#${pr.number} reviews=${persistedReviews.length} reviewComments=${persistedReviewComments.length}`,
+    );
+
+    // =====================================================
+    // ACTIVITY
+    // =====================================================
+
+    const actionMap: Record<string, string> = {
+      submitted: 'GITHUB_PR_REVIEW_SUBMITTED',
+      edited: 'GITHUB_PR_REVIEW_EDITED',
+      dismissed: 'GITHUB_PR_REVIEW_DISMISSED',
+    };
+
+    const activityAction =
+      actionMap[payload.action] ?? 'GITHUB_PR_REVIEW_EVENT';
+
+    let activity = null;
+
+    if (repository.projectId) {
+      activity = await this.activityLogsService.create({
+        organizationId: repository.organizationId,
+
+        projectId: repository.projectId,
+
+        actorId: null,
+
+        action: activityAction,
+
+        entityType: 'GITHUB_PULL_REQUEST',
+
+        entityId: persistedPullRequest.id,
+
+        metadata: {
+          deliveryId,
+
+          githubRepositoryId,
+
+          repositoryId: repository.id,
+
+          repositoryFullName: payload.repository.full_name,
+
+          action: payload.action,
+
+          pullRequest: {
+            id: persistedPullRequest.id,
+            githubId: pr.id,
+            number: pr.number,
+            title: pr.title,
+            state: pr.state,
+            url: pr.html_url,
+          },
+
+          review: {
+            githubId: review.id,
+            state: review.state,
+            body: review.body ?? null,
+            author: review.user?.login ?? null,
+            commitSha: review.commit_id ?? null,
+            url: review.html_url ?? null,
+            submittedAt: review.submitted_at ?? null,
+          },
+
+          syncedReviews: persistedReviews.length,
+
+          syncedReviewComments: persistedReviewComments.length,
+
+          sender: payload.sender?.login ?? null,
+        },
+      });
+    }
+
+    // =====================================================
+    // REALTIME
+    // =====================================================
+
+    if (repository.projectId && activity) {
+      this.realtimeGateway.emitToProject(
+        repository.organizationId,
+        repository.projectId,
+        'github:pull_request_review',
+        {
+          activityId: activity.id,
+
+          action: payload.action,
+
+          repository: {
+            id: repository.id,
+            githubRepositoryId,
+            fullName: payload.repository.full_name,
+          },
+
+          pullRequest: {
+            id: persistedPullRequest.id,
+            githubId: pr.id,
+            number: pr.number,
+            title: pr.title,
+            state: pr.state,
+            url: pr.html_url,
+          },
+
+          review: {
+            githubId: review.id,
+            state: review.state,
+            body: review.body ?? null,
+            author: review.user?.login ?? null,
+            commitSha: review.commit_id ?? null,
+            url: review.html_url ?? null,
+          },
+
+          reviews: {
+            synced: true,
+            count: persistedReviews.length,
+          },
+
+          reviewComments: {
+            synced: true,
+            count: persistedReviewComments.length,
+          },
+
+          sender: payload.sender?.login ?? null,
+
+          createdAt: activity.createdAt,
+        },
+      );
+
+      this.logger.log(
+        `Realtime github:pull_request_review emitted project=${repository.projectId} PR=#${pr.number} action=${payload.action}`,
+      );
+    }
+
+    // =====================================================
+    // RESPONSE
+    // =====================================================
+
+    return {
+      received: true,
+
+      event: 'pull_request_review',
+
+      deliveryId,
+
+      action: payload.action,
+
+      repository: {
+        id: repository.id,
+        githubRepositoryId,
+        fullName: payload.repository.full_name,
+        projectId: repository.projectId,
+      },
+
+      pullRequest: {
+        id: persistedPullRequest.id,
+        githubId: pr.id,
+        number: pr.number,
+        title: pr.title,
+      },
+
+      review: {
+        githubId: review.id,
+        state: review.state,
+        author: review.user?.login ?? null,
+      },
+
+      reviews: {
+        synced: true,
+        count: persistedReviews.length,
+      },
+
+      reviewComments: {
+        synced: true,
+        count: persistedReviewComments.length,
+      },
+
+      activityCreated: Boolean(activity),
+
+      activityId: activity?.id ?? null,
+    };
+  }
+
+  /* ------------------------------------------------------------------------ */
+  /*                      PULL REQUEST REVIEW COMMENT                         */
+  /* ------------------------------------------------------------------------ */
+
+  private async handlePullRequestReviewComment(
+    deliveryId: string,
+    payload: GithubPullRequestReviewCommentPayload,
+  ) {
+    const githubRepositoryId = payload.repository?.id;
+
+    if (!githubRepositoryId) {
+      throw new BadRequestException('GitHub repository ID missing');
+    }
+
+    if (!payload.pull_request) {
+      throw new BadRequestException(
+        'GitHub pull request missing from pull_request_review_comment payload',
+      );
+    }
+
+    if (!payload.comment) {
+      throw new BadRequestException(
+        'GitHub review comment missing from pull_request_review_comment payload',
+      );
+    }
+
+    const githubInstallationId = payload.installation?.id;
+
+    if (!githubInstallationId) {
+      throw new BadRequestException(
+        'GitHub installation ID missing from pull_request_review_comment payload',
+      );
+    }
+
+    // =====================================================
+    // FIND CONNECTED REPOSITORY
+    // =====================================================
+
+    const repository =
+      await this.githubService.findActiveRepositoryByGithubId(
+        githubRepositoryId,
+      );
+
+    if (!repository) {
+      this.logger.warn(
+        `PR review comment ignored: repository ${githubRepositoryId} is not connected`,
+      );
+
+      return {
+        received: true,
+        event: 'pull_request_review_comment',
+        deliveryId,
+        ignored: true,
+        reason: 'repository_not_connected',
+      };
+    }
+
+    const pr = payload.pull_request;
+    const comment = payload.comment;
+
+    // =====================================================
+    // FIND CANONICAL DEVFLOW PR
+    // =====================================================
+
+    const persistedPullRequest =
+      await this.githubEntityPersistenceService.findPullRequestByRepositoryAndNumber(
+        repository.id,
+        pr.number,
+      );
+
+    if (!persistedPullRequest) {
+      this.logger.warn(
+        `PR review comment ignored: canonical PR not found repo=${payload.repository.full_name} PR=#${pr.number}`,
+      );
+
+      return {
+        received: true,
+        event: 'pull_request_review_comment',
+        deliveryId,
+        ignored: true,
+        reason: 'pull_request_not_found',
+      };
+    }
+
+    // =====================================================
+    // REFRESH REVIEW COMMENTS SNAPSHOT
+    // =====================================================
+
+    /*
+     * Do not directly trust only the webhook comment.
+     *
+     * created / edited / deleted events should all result in
+     * the local database matching GitHub's current snapshot.
+     */
+    const pullRequestReviewComments =
+      await this.githubService.getPullRequestReviewComments(
+        githubInstallationId,
+        repository.ownerLogin,
+        repository.name,
+        pr.number,
+      );
+
+    const persistedReviewComments =
+      await this.githubEntityPersistenceService.replacePullRequestReviewComments(
+        persistedPullRequest.id,
+        pullRequestReviewComments,
+      );
+
+    // =====================================================
+    // REFRESH REVIEWS TOO
+    // =====================================================
+
+    /*
+     * A review comment belongs to a review. Refreshing reviews
+     * keeps both snapshots synchronized when GitHub creates or
+     * changes review-related data.
+     */
+    const pullRequestReviews = await this.githubService.getPullRequestReviews(
+      githubInstallationId,
+      repository.ownerLogin,
+      repository.name,
+      pr.number,
+    );
+
+    const persistedReviews =
+      await this.githubEntityPersistenceService.replacePullRequestReviews(
+        persistedPullRequest.id,
+        pullRequestReviews,
+      );
+
+    this.logger.log(
+      `GitHub PR review comment synced repo=${payload.repository.full_name} PR=#${pr.number} action=${payload.action} reviewComments=${persistedReviewComments.length} reviews=${persistedReviews.length}`,
+    );
+
+    // =====================================================
+    // ACTIVITY
+    // =====================================================
+
+    const actionMap: Record<string, string> = {
+      created: 'GITHUB_PR_REVIEW_COMMENT_CREATED',
+      edited: 'GITHUB_PR_REVIEW_COMMENT_EDITED',
+      deleted: 'GITHUB_PR_REVIEW_COMMENT_DELETED',
+    };
+
+    const activityAction =
+      actionMap[payload.action] ?? 'GITHUB_PR_REVIEW_COMMENT_EVENT';
+
+    let activity = null;
+
+    if (repository.projectId) {
+      activity = await this.activityLogsService.create({
+        organizationId: repository.organizationId,
+
+        projectId: repository.projectId,
+
+        actorId: null,
+
+        action: activityAction,
+
+        entityType: 'GITHUB_PULL_REQUEST',
+
+        entityId: persistedPullRequest.id,
+
+        metadata: {
+          deliveryId,
+
+          githubRepositoryId,
+
+          repositoryId: repository.id,
+
+          repositoryFullName: payload.repository.full_name,
+
+          action: payload.action,
+
+          pullRequest: {
+            id: persistedPullRequest.id,
+
+            githubId: pr.id,
+
+            number: pr.number,
+
+            title: pr.title,
+
+            state: pr.state,
+
+            url: pr.html_url,
+          },
+
+          comment: {
+            githubId: comment.id,
+
+            githubReviewId: comment.pull_request_review_id ?? null,
+
+            author: comment.user?.login ?? null,
+
+            body: comment.body ?? null,
+
+            path: comment.path,
+
+            line: comment.line ?? null,
+
+            originalLine: comment.original_line ?? null,
+
+            startLine: comment.start_line ?? null,
+
+            originalStartLine: comment.original_start_line ?? null,
+
+            side: comment.side ?? null,
+
+            startSide: comment.start_side ?? null,
+
+            commitSha: comment.commit_id ?? null,
+
+            originalCommitSha: comment.original_commit_id ?? null,
+
+            diffHunk: comment.diff_hunk ?? null,
+
+            url: comment.html_url ?? null,
+
+            createdAt: comment.created_at ?? null,
+
+            updatedAt: comment.updated_at ?? null,
+          },
+
+          syncedReviews: persistedReviews.length,
+
+          syncedReviewComments: persistedReviewComments.length,
+
+          sender: payload.sender?.login ?? null,
+        },
+      });
+    }
+
+    // =====================================================
+    // REALTIME
+    // =====================================================
+
+    if (repository.projectId && activity) {
+      this.realtimeGateway.emitToProject(
+        repository.organizationId,
+        repository.projectId,
+        'github:pull_request_review_comment',
+        {
+          activityId: activity.id,
+
+          action: payload.action,
+
+          repository: {
+            id: repository.id,
+
+            githubRepositoryId,
+
+            fullName: payload.repository.full_name,
+          },
+
+          pullRequest: {
+            id: persistedPullRequest.id,
+
+            githubId: pr.id,
+
+            number: pr.number,
+
+            title: pr.title,
+
+            state: pr.state,
+
+            url: pr.html_url,
+          },
+
+          comment: {
+            githubId: comment.id,
+
+            githubReviewId: comment.pull_request_review_id ?? null,
+
+            author: comment.user?.login ?? null,
+
+            body: comment.body ?? null,
+
+            path: comment.path,
+
+            line: comment.line ?? null,
+
+            originalLine: comment.original_line ?? null,
+
+            side: comment.side ?? null,
+
+            commitSha: comment.commit_id ?? null,
+
+            url: comment.html_url ?? null,
+          },
+
+          reviews: {
+            synced: true,
+            count: persistedReviews.length,
+          },
+
+          reviewComments: {
+            synced: true,
+            count: persistedReviewComments.length,
+          },
+
+          sender: payload.sender?.login ?? null,
+
+          createdAt: activity.createdAt,
+        },
+      );
+
+      this.logger.log(
+        `Realtime github:pull_request_review_comment emitted project=${repository.projectId} PR=#${pr.number} action=${payload.action}`,
+      );
+    }
+
+    // =====================================================
+    // FINAL LOG
+    // =====================================================
+
+    this.logger.log(
+      `GitHub PR review comment processed repo=${payload.repository.full_name} PR=#${pr.number} action=${payload.action} comment=${comment.id} reviewComments=${persistedReviewComments.length}`,
+    );
+
+    // =====================================================
+    // RESPONSE
+    // =====================================================
+
+    return {
+      received: true,
+
+      event: 'pull_request_review_comment',
+
+      deliveryId,
+
+      action: payload.action,
+
+      repository: {
+        id: repository.id,
+
+        githubRepositoryId,
+
+        fullName: payload.repository.full_name,
+
+        projectId: repository.projectId,
+      },
+
+      pullRequest: {
+        id: persistedPullRequest.id,
+
+        githubId: pr.id,
+
+        number: pr.number,
+
+        title: pr.title,
+      },
+
+      comment: {
+        githubId: comment.id,
+
+        githubReviewId: comment.pull_request_review_id ?? null,
+
+        author: comment.user?.login ?? null,
+
+        path: comment.path,
+
+        line: comment.line ?? null,
+
+        side: comment.side ?? null,
+
+        url: comment.html_url ?? null,
+      },
+
+      reviews: {
+        synced: true,
+
+        count: persistedReviews.length,
+      },
+
+      reviewComments: {
+        synced: true,
+
+        count: persistedReviewComments.length,
       },
 
       activityCreated: Boolean(activity),

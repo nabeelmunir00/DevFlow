@@ -1,9 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import {
   githubPullRequestCommits,
   githubPullRequestReviewComments,
   githubPullRequestReviews,
+  githubPullRequests,
   schema,
 } from '@devflow/db';
 
@@ -221,6 +222,23 @@ export class GithubEntityPersistenceService {
     );
 
     return pullRequest;
+  }
+  async findPullRequestByRepositoryAndNumber(
+    repositoryId: string,
+    githubNumber: number,
+  ) {
+    const [pullRequest] = await this.databaseService.db
+      .select()
+      .from(githubPullRequests)
+      .where(
+        and(
+          eq(githubPullRequests.repositoryId, repositoryId),
+          eq(githubPullRequests.githubNumber, githubNumber),
+        ),
+      )
+      .limit(1);
+
+    return pullRequest ?? null;
   }
 
   // =====================================================
