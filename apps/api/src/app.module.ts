@@ -28,6 +28,7 @@ import { SubtasksModule } from './modules/subtasks/subtasks.module.js';
 import { LabelsModule } from './modules/labels/labels.module.js';
 import { RealtimeModule } from './modules/realtime/realtime.module.js';
 import { GithubModule } from './modules/github/github.module.js';
+import { AiModule } from './modules/ai/ai.module.js';
 
 @Module({
   imports: [
@@ -59,6 +60,7 @@ import { GithubModule } from './modules/github/github.module.js';
     LabelsModule,
     RealtimeModule,
     GithubModule,
+    AiModule,
   ],
   controllers: [AppController],
   providers: [AppService],
