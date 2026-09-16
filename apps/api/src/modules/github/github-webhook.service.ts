@@ -160,10 +160,13 @@ type GithubPullRequestPayload = {
       sha?: string;
     };
 
+    // GitHub PR statistics
     additions?: number;
     deletions?: number;
     changed_files?: number;
     commits?: number;
+    comments?: number;
+    review_comments?: number;
   };
 };
 
@@ -785,23 +788,19 @@ export class GithubWebhookService {
     /*
      * Persist first.
      *
-     * The DevFlow PR row now becomes the canonical internal
+     * The DevFlow PR row becomes the canonical internal
      * representation of this GitHub PR.
      */
     const persistedPullRequest =
       await this.githubEntityPersistenceService.upsertPullRequest({
         organizationId: repository.organizationId,
-
         repositoryId: repository.id,
 
         githubPullRequestId: pr.id,
-
         githubNumber: pr.number,
 
         title: pr.title,
-
         body: pr.body ?? null,
-
         state: pr.state,
 
         isDraft: pr.draft ?? false,
@@ -809,22 +808,30 @@ export class GithubWebhookService {
         authorLogin: pr.user?.login ?? null,
 
         headRef: pr.head?.ref ?? null,
-
         baseRef: pr.base?.ref ?? null,
 
         htmlUrl: pr.html_url,
 
         merged: pr.merged ?? false,
 
+        // GitHub PR statistics
+        additions: pr.additions ?? 0,
+        deletions: pr.deletions ?? 0,
+        changedFiles: pr.changed_files ?? 0,
+        commitsCount: pr.commits ?? 0,
+        commentsCount: pr.comments ?? 0,
+        reviewCommentsCount: pr.review_comments ?? 0,
+
         githubCreatedAt: pr.created_at ?? null,
-
         githubUpdatedAt: pr.updated_at ?? null,
-
         githubClosedAt: pr.closed_at ?? null,
-
         githubMergedAt: pr.merged_at ?? null,
       });
 
+    /*
+     * Run task automation after persistence so automation always
+     * reads the latest PR state from the DevFlow database.
+     */
     await this.githubTaskAutomationService.handlePullRequestChange(
       persistedPullRequest.id,
       payload.action,
@@ -850,6 +857,10 @@ export class GithubWebhookService {
 
     let activity = null;
 
+    /*
+     * Create project activity when the GitHub repository
+     * is connected to a DevFlow project.
+     */
     if (repository.projectId) {
       activity = await this.activityLogsService.create({
         organizationId: repository.organizationId,
@@ -906,13 +917,17 @@ export class GithubWebhookService {
 
             baseSha: pr.base?.sha ?? null,
 
-            additions: pr.additions ?? null,
+            additions: pr.additions ?? 0,
 
-            deletions: pr.deletions ?? null,
+            deletions: pr.deletions ?? 0,
 
-            changedFiles: pr.changed_files ?? null,
+            changedFiles: pr.changed_files ?? 0,
 
-            commits: pr.commits ?? null,
+            commits: pr.commits ?? 0,
+
+            comments: pr.comments ?? 0,
+
+            reviewComments: pr.review_comments ?? 0,
           },
 
           sender: payload.sender?.login ?? null,
@@ -920,6 +935,9 @@ export class GithubWebhookService {
       });
     }
 
+    /*
+     * Broadcast the updated PR to connected project clients.
+     */
     if (repository.projectId && activity) {
       this.realtimeGateway.emitToProject(
         repository.organizationId,
@@ -939,9 +957,7 @@ export class GithubWebhookService {
           },
 
           pullRequest: {
-            /*
-             * DevFlow database UUID.
-             */
+            // DevFlow database UUID
             id: persistedPullRequest.id,
 
             githubId: pr.id,
@@ -970,13 +986,17 @@ export class GithubWebhookService {
 
             baseSha: pr.base?.sha ?? null,
 
-            additions: pr.additions ?? null,
+            additions: pr.additions ?? 0,
 
-            deletions: pr.deletions ?? null,
+            deletions: pr.deletions ?? 0,
 
-            changedFiles: pr.changed_files ?? null,
+            changedFiles: pr.changed_files ?? 0,
 
-            commits: pr.commits ?? null,
+            commits: pr.commits ?? 0,
+
+            comments: pr.comments ?? 0,
+
+            reviewComments: pr.review_comments ?? 0,
           },
 
           sender: payload.sender?.login ?? null,
@@ -991,7 +1011,7 @@ export class GithubWebhookService {
     }
 
     this.logger.log(
-      `GitHub PR persisted repo=${payload.repository.full_name} PR=#${pr.number} action=${payload.action}`,
+      `GitHub PR persisted repo=${payload.repository.full_name} PR=#${pr.number} action=${payload.action} additions=${pr.additions ?? 0} deletions=${pr.deletions ?? 0} files=${pr.changed_files ?? 0} commits=${pr.commits ?? 0}`,
     );
 
     return {
@@ -1014,9 +1034,7 @@ export class GithubWebhookService {
       },
 
       pullRequest: {
-        /*
-         * DevFlow database UUID.
-         */
+        // DevFlow database UUID
         id: persistedPullRequest.id,
 
         githubId: pr.id,
@@ -1032,6 +1050,20 @@ export class GithubWebhookService {
         merged: pr.merged ?? false,
 
         url: pr.html_url,
+
+        stats: {
+          additions: persistedPullRequest.additions,
+
+          deletions: persistedPullRequest.deletions,
+
+          changedFiles: persistedPullRequest.changedFiles,
+
+          commits: persistedPullRequest.commitsCount,
+
+          comments: persistedPullRequest.commentsCount,
+
+          reviewComments: persistedPullRequest.reviewCommentsCount,
+        },
       },
 
       activityCreated: Boolean(activity),

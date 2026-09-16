@@ -18,6 +18,15 @@ type GithubPullRequestInput = {
   baseRef?: string | null;
   htmlUrl: string;
   merged?: boolean;
+
+  // GitHub PR statistics
+  additions?: number;
+  deletions?: number;
+  changedFiles?: number;
+  commitsCount?: number;
+  commentsCount?: number;
+  reviewCommentsCount?: number;
+
   githubCreatedAt?: string | null;
   githubUpdatedAt?: string | null;
   githubClosedAt?: string | null;
@@ -73,6 +82,14 @@ export class GithubEntityPersistenceService {
         baseRef: input.baseRef ?? null,
         htmlUrl: input.htmlUrl,
         merged: input.merged ?? false,
+
+        additions: input.additions ?? 0,
+        deletions: input.deletions ?? 0,
+        changedFiles: input.changedFiles ?? 0,
+        commitsCount: input.commitsCount ?? 0,
+        commentsCount: input.commentsCount ?? 0,
+        reviewCommentsCount: input.reviewCommentsCount ?? 0,
+
         githubCreatedAt: this.toDate(input.githubCreatedAt),
         githubUpdatedAt: this.toDate(input.githubUpdatedAt),
         githubClosedAt: this.toDate(input.githubClosedAt),
@@ -94,6 +111,14 @@ export class GithubEntityPersistenceService {
           baseRef: input.baseRef ?? null,
           htmlUrl: input.htmlUrl,
           merged: input.merged ?? false,
+
+          additions: input.additions ?? 0,
+          deletions: input.deletions ?? 0,
+          changedFiles: input.changedFiles ?? 0,
+          commitsCount: input.commitsCount ?? 0,
+          commentsCount: input.commentsCount ?? 0,
+          reviewCommentsCount: input.reviewCommentsCount ?? 0,
+
           githubUpdatedAt: this.toDate(input.githubUpdatedAt),
           githubClosedAt: this.toDate(input.githubClosedAt),
           githubMergedAt: this.toDate(input.githubMergedAt),
