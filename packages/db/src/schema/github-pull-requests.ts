@@ -51,6 +51,19 @@ export const githubPullRequests = pgTable(
 
     merged: boolean("merged").notNull().default(false),
 
+    // GitHub PR statistics
+    additions: integer("additions").notNull().default(0),
+
+    deletions: integer("deletions").notNull().default(0),
+
+    changedFiles: integer("changed_files").notNull().default(0),
+
+    commitsCount: integer("commits_count").notNull().default(0),
+
+    commentsCount: integer("comments_count").notNull().default(0),
+
+    reviewCommentsCount: integer("review_comments_count").notNull().default(0),
+
     githubCreatedAt: timestamp("github_created_at", {
       withTimezone: true,
     }),

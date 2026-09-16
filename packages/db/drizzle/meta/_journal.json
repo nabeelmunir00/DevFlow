@@ -120,6 +120,13 @@
       "when": 1789467264419,
       "tag": "0016_familiar_bullseye",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1789540661718,
+      "tag": "0017_free_harpoon",
+      "breakpoints": true
     }
   ]
 }
