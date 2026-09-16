@@ -1284,4 +1284,99 @@ export class GithubService implements OnModuleInit {
       );
     }
   }
+  async getPullRequestCommits(
+    installationId: number,
+    owner: string,
+    repo: string,
+    pullNumber: number,
+  ) {
+    this.validateInstallationId(installationId);
+
+    if (!owner?.trim()) {
+      throw new BadRequestException('GitHub repository owner is required');
+    }
+
+    if (!repo?.trim()) {
+      throw new BadRequestException('GitHub repository name is required');
+    }
+
+    if (!Number.isSafeInteger(pullNumber) || pullNumber <= 0) {
+      throw new BadRequestException('Invalid GitHub pull request number');
+    }
+
+    try {
+      const installationOctokit =
+        await this.githubApp.getInstallationOctokit(installationId);
+
+      const commits = [];
+
+      let page = 1;
+
+      while (true) {
+        const response = await installationOctokit.request(
+          'GET /repos/{owner}/{repo}/pulls/{pull_number}/commits',
+          {
+            owner: owner.trim(),
+            repo: repo.trim(),
+            pull_number: pullNumber,
+            per_page: 100,
+            page,
+          },
+        );
+
+        const currentCommits = response.data;
+
+        for (const commit of currentCommits) {
+          commits.push({
+            sha: commit.sha,
+
+            message: commit.commit.message,
+
+            authorName: commit.commit.author?.name ?? null,
+
+            authorEmail: commit.commit.author?.email ?? null,
+
+            authorLogin: commit.author?.login ?? null,
+
+            authorDate: commit.commit.author?.date
+              ? new Date(commit.commit.author.date)
+              : null,
+
+            committerName: commit.commit.committer?.name ?? null,
+
+            committerEmail: commit.commit.committer?.email ?? null,
+
+            committerLogin: commit.committer?.login ?? null,
+
+            committerDate: commit.commit.committer?.date
+              ? new Date(commit.commit.committer.date)
+              : null,
+
+            htmlUrl: commit.html_url ?? null,
+          });
+        }
+
+        if (currentCommits.length < 100) {
+          break;
+        }
+
+        page += 1;
+      }
+
+      this.logger.log(
+        `Fetched ${commits.length} commits for GitHub PR ${owner}/${repo}#${pullNumber}`,
+      );
+
+      return commits;
+    } catch (error) {
+      this.logGithubError(
+        `Failed to fetch commits for GitHub PR ${owner}/${repo}#${pullNumber}`,
+        error,
+      );
+
+      throw new InternalServerErrorException(
+        'Failed to fetch GitHub pull request commits',
+      );
+    }
+  }
 }

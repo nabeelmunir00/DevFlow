@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
-import { schema } from '@devflow/db';
+import { githubPullRequestCommits, schema } from '@devflow/db';
 
 import { DatabaseService } from '../../../database/database.service.js';
 
@@ -386,5 +386,69 @@ export class GithubEntityPersistenceService {
     );
 
     return issue;
+  }
+  async replacePullRequestCommits(
+    pullRequestId: string,
+    commits: Array<{
+      sha: string;
+      message: string;
+      authorName: string | null;
+      authorEmail: string | null;
+      authorLogin: string | null;
+      authorDate: Date | null;
+      committerName: string | null;
+      committerEmail: string | null;
+      committerLogin: string | null;
+      committerDate: Date | null;
+      htmlUrl: string | null;
+    }>,
+  ) {
+    const db = this.databaseService.db;
+
+    return db.transaction(async (tx) => {
+      await tx
+        .delete(githubPullRequestCommits)
+        .where(eq(githubPullRequestCommits.pullRequestId, pullRequestId));
+
+      if (commits.length === 0) {
+        this.logger.log(
+          `GitHub PR commits cleared: pullRequest=${pullRequestId}`,
+        );
+
+        return [];
+      }
+
+      const persistedCommits = await tx
+        .insert(githubPullRequestCommits)
+        .values(
+          commits.map((commit) => ({
+            pullRequestId,
+
+            sha: commit.sha,
+            message: commit.message,
+
+            authorName: commit.authorName,
+            authorEmail: commit.authorEmail,
+            authorLogin: commit.authorLogin,
+            authorDate: commit.authorDate,
+
+            committerName: commit.committerName,
+            committerEmail: commit.committerEmail,
+            committerLogin: commit.committerLogin,
+            committerDate: commit.committerDate,
+
+            htmlUrl: commit.htmlUrl,
+
+            updatedAt: new Date(),
+          })),
+        )
+        .returning();
+
+      this.logger.log(
+        `GitHub PR commits persisted: pullRequest=${pullRequestId} commits=${persistedCommits.length}`,
+      );
+
+      return persistedCommits;
+    });
   }
 }
