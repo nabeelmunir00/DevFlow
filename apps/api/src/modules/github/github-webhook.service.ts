@@ -789,7 +789,7 @@ export class GithubWebhookService {
      * Persist PR first.
      *
      * This creates/updates the canonical DevFlow PR row
-     * before related files and commits are persisted.
+     * before related files, commits and reviews are persisted.
      */
     const persistedPullRequest =
       await this.githubEntityPersistenceService.upsertPullRequest({
@@ -829,7 +829,7 @@ export class GithubWebhookService {
       });
 
     // =====================================================
-    // PR FILES / DIFF + COMMITS SNAPSHOT
+    // PR FILES / DIFF + COMMITS + REVIEWS SNAPSHOT
     // =====================================================
 
     let pullRequestFilesSynced = false;
@@ -837,6 +837,9 @@ export class GithubWebhookService {
 
     let pullRequestCommitsSynced = false;
     let persistedCommitsCount = 0;
+
+    let pullRequestReviewsSynced = false;
+    let persistedReviewsCount = 0;
 
     const githubInstallationId = payload.installation?.id;
 
@@ -846,7 +849,7 @@ export class GithubWebhookService {
      *
      * Synthetic/local webhook payloads may omit it.
      * In that case we keep processing the PR but skip
-     * remote GitHub files and commits fetching.
+     * remote GitHub files, commits and reviews fetching.
      */
     if (githubInstallationId) {
       // -------------------------------------------------
@@ -896,14 +899,38 @@ export class GithubWebhookService {
       this.logger.log(
         `GitHub PR commits synced repo=${payload.repository.full_name} PR=#${pr.number} commits=${persistedCommitsCount}`,
       );
+
+      // -------------------------------------------------
+      // Sync PR reviews
+      // -------------------------------------------------
+
+      const pullRequestReviews = await this.githubService.getPullRequestReviews(
+        githubInstallationId,
+        repository.ownerLogin,
+        repository.name,
+        pr.number,
+      );
+
+      const persistedReviews =
+        await this.githubEntityPersistenceService.replacePullRequestReviews(
+          persistedPullRequest.id,
+          pullRequestReviews,
+        );
+
+      persistedReviewsCount = persistedReviews.length;
+      pullRequestReviewsSynced = true;
+
+      this.logger.log(
+        `GitHub PR reviews synced repo=${payload.repository.full_name} PR=#${pr.number} reviews=${persistedReviewsCount}`,
+      );
     } else {
       this.logger.warn(
-        `GitHub PR files and commits not synced repo=${payload.repository.full_name} PR=#${pr.number}: installation ID missing`,
+        `GitHub PR files, commits and reviews not synced repo=${payload.repository.full_name} PR=#${pr.number}: installation ID missing`,
       );
     }
 
     /*
-     * Run automation after PR, files and commits persistence.
+     * Run automation after PR, files, commits and reviews persistence.
      */
     await this.githubTaskAutomationService.handlePullRequestChange(
       persistedPullRequest.id,
@@ -1009,6 +1036,10 @@ export class GithubWebhookService {
             commitsSynced: pullRequestCommitsSynced,
 
             persistedCommits: persistedCommitsCount,
+
+            reviewsSynced: pullRequestReviewsSynced,
+
+            persistedReviews: persistedReviewsCount,
           },
 
           sender: payload.sender?.login ?? null,
@@ -1086,6 +1117,10 @@ export class GithubWebhookService {
             commitsSynced: pullRequestCommitsSynced,
 
             persistedCommits: persistedCommitsCount,
+
+            reviewsSynced: pullRequestReviewsSynced,
+
+            persistedReviews: persistedReviewsCount,
           },
 
           sender: payload.sender?.login ?? null,
@@ -1104,7 +1139,7 @@ export class GithubWebhookService {
     // =====================================================
 
     this.logger.log(
-      `GitHub PR persisted repo=${payload.repository.full_name} PR=#${pr.number} action=${payload.action} additions=${pr.additions ?? 0} deletions=${pr.deletions ?? 0} files=${pr.changed_files ?? 0} persistedFiles=${persistedFilesCount} commits=${pr.commits ?? 0} persistedCommits=${persistedCommitsCount}`,
+      `GitHub PR persisted repo=${payload.repository.full_name} PR=#${pr.number} action=${payload.action} additions=${pr.additions ?? 0} deletions=${pr.deletions ?? 0} files=${pr.changed_files ?? 0} persistedFiles=${persistedFilesCount} commits=${pr.commits ?? 0} persistedCommits=${persistedCommitsCount} persistedReviews=${persistedReviewsCount}`,
     );
 
     // =====================================================
@@ -1171,6 +1206,12 @@ export class GithubWebhookService {
           synced: pullRequestCommitsSynced,
 
           count: persistedCommitsCount,
+        },
+
+        reviews: {
+          synced: pullRequestReviewsSynced,
+
+          count: persistedReviewsCount,
         },
       },
 
