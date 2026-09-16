@@ -1379,4 +1379,93 @@ export class GithubService implements OnModuleInit {
       );
     }
   }
+  // =====================================================
+  // GET PULL REQUEST REVIEWS
+  // =====================================================
+
+  async getPullRequestReviews(
+    installationId: number,
+    owner: string,
+    repo: string,
+    pullNumber: number,
+  ) {
+    this.validateInstallationId(installationId);
+
+    if (!owner?.trim()) {
+      throw new BadRequestException('GitHub repository owner is required');
+    }
+
+    if (!repo?.trim()) {
+      throw new BadRequestException('GitHub repository name is required');
+    }
+
+    if (!Number.isSafeInteger(pullNumber) || pullNumber <= 0) {
+      throw new BadRequestException('Invalid GitHub pull request number');
+    }
+
+    try {
+      const installationOctokit =
+        await this.githubApp.getInstallationOctokit(installationId);
+
+      const reviews = [];
+
+      let page = 1;
+
+      while (true) {
+        const response = await installationOctokit.request(
+          'GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews',
+          {
+            owner: owner.trim(),
+            repo: repo.trim(),
+            pull_number: pullNumber,
+            per_page: 100,
+            page,
+          },
+        );
+
+        const currentReviews = response.data;
+
+        for (const review of currentReviews) {
+          reviews.push({
+            githubReviewId: String(review.id),
+
+            reviewerLogin: review.user?.login ?? null,
+
+            state: review.state ?? 'UNKNOWN',
+
+            body: review.body ?? null,
+
+            commitSha: review.commit_id ?? null,
+
+            htmlUrl: review.html_url ?? null,
+
+            submittedAt: review.submitted_at
+              ? new Date(review.submitted_at)
+              : null,
+          });
+        }
+
+        if (currentReviews.length < 100) {
+          break;
+        }
+
+        page += 1;
+      }
+
+      this.logger.log(
+        `Fetched ${reviews.length} reviews for GitHub PR ${owner}/${repo}#${pullNumber}`,
+      );
+
+      return reviews;
+    } catch (error) {
+      this.logGithubError(
+        `Failed to fetch reviews for GitHub PR ${owner}/${repo}#${pullNumber}`,
+        error,
+      );
+
+      throw new InternalServerErrorException(
+        'Failed to fetch GitHub pull request reviews',
+      );
+    }
+  }
 }

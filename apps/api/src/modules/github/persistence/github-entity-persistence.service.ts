@@ -1,6 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
-import { githubPullRequestCommits, schema } from '@devflow/db';
+import {
+  githubPullRequestCommits,
+  githubPullRequestReviews,
+  schema,
+} from '@devflow/db';
 
 import { DatabaseService } from '../../../database/database.service.js';
 
@@ -449,6 +453,63 @@ export class GithubEntityPersistenceService {
       );
 
       return persistedCommits;
+    });
+  }
+  async replacePullRequestReviews(
+    pullRequestId: string,
+    reviews: Array<{
+      githubReviewId: string;
+      reviewerLogin: string | null;
+      state: string;
+      body: string | null;
+      commitSha: string | null;
+      htmlUrl: string | null;
+      submittedAt: Date | null;
+    }>,
+  ) {
+    return this.databaseService.db.transaction(async (tx) => {
+      await tx
+        .delete(githubPullRequestReviews)
+        .where(eq(githubPullRequestReviews.pullRequestId, pullRequestId));
+
+      if (reviews.length === 0) {
+        this.logger.log(
+          `GitHub PR reviews cleared: pullRequest=${pullRequestId}`,
+        );
+
+        return [];
+      }
+
+      const persistedReviews = await tx
+        .insert(githubPullRequestReviews)
+        .values(
+          reviews.map((review) => ({
+            pullRequestId,
+
+            githubReviewId: review.githubReviewId,
+
+            reviewerLogin: review.reviewerLogin,
+
+            state: review.state,
+
+            body: review.body,
+
+            commitSha: review.commitSha,
+
+            htmlUrl: review.htmlUrl,
+
+            submittedAt: review.submittedAt,
+
+            updatedAt: new Date(),
+          })),
+        )
+        .returning();
+
+      this.logger.log(
+        `GitHub PR reviews persisted: pullRequest=${pullRequestId} reviews=${persistedReviews.length}`,
+      );
+
+      return persistedReviews;
     });
   }
 }
