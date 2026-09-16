@@ -26,6 +26,7 @@
     "@aws-sdk/s3-request-presigner": "^3.1129.0",
     "@clerk/backend": "^3.17.1",
     "@devflow/db": "workspace:^",
+    "@google/genai": "^2.22.0",
     "@nestjs/bullmq": "^12.0.0",
     "@nestjs/common": "^12.0.1",
     "@nestjs/config": "^12.0.0",
