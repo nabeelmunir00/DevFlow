@@ -148,6 +148,13 @@
       "when": 1789560391852,
       "tag": "0020_moaning_chimera",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1789563960320,
+      "tag": "0021_lethal_gamma_corps",
+      "breakpoints": true
     }
   ]
 }
