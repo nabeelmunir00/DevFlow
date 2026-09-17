@@ -1,7 +1,9 @@
+import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 
 import { AppModule } from './app.module.js';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -15,9 +17,21 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // tumhara existing ValidationPipe yahan same rahega
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
 
-  await app.listen(process.env.PORT ?? 3001);
+  app.useGlobalFilters(new HttpExceptionFilter());
+
+  const port = Number(process.env.PORT ?? 3001);
+
+  await app.listen(port);
+
+  console.log(`🚀 DevFlow API running on http://localhost:${port}/api/v1`);
 }
 
 void bootstrap();
