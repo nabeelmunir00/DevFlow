@@ -5,9 +5,9 @@ import {
   Post,
   Req,
 } from '@nestjs/common';
-
 import type { RawBodyRequest } from '@nestjs/common';
 import type { Request } from 'express';
+import { SkipThrottle } from '@nestjs/throttler';
 
 import { GithubWebhookService } from './github-webhook.service.js';
 import { GithubWebhookDeliveryService } from './github-webhook-delivery.service.js';
@@ -21,6 +21,7 @@ export class GithubWebhookController {
     private readonly githubWebhookQueueService: GithubWebhookQueueService,
   ) {}
 
+  @SkipThrottle()
   @Post()
   async handleWebhook(
     @Req()

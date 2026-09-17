@@ -1,10 +1,13 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 
 import { DatabaseModule } from './database/database.module.js';
+
 import { HealthModule } from './modules/health/health.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { UsersModule } from './modules/users/users.module.js';
@@ -18,8 +21,6 @@ import { TasksModule } from './modules/tasks/tasks.module.js';
 import { ProjectsModule } from './modules/projects/projects.module.js';
 import { SprintsModule } from './modules/sprints/sprints.module.js';
 import { ActivityLogsModule } from './modules/activity-logs/activity-logs.module.js';
-import { RedisModule } from './redis/redis.module.js';
-import { QueueModule } from './queue/queue.module.js';
 import { CommentsModule } from './modules/comments/comments.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { StorageModule } from './modules/storage/storage.module.js';
@@ -28,6 +29,10 @@ import { SubtasksModule } from './modules/subtasks/subtasks.module.js';
 import { LabelsModule } from './modules/labels/labels.module.js';
 import { RealtimeModule } from './modules/realtime/realtime.module.js';
 import { GithubModule } from './modules/github/github.module.js';
+
+import { RedisModule } from './redis/redis.module.js';
+import { QueueModule } from './queue/queue.module.js';
+
 import { RequestLoggerMiddleware } from './common/middleware/request-logger.middleware.js';
 
 @Module({
@@ -36,6 +41,18 @@ import { RequestLoggerMiddleware } from './common/middleware/request-logger.midd
       isGlobal: true,
       envFilePath: '../../.env',
     }),
+
+    // Global API rate limiting
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          name: 'default',
+          ttl: 60_000,
+          limit: 100,
+        },
+      ],
+    }),
+
     DatabaseModule,
     HealthModule,
     AuthModule,
@@ -61,8 +78,18 @@ import { RequestLoggerMiddleware } from './common/middleware/request-logger.midd
     RealtimeModule,
     GithubModule,
   ],
+
   controllers: [AppController],
-  providers: [AppService],
+
+  providers: [
+    AppService,
+
+    // Apply rate limiting globally
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {
