@@ -29,6 +29,7 @@ import { SubtasksModule } from './modules/subtasks/subtasks.module.js';
 import { LabelsModule } from './modules/labels/labels.module.js';
 import { RealtimeModule } from './modules/realtime/realtime.module.js';
 import { GithubModule } from './modules/github/github.module.js';
+import { AiModule } from './modules/ai/ai.module.js';
 
 import { RedisModule } from './redis/redis.module.js';
 import { QueueModule } from './queue/queue.module.js';
@@ -77,6 +78,7 @@ import { RequestLoggerMiddleware } from './common/middleware/request-logger.midd
     LabelsModule,
     RealtimeModule,
     GithubModule,
+    AiModule,
   ],
 
   controllers: [AppController],
