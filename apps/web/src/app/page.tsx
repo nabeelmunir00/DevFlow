@@ -1,51 +1,21 @@
-"use client";
+import { BenefitsSection } from "@/components/landing/benefits-section";
+import { DeveloperFeatures } from "@/components/landing/developer-features";
+import { HeroSection } from "@/components/landing/hero-section";
+import { LandingFooter } from "@/components/landing/landing-footer";
+import { LandingNavbar } from "@/components/landing/landing-navbar";
 
-import { Show, SignInButton, UserButton, useAuth } from "@clerk/nextjs";
-
-export default function Home() {
-  const { getToken } = useAuth();
-
-  async function testBackend() {
-    const token = await getToken();
-    console.log(`Bearer ${token}`);
-
-    if (!token) {
-      console.error("No Clerk token found");
-      return;
-    }
-    console.log(token);
-
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/v1/me`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
-    );
-
-    const data = await response.json();
-
-    // console.log(data);
-  }
-
+export default function HomePage() {
   return (
-    <main className="p-10">
-      <Show when="signed-out">
-        <SignInButton>
-          <button className="rounded-md border px-4 py-2">Sign In</button>
-        </SignInButton>
-      </Show>
+    <div className="min-h-screen bg-background text-foreground">
+      <LandingNavbar />
 
-      <Show when="signed-in">
-        <div className="flex items-center gap-4">
-          <UserButton />
+      <main>
+        <HeroSection />
+        <BenefitsSection />
+        <DeveloperFeatures />
+      </main>
 
-          <button onClick={testBackend} className="rounded-md border px-4 py-2">
-            Test Backend Auth
-          </button>
-        </div>
-      </Show>
-    </main>
+      <LandingFooter />
+    </div>
   );
 }
