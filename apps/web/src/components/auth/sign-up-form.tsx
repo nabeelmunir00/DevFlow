@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSignUp } from "@clerk/nextjs";
-import { ArrowLeft, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,14 +17,7 @@ export function SignUpForm() {
   const { signUp, errors, fetchStatus } = useSignUp();
 
   const [showPassword, setShowPassword] = useState(false);
-
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  const [isVerifying, setIsVerifying] = useState(false);
-
-  const [emailAddress, setEmailAddress] = useState("");
-
-  const [verificationCode, setVerificationCode] = useState("");
 
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -36,6 +29,7 @@ export function SignUpForm() {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
     setFormError(null);
 
     const formData = new FormData(event.currentTarget);
@@ -51,7 +45,7 @@ export function SignUpForm() {
     const confirmPassword = String(formData.get("confirmPassword") ?? "");
 
     /* -------------------------
-       Client validation
+       Client Validation
     ------------------------- */
 
     if (!fullName || !email || !password || !confirmPassword) {
@@ -64,10 +58,8 @@ export function SignUpForm() {
       return;
     }
 
-    setEmailAddress(email);
-
     /* -------------------------
-       Split full name
+       Split Full Name
     ------------------------- */
 
     const nameParts = fullName.split(/\s+/).filter(Boolean);
@@ -78,7 +70,7 @@ export function SignUpForm() {
       nameParts.length > 1 ? nameParts.slice(1).join(" ") : undefined;
 
     /* -------------------------
-       Clerk sign up
+       Create Clerk Sign Up
     ------------------------- */
 
     const { error } = await signUp.password({
@@ -93,17 +85,17 @@ export function SignUpForm() {
       return;
     }
 
-    /*
-     * Some Clerk configurations could theoretically
-     * complete without email verification.
-     */
+    /* -------------------------
+       Sign Up Already Complete
+    ------------------------- */
+
     if (signUp.status === "complete") {
       await finalizeSignUp();
       return;
     }
 
     /* -------------------------
-       Send verification email
+       Send Email OTP
     ------------------------- */
 
     const { error: verificationError } =
@@ -117,40 +109,11 @@ export function SignUpForm() {
       return;
     }
 
-    setVerificationCode("");
-    setIsVerifying(true);
-  }
+    /* -------------------------
+       Open Verification Page
+    ------------------------- */
 
-  /* =========================================================
-     VERIFY EMAIL OTP
-  ========================================================= */
-
-  async function handleVerifyEmail(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setFormError(null);
-
-    const code = verificationCode.trim();
-
-    if (!code) {
-      setFormError("Please enter the verification code.");
-      return;
-    }
-
-    const { error } = await signUp.verifications.verifyEmailCode({
-      code,
-    });
-
-    if (error) {
-      console.error("Verification error:", error);
-      return;
-    }
-
-    if (signUp.status === "complete") {
-      await finalizeSignUp();
-      return;
-    }
-
-    setFormError("Email verification could not be completed.");
+    router.push("/verify-email");
   }
 
   /* =========================================================
@@ -160,9 +123,6 @@ export function SignUpForm() {
   async function finalizeSignUp() {
     await signUp.finalize({
       navigate: ({ session, decorateUrl }) => {
-        /*
-         * Don't bypass required Clerk session tasks.
-         */
         if (session?.currentTask) {
           console.log("Clerk session task:", session.currentTask);
 
@@ -179,26 +139,6 @@ export function SignUpForm() {
         router.push(url);
       },
     });
-  }
-
-  /* =========================================================
-     RESEND EMAIL CODE
-  ========================================================= */
-
-  async function handleResendCode() {
-    setFormError(null);
-
-    const { error } = await signUp.verifications.sendEmailCode();
-
-    if (error) {
-      console.error("Resend verification error:", error);
-
-      setFormError("Unable to resend the code. Please try again.");
-
-      return;
-    }
-
-    setVerificationCode("");
   }
 
   /* =========================================================
@@ -222,113 +162,7 @@ export function SignUpForm() {
   }
 
   /* =========================================================
-     EMAIL VERIFICATION VIEW
-  ========================================================= */
-
-  if (isVerifying) {
-    return (
-      <div className="w-full">
-        <Button
-          type="button"
-          variant="ghost"
-          disabled={isLoading}
-          onClick={() => {
-            setIsVerifying(false);
-            setVerificationCode("");
-            setFormError(null);
-          }}
-          className="-ml-3 mb-6 gap-2 text-muted-foreground hover:bg-accent hover:text-foreground"
-        >
-          <ArrowLeft className="size-4" />
-          Back
-        </Button>
-
-        {/* Header */}
-        <div>
-          <h2 className="text-3xl font-semibold tracking-tight text-foreground">
-            Check your email
-          </h2>
-
-          <p className="mt-2 text-base leading-6 text-muted-foreground">
-            We sent a verification code to{" "}
-            <span className="font-medium text-foreground">{emailAddress}</span>
-          </p>
-        </div>
-
-        {/* Verification Form */}
-        <form onSubmit={handleVerifyEmail} className="mt-8 space-y-5">
-          <div className="space-y-2">
-            <Label
-              htmlFor="verification-code"
-              className="text-sm font-medium text-muted-foreground"
-            >
-              Verification code
-            </Label>
-
-            <Input
-              id="verification-code"
-              name="verificationCode"
-              type="text"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              placeholder="Enter verification code"
-              value={verificationCode}
-              disabled={isLoading}
-              onChange={(event) =>
-                setVerificationCode(event.target.value.replace(/\D/g, ""))
-              }
-              className="h-12 border-input bg-card text-base font-medium tracking-[0.2em] shadow-none md:text-base"
-            />
-          </div>
-
-          {errors.fields.code && (
-            <p className="text-sm text-destructive">
-              {errors.fields.code.message}
-            </p>
-          )}
-
-          {formError && (
-            <div
-              role="alert"
-              className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2.5 text-sm text-destructive"
-            >
-              {formError}
-            </div>
-          )}
-
-          <Button
-            type="submit"
-            disabled={isLoading}
-            className="h-12 w-full text-base font-semibold"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="size-4 animate-spin" />
-                Verifying...
-              </>
-            ) : (
-              "Verify email"
-            )}
-          </Button>
-        </form>
-
-        <p className="mt-5 text-center text-sm text-muted-foreground">
-          Didn&apos;t receive the code?{" "}
-          <button
-            type="button"
-            disabled={isLoading}
-            onClick={handleResendCode}
-            className="font-medium text-primary transition-colors hover:text-primary/80 disabled:pointer-events-none disabled:opacity-50"
-          >
-            Resend code
-          </button>
-        </p>
-      </div>
-    );
-  }
-
-  /* =========================================================
-     SIGN UP VIEW
+     UI
   ========================================================= */
 
   return (
