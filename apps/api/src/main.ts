@@ -1,11 +1,8 @@
-import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import helmet from 'helmet';
 
 import { AppModule } from './app.module.js';
-import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
-import { ResponseInterceptor } from './common/interceptors/response.interceptor.js';
+import { configureApp } from './configure-app.js';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -13,32 +10,14 @@ async function bootstrap() {
     rawBody: true,
   });
 
-  // Global API prefix
-  app.setGlobalPrefix('api/v1');
-
-  // Security headers
-  app.use(helmet());
-
-  // CORS
-  app.enableCors({
-    origin: 'http://localhost:3000',
-    credentials: true,
-  });
-
-  // Global request validation
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }),
-  );
-
-  // Global exception handling
-  app.useGlobalFilters(new HttpExceptionFilter());
-
-  // Global successful response formatting
-  app.useGlobalInterceptors(new ResponseInterceptor());
+  // Apply shared application configuration:
+  // - Global API prefix
+  // - Helmet security headers
+  // - CORS
+  // - ValidationPipe
+  // - HttpExceptionFilter
+  // - ResponseInterceptor
+  configureApp(app);
 
   const port = Number(process.env.PORT ?? 3001);
 
