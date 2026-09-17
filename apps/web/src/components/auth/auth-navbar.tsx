@@ -8,9 +8,8 @@ export function AuthNavbar({ mode }: AuthNavbarProps) {
   const isSignIn = mode === "sign-in";
 
   return (
-    <header className="grid h-16 shrink-0 grid-cols-2 bg-background">
-      {/* Left */}
-      <div className="flex items-center border-r border-border px-10">
+    <header className="w-full bg-background">
+      <div className="flex items-center justify-between px-6 py-6 sm:px-8 lg:px-10">
         <Link
           href="/"
           className="flex items-center gap-3"
@@ -18,15 +17,12 @@ export function AuthNavbar({ mode }: AuthNavbarProps) {
         >
           <DevFlowLogo />
 
-          <span className="text-xl font-bold tracking-tight text-foreground">
+          <span className="text-xl font-semibold tracking-tight text-foreground">
             DevFlow
           </span>
         </Link>
-      </div>
 
-      {/* Right */}
-      <div className="flex items-center justify-end px-10">
-        <p className="text-sm text-muted-foreground">
+        <p className="hidden text-sm text-muted-foreground sm:block">
           {isSignIn ? "New to DevFlow?" : "Already have an account?"}{" "}
           <Link
             href={isSignIn ? "/sign-up" : "/sign-in"}
