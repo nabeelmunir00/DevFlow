@@ -1,18 +1,30 @@
 import { Controller, Get } from '@nestjs/common';
-import { DatabaseService } from '../../database/database.service.js';
+
+import { HealthService } from './health.service.js';
 
 @Controller('health')
 export class HealthController {
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(private readonly healthService: HealthService) {}
 
+  /**
+   * Liveness
+   *
+   * Checks whether the API process is running.
+   */
   @Get()
-  async check() {
-    await this.databaseService.healthCheck();
+  checkLiveness() {
+    return this.healthService.getLiveness();
+  }
 
-    return {
-      status: 'ok',
-      database: 'connected',
-      timestamp: new Date().toISOString(),
-    };
+  /**
+   * Readiness
+   *
+   * Checks critical infrastructure:
+   * - PostgreSQL
+   * - Redis
+   */
+  @Get('ready')
+  async checkReadiness() {
+    return this.healthService.getReadiness();
   }
 }
