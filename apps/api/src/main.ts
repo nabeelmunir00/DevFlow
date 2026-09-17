@@ -1,6 +1,7 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
+import helmet from 'helmet';
 
 import { AppModule } from './app.module.js';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
@@ -8,11 +9,15 @@ import { ResponseInterceptor } from './common/interceptors/response.interceptor.
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    // Required for GitHub webhook signature verification
     rawBody: true,
   });
 
   // Global API prefix
   app.setGlobalPrefix('api/v1');
+
+  // Security headers
+  app.use(helmet());
 
   // CORS
   app.enableCors({
