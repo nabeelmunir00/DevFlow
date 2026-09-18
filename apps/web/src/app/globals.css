@@ -144,9 +144,9 @@
 
 @theme inline {
   /* Typography */
-  --font-sans: var(--font-inter);
+  --font-sans: var(--font-poppins);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-inter);
+  --font-heading: var(--font-poppins);
 
   /* Core */
   --color-background: var(--background);
@@ -238,7 +238,7 @@
     min-width: 320px;
     background: var(--background);
     color: var(--foreground);
-    font-family: var(--font-inter), sans-serif;
+    font-family: var(--font-poppins), sans-serif;
     text-rendering: optimizeLegibility;
   }
 

@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
-import { Geist_Mono, Inter } from "next/font/google";
+import { Geist_Mono, Poppins } from "next/font/google";
 
 import { ThemeProvider } from "@/components/theme-provider";
 
 import "./globals.css";
 
-const inter = Inter({
+const poppins = Poppins({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-poppins",
   display: "swap",
+  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
 });
 
 const geistMono = Geist_Mono({
@@ -37,7 +38,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
       <html
         lang="en"
         suppressHydrationWarning
-        className={`${inter.variable} ${geistMono.variable}`}
+        className={`${poppins.variable} ${geistMono.variable}`}
       >
         <body className="min-h-dvh bg-background font-sans text-foreground antialiased">
           <ThemeProvider
