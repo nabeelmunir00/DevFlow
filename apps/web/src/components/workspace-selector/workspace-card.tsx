@@ -40,7 +40,15 @@ function formatRole(role: Organization["role"]) {
 }
 
 export function WorkspaceCard({ organization }: WorkspaceCardProps) {
-  const firstLetter = organization.name.trim().charAt(0).toUpperCase() || "W";
+  const initials =
+    organization.name
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((word) => word.charAt(0))
+      .join("")
+      .toUpperCase() || "W";
 
   const backgroundColor = getWorkspaceColor(organization.id);
 
@@ -50,7 +58,7 @@ export function WorkspaceCard({ organization }: WorkspaceCardProps) {
         <div
           className={`flex size-14 shrink-0 items-center justify-center rounded-xl text-lg font-semibold text-white shadow-sm ${backgroundColor}`}
         >
-          {firstLetter}
+          {initials}
         </div>
 
         <div className="min-w-0 flex-1">
