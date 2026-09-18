@@ -14,7 +14,7 @@ export async function getOrganizations(token: string): Promise<Organization[]> {
     throw new Error("NEXT_PUBLIC_API_URL is not configured");
   }
 
-  const response = await fetch(`${API_URL}/api/v1/organizations`, {
+  const response = await fetch(`${API_URL}/organizations`, {
     method: "GET",
     headers: {
       Authorization: `Bearer ${token}`,

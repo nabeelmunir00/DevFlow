@@ -1,11 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Plus } from "lucide-react";
 import { UserButton } from "@clerk/nextjs";
 
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
+import { CreateWorkspaceDialog } from "./create-workspace-dialog";
 import { EmptyWorkspaces } from "./empty-workspaces";
 import { WorkspaceCard } from "./workspace-card";
 
@@ -24,6 +23,7 @@ export function WorkspaceSelector({
 
   return (
     <div className="min-h-dvh bg-background">
+      {/* Header */}
       <header className="border-b border-border">
         <div className="mx-auto flex h-16 w-full items-center justify-between px-6 lg:px-8">
           <Link
@@ -55,7 +55,9 @@ export function WorkspaceSelector({
         </div>
       </header>
 
+      {/* Content */}
       <main className="mx-auto w-full max-w-3xl px-6 pb-16 pt-20 sm:pt-24">
+        {/* Heading */}
         <div className="text-center">
           <h1 className="font-heading text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
             Choose a workspace
@@ -66,6 +68,7 @@ export function WorkspaceSelector({
           </p>
         </div>
 
+        {/* Workspaces */}
         <div className="mt-8">
           {hasOrganizations ? (
             <div className="space-y-3">
@@ -76,29 +79,23 @@ export function WorkspaceSelector({
                 />
               ))}
 
-              <Button
-                variant="outline"
-                className="h-24 w-full justify-start gap-5 px-5 shadow-none"
-              >
-                <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border border-dashed border-border bg-muted/30">
-                  <Plus className="size-5 text-muted-foreground" />
-                </div>
-
-                <span className="font-medium text-foreground">
-                  Create a workspace
-                </span>
-              </Button>
+              {/* Create another workspace */}
+              <div className="w-full">
+                <CreateWorkspaceDialog variant="card" />
+              </div>
             </div>
           ) : (
             <EmptyWorkspaces />
           )}
         </div>
 
+        {/* Account */}
         <Separator className="mt-14" />
 
         <div className="mt-7 flex flex-col items-center gap-2 text-center">
           <p className="text-sm text-muted-foreground">
-            Signed in as <span className="text-foreground">{email}</span>
+            Signed in as{" "}
+            <span className="font-medium text-foreground">{email}</span>
           </p>
 
           <Link

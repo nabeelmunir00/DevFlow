@@ -18,3 +18,21 @@ export interface Organization {
   joinedAt: string;
   memberCount: number;
 }
+
+export interface ApiResponse<T> {
+  success: boolean;
+  statusCode: number;
+  data: T;
+  timestamp: string;
+}
+
+export interface CreatedOrganization {
+  id: string;
+  name: string;
+  slug: string;
+  logoUrl: string | null;
+  ownerId: string;
+  plan: "FREE" | "PRO" | "BUSINESS";
+  createdAt: string;
+  updatedAt: string;
+}
