@@ -4,6 +4,7 @@ import { SignUpButton } from "@clerk/nextjs";
 
 import { Button } from "@/components/ui/button";
 import { WorkspacePreview } from "@/components/marketing/workspace-preview";
+import Link from "next/link";
 
 export function Hero() {
   return (
@@ -28,12 +29,12 @@ export function Hero() {
           </p>
 
           <div className="mt-8 flex flex-wrap items-center gap-3">
-            <SignUpButton>
+            <Link href={"/workspace"}>
               <Button size="lg">
                 Create your workspace
                 <ArrowRight />
               </Button>
-            </SignUpButton>
+            </Link>
 
             <Button variant="secondary" size="lg">
               <a href="#workspace-preview">Explore DevFlow</a>

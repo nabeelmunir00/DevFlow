@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
 import { WorkspaceSelector } from "@/components/workspace-selector/workspace-selector";
@@ -17,7 +17,15 @@ export default async function WorkspacesPage() {
     redirect("/");
   }
 
-  const organizations = await getOrganizations(token);
+  const [organizations, user] = await Promise.all([
+    getOrganizations(token),
+    currentUser(),
+  ]);
 
-  return <WorkspaceSelector organizations={organizations} />;
+  const email =
+    user?.primaryEmailAddress?.emailAddress ??
+    user?.emailAddresses[0]?.emailAddress ??
+    "";
+
+  return <WorkspaceSelector organizations={organizations} email={email} />;
 }

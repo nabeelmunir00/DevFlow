@@ -13,9 +13,13 @@ import type { Organization } from "@/features/organizations/types/organization";
 
 interface WorkspaceSelectorProps {
   organizations: Organization[];
+  email: string;
 }
 
-export function WorkspaceSelector({ organizations }: WorkspaceSelectorProps) {
+export function WorkspaceSelector({
+  organizations,
+  email,
+}: WorkspaceSelectorProps) {
   const hasOrganizations = organizations.length > 0;
 
   return (
@@ -92,10 +96,17 @@ export function WorkspaceSelector({ organizations }: WorkspaceSelectorProps) {
 
         <Separator className="mt-14" />
 
-        <div className="mt-7 text-center">
+        <div className="mt-7 flex flex-col items-center gap-2 text-center">
           <p className="text-sm text-muted-foreground">
-            Select a workspace to continue to DevFlow.
+            Signed in as <span className="text-foreground">{email}</span>
           </p>
+
+          <Link
+            href="/"
+            className="text-sm font-medium text-primary transition-colors hover:text-primary/80"
+          >
+            Switch account
+          </Link>
         </div>
       </main>
     </div>
