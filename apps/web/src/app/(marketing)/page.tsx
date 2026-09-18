@@ -1,11 +1,14 @@
-import Image from "next/image";
-import { assets } from "@/assets/assets";
+import { Hero } from "@/components/marketing/hero";
+import { Navbar } from "@/components/marketing/navbar";
 
 export default function Home() {
   return (
-    <main className="flex min-h-dvh items-center justify-center">
-      <Image src={assets.logo} alt="logo" height={300} width={300} />
-      <p className="text-sm text-muted-foreground">DevFlow</p>
-    </main>
+    <div className="min-h-dvh bg-background">
+      <Navbar />
+
+      <main>
+        <Hero />
+      </main>
+    </div>
   );
 }
