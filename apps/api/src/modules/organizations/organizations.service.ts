@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 
 import { schema } from '@devflow/db';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 
 import { DatabaseService } from '../../database/database.service.js';
 import { UsersService } from '../users/users.service.js';
@@ -57,32 +57,36 @@ export class OrganizationsService {
   async findAllForCurrentUser(clerkUserId: string) {
     const user = await this.usersService.findByClerkId(clerkUserId);
 
-    const memberships =
-      await this.databaseService.db.query.organizationMembers.findMany({
-        where: (members, { eq }) => eq(members.userId, user.id),
-      });
+    const organizations = await this.databaseService.db
+      .select({
+        id: schema.organizations.id,
+        name: schema.organizations.name,
+        slug: schema.organizations.slug,
+        logoUrl: schema.organizations.logoUrl,
+        ownerId: schema.organizations.ownerId,
+        plan: schema.organizations.plan,
+        createdAt: schema.organizations.createdAt,
+        updatedAt: schema.organizations.updatedAt,
 
-    const organizations = await Promise.all(
-      memberships.map(async (membership) => {
-        const organization =
-          await this.databaseService.db.query.organizations.findFirst({
-            where: (organizations, { eq }) =>
-              eq(organizations.id, membership.organizationId),
-          });
+        role: schema.organizationMembers.role,
+        joinedAt: schema.organizationMembers.joinedAt,
 
-        if (!organization) {
-          return null;
-        }
+        memberCount: sql<number>`
+        (
+          SELECT COUNT(*)::int
+          FROM ${schema.organizationMembers} AS members_count
+          WHERE members_count.organization_id = ${schema.organizations.id}
+        )
+      `,
+      })
+      .from(schema.organizationMembers)
+      .innerJoin(
+        schema.organizations,
+        eq(schema.organizationMembers.organizationId, schema.organizations.id),
+      )
+      .where(eq(schema.organizationMembers.userId, user.id));
 
-        return {
-          ...organization,
-          role: membership.role,
-          joinedAt: membership.joinedAt,
-        };
-      }),
-    );
-
-    return organizations.filter((organization) => organization !== null);
+    return organizations;
   }
   async findOneForCurrentUser(clerkUserId: string, organizationId: string) {
     const user = await this.usersService.findByClerkId(clerkUserId);

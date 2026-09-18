@@ -1,9 +1,23 @@
-import { WorkspaceSelector } from "@/components/workspace-selector/workspace-selector";
+import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
 
-export default function WorkspacesPage() {
-  return (
-    <main className="min-h-dvh bg-background">
-      <WorkspaceSelector />
-    </main>
-  );
+import { WorkspaceSelector } from "@/components/workspace-selector/workspace-selector";
+import { getOrganizations } from "@/features/organizations/api/get-organizations";
+
+export default async function WorkspacesPage() {
+  const { userId, getToken } = await auth();
+
+  if (!userId) {
+    redirect("/");
+  }
+
+  const token = await getToken();
+
+  if (!token) {
+    redirect("/");
+  }
+
+  const organizations = await getOrganizations(token);
+
+  return <WorkspaceSelector organizations={organizations} />;
 }
