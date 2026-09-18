@@ -1,6 +1,8 @@
 import { AiSpotlight } from "@/components/marketing/ai-spotlight";
 import { Benefits } from "@/components/marketing/benefits";
 import { CoreFeatures } from "@/components/marketing/core-features";
+import { FinalCta } from "@/components/marketing/final-cta";
+import { Footer } from "@/components/marketing/footer";
 import { GithubWorkflow } from "@/components/marketing/github-workflow";
 import { Hero } from "@/components/marketing/hero";
 import { Navbar } from "@/components/marketing/navbar";
@@ -17,7 +19,9 @@ export default function Home() {
         <AiSpotlight />
         <GithubWorkflow />
         <TeamCollaboration />
+        <FinalCta />
       </main>
+      <Footer />
     </div>
   );
 }
