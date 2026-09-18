@@ -68,6 +68,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function UiPreviewPage() {
   return (
@@ -89,6 +90,7 @@ export default function UiPreviewPage() {
             </div>
 
             <div className="flex items-center gap-2">
+              <ThemeToggle />
               <Tooltip>
                 <TooltipTrigger
                   render={<Button variant="outline" size="icon" />}
