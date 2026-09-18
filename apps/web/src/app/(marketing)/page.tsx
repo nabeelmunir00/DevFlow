@@ -1,3 +1,4 @@
+import { Benefits } from "@/components/marketing/benefits";
 import { Hero } from "@/components/marketing/hero";
 import { Navbar } from "@/components/marketing/navbar";
 
@@ -7,6 +8,7 @@ export default function Home() {
       <Navbar />
       <main>
         <Hero />
+        <Benefits />
       </main>
     </div>
   );
