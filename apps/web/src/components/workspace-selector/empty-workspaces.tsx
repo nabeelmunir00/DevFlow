@@ -1,13 +1,14 @@
-import { Building2, Plus } from "lucide-react";
+import { Building2 } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+
+import { CreateWorkspaceDialog } from "./create-workspace-dialog";
 
 export function EmptyWorkspaces() {
   return (
     <Card className="border-dashed bg-muted/20 shadow-none">
       <CardContent className="flex flex-col items-center px-6 py-12 text-center">
-        <div className="flex size-12 items-center justify-center rounded-xl border border-border bg-secondary">
+        <div className="flex size-12 items-center justify-center rounded-xl border border-border bg-muted">
           <Building2 className="size-5 text-muted-foreground" />
         </div>
 
@@ -16,14 +17,13 @@ export function EmptyWorkspaces() {
         </h2>
 
         <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
-          Workspaces keep your projects, team, issues, and development activity
-          organized in one place.
+          Bring your projects, issues, code, and team together in one organized
+          workspace.
         </p>
 
-        <Button className="mt-6">
-          <Plus />
-          Create workspace
-        </Button>
+        <div className="mt-6">
+          <CreateWorkspaceDialog variant="button" />
+        </div>
       </CardContent>
     </Card>
   );
