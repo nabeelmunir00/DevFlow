@@ -1,13 +1,28 @@
-import { ArrowRight, Check, Sparkles } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowRight,
+  BarChart3,
+  ListChecks,
+  Sparkles,
+} from "lucide-react";
 
 import { AiAssistantPreview } from "@/components/marketing/ai-assistant-preview";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 const capabilities = [
-  "Break complex work into actionable tasks",
-  "Surface blockers and project risks",
-  "Summarize progress across your workspace",
+  {
+    icon: ListChecks,
+    text: "Break complex work into actionable tasks",
+  },
+  {
+    icon: AlertTriangle,
+    text: "Surface blockers and project risks",
+  },
+  {
+    icon: BarChart3,
+    text: "Summarize progress across your workspace",
+  },
 ];
 
 export function AiSpotlight() {
@@ -27,7 +42,11 @@ export function AiSpotlight() {
           <h2 className="mt-5 font-heading text-3xl font-semibold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
             Turn project context
             <br />
-            into action with AI
+            into{" "}
+            <span className="bg-gradient-to-r from-primary to-primary/50 bg-clip-text text-transparent">
+              action
+            </span>{" "}
+            with AI
           </h2>
 
           <p className="mt-5 max-w-lg text-base leading-7 text-muted-foreground">
@@ -36,13 +55,13 @@ export function AiSpotlight() {
           </p>
 
           <div className="mt-8 space-y-4">
-            {capabilities.map((capability) => (
-              <div key={capability} className="flex items-center gap-3">
+            {capabilities.map(({ icon: Icon, text }) => (
+              <div key={text} className="flex items-center gap-3">
                 <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                  <Check className="size-3.5 text-primary" />
+                  <Icon className="size-3.5 text-primary" />
                 </div>
 
-                <p className="text-sm text-foreground">{capability}</p>
+                <p className="text-sm text-foreground">{text}</p>
               </div>
             ))}
           </div>
@@ -52,6 +71,11 @@ export function AiSpotlight() {
               Explore DevFlow AI
               <ArrowRight />
             </Button>
+
+            <p className="mt-3 text-xs text-muted-foreground">
+              Works alongside your existing issues, sprints, and pull requests —
+              no setup required.
+            </p>
           </div>
         </div>
 
@@ -59,7 +83,11 @@ export function AiSpotlight() {
         <div className="relative min-w-0">
           {/* subtle background decoration */}
           <div
-            className="pointer-events-none absolute -inset-8 -z-10 bg-primary/5 blur-3xl"
+            className="pointer-events-none absolute -inset-8 -z-10 rounded-full bg-primary/10 blur-3xl"
+            aria-hidden="true"
+          />
+          <div
+            className="pointer-events-none absolute -right-6 top-1/3 -z-10 size-40 rounded-full bg-primary/5 blur-2xl"
             aria-hidden="true"
           />
 
