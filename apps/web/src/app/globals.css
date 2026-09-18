@@ -1,26 +1,163 @@
 @import "tailwindcss";
 
+/*
+ * DevFlow Design System
+ * ---------------------
+ * Global semantic tokens only.
+ * Feature-specific styling belongs with the feature/component.
+ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Core surfaces */
+  --background: #0b1015;
+  --foreground: #f3f5f8;
+
+  --card: #111820;
+  --card-foreground: #f3f5f8;
+
+  --popover: #111820;
+  --popover-foreground: #f3f5f8;
+
+  /* Brand */
+  --primary: #5965ff;
+  --primary-foreground: #ffffff;
+
+  /* Neutral surfaces */
+  --secondary: #151c24;
+  --secondary-foreground: #e8ebf0;
+
+  --muted: #151c24;
+  --muted-foreground: #9da9ba;
+
+  --accent: #18212b;
+  --accent-foreground: #f3f5f8;
+
+  /* Feedback */
+  --destructive: #e75858;
+  --destructive-foreground: #ffffff;
+
+  --success: #35c985;
+  --success-foreground: #07140e;
+
+  --warning: #e7b43a;
+  --warning-foreground: #1c1504;
+
+  --info: #4d8df7;
+  --info-foreground: #ffffff;
+
+  /* Controls */
+  --border: #27313c;
+  --input: #35404d;
+  --ring: #6873ff;
+
+  /* Sidebar */
+  --sidebar: #0d1319;
+  --sidebar-foreground: #cdd4de;
+  --sidebar-accent: #151e2b;
+  --sidebar-accent-foreground: #f3f5f8;
+  --sidebar-border: #202833;
+
+  /* Shape */
+  --radius: 0.5rem;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  /* Fonts */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Core */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  /* Card */
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  /* Popover */
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  /* Primary */
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  /* Secondary */
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  /* Muted */
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  /* Accent */
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  /* Destructive */
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  /* Status */
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+
+  /* Controls */
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Sidebar */
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+
+  /* Radius */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    border-color: var(--border);
   }
-}
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  html {
+    background: var(--background);
+  }
+
+  body {
+    margin: 0;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-geist-sans), sans-serif;
+    text-rendering: optimizeLegibility;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--primary) 30%, transparent);
+    color: var(--foreground);
+  }
 }
