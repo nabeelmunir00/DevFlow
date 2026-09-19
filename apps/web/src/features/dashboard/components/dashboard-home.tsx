@@ -1,8 +1,11 @@
 import { AssignedTasks } from "./assigned-tasks";
 import { CurrentSprint } from "./current-sprint";
 import { DashboardHeader } from "./dashboard-header";
+import { NeedsAttention } from "./needs-attention";
 import { PullRequests } from "./pull-requests";
 import { RecentProjects } from "./recent-projects";
+import { TeamActivity } from "./team-activity";
+import { UpcomingDeadline } from "./upcoming-deadline";
 import { WorkspaceBrief } from "./workspace-brief";
 import { WorkspaceMetrics } from "./workspace-metrics";
 
@@ -27,6 +30,8 @@ export function DashboardHome({ slug }: DashboardHomeProps) {
               <AssignedTasks slug={slug} />
 
               <RecentProjects slug={slug} />
+
+              <TeamActivity slug={slug} />
             </div>
 
             {/* Right column */}
@@ -34,6 +39,10 @@ export function DashboardHome({ slug }: DashboardHomeProps) {
               <CurrentSprint slug={slug} />
 
               <PullRequests slug={slug} />
+
+              <NeedsAttention slug={slug} />
+
+              <UpcomingDeadline slug={slug} />
             </div>
           </div>
         </div>
