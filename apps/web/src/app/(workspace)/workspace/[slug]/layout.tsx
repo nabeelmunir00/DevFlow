@@ -4,8 +4,16 @@ import { WorkspaceShell } from "@/components/layout/workspace/workspace-shell";
 
 interface WorkspaceLayoutProps {
   children: ReactNode;
+  params: Promise<{
+    slug: string;
+  }>;
 }
 
-export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
-  return <WorkspaceShell>{children}</WorkspaceShell>;
+export default async function WorkspaceLayout({
+  children,
+  params,
+}: WorkspaceLayoutProps) {
+  const { slug } = await params;
+
+  return <WorkspaceShell slug={slug}>{children}</WorkspaceShell>;
 }

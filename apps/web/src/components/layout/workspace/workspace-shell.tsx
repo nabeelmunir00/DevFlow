@@ -1,17 +1,17 @@
-import type { ReactNode } from "react";
-
+import { ReactNode } from "react";
 import { WorkspaceHeader } from "./workspace-header";
 import { WorkspaceSidebar } from "./workspace-sidebar";
 
 interface WorkspaceShellProps {
+  slug: string;
   children: ReactNode;
 }
 
-export function WorkspaceShell({ children }: WorkspaceShellProps) {
+export function WorkspaceShell({ slug, children }: WorkspaceShellProps) {
   return (
     <div className="min-h-dvh bg-background">
       <div className="hidden lg:block">
-        <WorkspaceSidebar />
+        <WorkspaceSidebar slug={slug} />
       </div>
 
       <div className="lg:pl-64">
