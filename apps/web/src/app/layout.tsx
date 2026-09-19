@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Geist_Mono, Poppins } from "next/font/google";
 
-import { ThemeProvider } from "@/components/theme-provider";
-
 import "./globals.css";
+import { ThemeProvider } from "@/providers/theme-provider";
 
 const poppins = Poppins({
   subsets: ["latin"],
