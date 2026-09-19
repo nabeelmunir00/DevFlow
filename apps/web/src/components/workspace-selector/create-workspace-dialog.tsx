@@ -18,7 +18,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import { createOrganization } from "@/features/organizations/api/create-organization";
-import { Card, CardContent } from "../ui/card";
 
 interface CreateWorkspaceDialogProps {
   variant?: "card" | "button";
@@ -103,7 +102,9 @@ export function CreateWorkspaceDialog({
 
     setName(value);
     setError(null);
-    setSlug(generateSlug(value));
+    if (!slugEdited) {
+      setSlug(generateSlug(value));
+    }
   }
 
   function handleSlugChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -119,23 +120,24 @@ export function CreateWorkspaceDialog({
       <DialogTrigger
         render={
           variant === "card" ? (
-            <Card className="group cursor-pointer overflow-hidden py-0 shadow-none transition-colors hover:bg-muted/30">
-              <CardContent className="flex min-h-24 items-center gap-5 p-5">
-                <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border border-border bg-muted/30 transition-colors group-hover:bg-muted">
-                  <Plus className="size-5 text-muted-foreground" />
-                </div>
+            <button
+              type="button"
+              className="group flex min-h-24 w-full items-center gap-5 rounded-xl border border-border bg-card p-5 text-left shadow-none transition-colors hover:bg-muted/30"
+            >
+              <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border border-border bg-muted/30 transition-colors group-hover:bg-muted">
+                <Plus className="size-5 text-muted-foreground" />
+              </div>
 
-                <div className="min-w-0 flex-1 text-left">
-                  <h2 className="truncate font-heading text-base font-medium text-foreground">
-                    Create a workspace
-                  </h2>
+              <div className="min-w-0 flex-1">
+                <h2 className="truncate font-heading text-base font-medium text-foreground">
+                  Create a workspace
+                </h2>
 
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Start a new workspace for your team
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Start a new workspace for your team
+                </p>
+              </div>
+            </button>
           ) : (
             <Button>
               <Plus />
@@ -224,9 +226,7 @@ export function CreateWorkspaceDialog({
 
             <Button
               type="submit"
-              disabled={
-                isSubmitting || !name.trim() || !slug.trim() || !slugEdited
-              }
+              disabled={isSubmitting || !name.trim() || !slug.trim()}
             >
               {isSubmitting ? (
                 <>
