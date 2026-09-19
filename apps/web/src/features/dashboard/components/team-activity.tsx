@@ -66,7 +66,7 @@ export function TeamActivity({
   activities = demoActivities,
 }: TeamActivityProps) {
   return (
-    <Card className="gap-0 overflow-hidden rounded-md border-border py-0 shadow-none">
+    <Card className="min-w-0 gap-0 overflow-hidden rounded-md border-border bg-card py-0 shadow-none">
       <DashboardPanelHeader
         title="Team activity"
         actionLabel="View all activity"
@@ -74,58 +74,82 @@ export function TeamActivity({
       />
 
       <CardContent className="p-0">
-        <div className="divide-y divide-border">
-          {activities.map((activity) => (
-            <div
-              key={activity.id}
-              className="flex min-h-14 items-center gap-3 px-4 py-2.5"
-            >
-              <Avatar className="size-8 shrink-0">
-                <AvatarFallback className="text-xs">
-                  {activity.user.initials}
-                </AvatarFallback>
-              </Avatar>
+        {activities.length === 0 ? (
+          <div className="flex h-28 items-center justify-center px-4 text-center">
+            <p className="text-sm text-muted-foreground">
+              No recent team activity.
+            </p>
+          </div>
+        ) : (
+          <div className="divide-y divide-border">
+            {activities.map((activity) => (
+              <div
+                key={activity.id}
+                className="group flex min-h-14 items-center gap-3 px-4 py-2.5 transition-colors hover:bg-muted/40"
+              >
+                <Avatar className="size-8 shrink-0">
+                  <AvatarFallback className="bg-muted text-xs font-medium text-foreground">
+                    {activity.user.initials}
+                  </AvatarFallback>
+                </Avatar>
 
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm text-foreground">
-                  <span className="font-medium">{activity.user.name}</span>{" "}
-                  <span className="text-muted-foreground">
-                    {activity.action}
-                  </span>{" "}
-                  <span className="font-medium">{activity.target}</span>
-                </p>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm leading-5 text-foreground">
+                    <span className="font-medium">{activity.user.name}</span>{" "}
+                    <span className="text-muted-foreground">
+                      {activity.action}
+                    </span>{" "}
+                    <span className="font-medium">{activity.target}</span>
+                  </p>
 
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  {activity.time}
-                </p>
-              </div>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  render={
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="size-7 shrink-0"
+                  <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Icon
+                      icon="solar:clock-circle-linear"
+                      className="size-3.5 shrink-0"
+                      aria-hidden="true"
                     />
-                  }
-                >
-                  <Icon
-                    icon="solar:menu-dots-bold"
-                    className="size-4 text-muted-foreground"
-                  />
 
-                  <span className="sr-only">Activity actions</span>
-                </DropdownMenuTrigger>
+                    <span className="whitespace-nowrap">{activity.time}</span>
+                  </div>
+                </div>
 
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem>View activity</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          ))}
-        </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    render={
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-7 shrink-0 rounded-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                      />
+                    }
+                  >
+                    <Icon
+                      icon="solar:menu-dots-bold"
+                      className="size-4"
+                      aria-hidden="true"
+                    />
+
+                    <span className="sr-only">
+                      Actions for {activity.user.name}&apos;s activity
+                    </span>
+                  </DropdownMenuTrigger>
+
+                  <DropdownMenuContent align="end" className="min-w-36">
+                    <DropdownMenuItem>
+                      <Icon
+                        icon="solar:eye-linear"
+                        className="size-4"
+                        aria-hidden="true"
+                      />
+                      View activity
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

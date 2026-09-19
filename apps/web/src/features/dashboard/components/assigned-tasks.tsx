@@ -21,6 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { DashboardPanelHeader } from "./dashboard-panel-header";
 
 type TaskPriority = "HIGH" | "MEDIUM" | "LOW";
 
@@ -117,23 +118,11 @@ export function AssignedTasks({
 
   return (
     <Card className="min-w-0 gap-0 overflow-hidden rounded-lg  border-border py-0 shadow-none">
-      <div className="flex h-[42px] items-center justify-between gap-3 border-b px-4">
-        <h2 className="truncate text-[17px] leading-5 font-semibold tracking-[-0.02em]">
-          Assigned to me
-        </h2>
-
-        <Link
-          href={`/workspace/${slug}/tasks`}
-          className="inline-flex shrink-0 items-center gap-2 text-sm rounded-sm "
-        >
-          View all tasks
-          <Icon
-            icon="solar:arrow-right-linear"
-            className="size-4"
-            aria-hidden="true"
-          />
-        </Link>
-      </div>
+      <DashboardPanelHeader
+        title="Assigned to me"
+        actionLabel="View all"
+        href={`/workspace/${slug}/task`}
+      />
 
       <CardContent className="p-0 pb-1">
         <Table
@@ -309,7 +298,7 @@ export function AssignedTasks({
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                className="size-7 rounded-sm text-[#d5dce5] hover:bg-white/5 hover:text-white focus-visible:ring-[#6b89ff]/50"
+                                className="size-7 rounded-sm"
                               />
                             }
                           >

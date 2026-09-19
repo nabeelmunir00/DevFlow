@@ -51,31 +51,32 @@ const demoPullRequests: PullRequest[] = [
   },
 ];
 
-function getStatusLabel(status: PullRequestStatus) {
-  switch (status) {
-    case "READY":
-      return "Ready";
-
-    case "REVIEW":
-      return "In review";
-
-    case "CHANGES_REQUESTED":
-      return "Changes";
+const statusStyles: Record<
+  PullRequestStatus,
+  {
+    label: string;
+    badge: string;
+    dot: string;
   }
-}
+> = {
+  READY: {
+    label: "Ready",
+    badge: "border-success/30 bg-success/10 text-success",
+    dot: "bg-success",
+  },
 
-function getStatusClassName(status: PullRequestStatus) {
-  switch (status) {
-    case "READY":
-      return "border-success/30 bg-success/10 text-success";
+  REVIEW: {
+    label: "In review",
+    badge: "border-info/30 bg-info/10 text-info",
+    dot: "bg-info",
+  },
 
-    case "REVIEW":
-      return "border-info/30 bg-info/10 text-info";
-
-    case "CHANGES_REQUESTED":
-      return "border-warning/30 bg-warning/10 text-warning";
-  }
-}
+  CHANGES_REQUESTED: {
+    label: "Changes",
+    badge: "border-warning/30 bg-warning/10 text-warning",
+    dot: "bg-warning",
+  },
+};
 
 export function PullRequests({
   slug,
@@ -90,7 +91,7 @@ export function PullRequests({
       />
 
       <CardContent className="p-0">
-        <Table>
+        <Table aria-label="Pull requests">
           <TableHeader>
             <TableRow className="h-9 border-border hover:bg-transparent">
               <TableHead className="h-9 w-16 px-4 text-xs font-normal text-muted-foreground">
@@ -112,89 +113,6 @@ export function PullRequests({
           </TableHeader>
 
           <TableBody>
-            {pullRequests.map((pullRequest) => (
-              <TableRow
-                key={pullRequest.id}
-                className="h-10 border-border transition-colors hover:bg-muted/40"
-              >
-                <TableCell className="px-4 py-0">
-                  <span className="text-xs tabular-nums text-muted-foreground">
-                    #{pullRequest.id}
-                  </span>
-                </TableCell>
-
-                <TableCell className="min-w-0 px-2 py-0">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <Icon
-                      icon="mdi:source-pull"
-                      className="size-4 shrink-0 text-primary"
-                      aria-hidden="true"
-                    />
-
-                    <span className="truncate text-sm font-medium text-foreground">
-                      {pullRequest.title}
-                    </span>
-                  </div>
-                </TableCell>
-
-                <TableCell className="px-2 py-0">
-                  <Badge
-                    variant="outline"
-                    className={`h-5 rounded-sm px-1.5 text-[11px] font-medium ${getStatusClassName(
-                      pullRequest.status,
-                    )}`}
-                  >
-                    {getStatusLabel(pullRequest.status)}
-                  </Badge>
-                </TableCell>
-
-                <TableCell className="px-2 py-0 text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger
-                      render={
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="size-7 rounded-sm text-muted-foreground hover:text-foreground"
-                        />
-                      }
-                    >
-                      <Icon
-                        icon="solar:menu-dots-bold"
-                        className="size-4"
-                        aria-hidden="true"
-                      />
-
-                      <span className="sr-only">
-                        Actions for pull request #{pullRequest.id}
-                      </span>
-                    </DropdownMenuTrigger>
-
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
-                        <Icon
-                          icon="mdi:source-pull"
-                          className="size-4"
-                          aria-hidden="true"
-                        />
-                        Open pull request
-                      </DropdownMenuItem>
-
-                      <DropdownMenuItem>
-                        <Icon
-                          icon="mdi:github"
-                          className="size-4"
-                          aria-hidden="true"
-                        />
-                        View repository
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))}
-
             {pullRequests.length === 0 ? (
               <TableRow className="hover:bg-transparent">
                 <TableCell
@@ -204,7 +122,100 @@ export function PullRequests({
                   No open pull requests.
                 </TableCell>
               </TableRow>
-            ) : null}
+            ) : (
+              pullRequests.map((pullRequest) => {
+                const status = statusStyles[pullRequest.status];
+
+                return (
+                  <TableRow
+                    key={pullRequest.id}
+                    className="h-10 border-border transition-colors hover:bg-muted/40"
+                  >
+                    <TableCell className="px-4 py-0">
+                      <span className="text-xs tabular-nums text-muted-foreground">
+                        #{pullRequest.id}
+                      </span>
+                    </TableCell>
+
+                    <TableCell className="min-w-0 px-2 py-0">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <Icon
+                          icon="mdi:source-pull"
+                          className="size-4 shrink-0 text-primary"
+                          aria-hidden="true"
+                        />
+
+                        <span
+                          className="truncate text-sm font-medium text-foreground"
+                          title={pullRequest.title}
+                        >
+                          {pullRequest.title}
+                        </span>
+                      </div>
+                    </TableCell>
+
+                    <TableCell className="px-2 py-0">
+                      <Badge
+                        variant="outline"
+                        className={`h-6 gap-1.5 rounded-full px-2 py-0 text-xs font-normal ${status.badge}`}
+                      >
+                        <span
+                          aria-hidden="true"
+                          className={`size-2.5 shrink-0 rounded-full ${status.dot}`}
+                        />
+
+                        {status.label}
+                      </Badge>
+                    </TableCell>
+
+                    <TableCell className="px-2 py-0 text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger
+                          render={
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="size-7 rounded-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                            />
+                          }
+                        >
+                          <Icon
+                            icon="solar:menu-dots-bold"
+                            className="size-4"
+                            aria-hidden="true"
+                          />
+
+                          <span className="sr-only">
+                            Actions for pull request #{pullRequest.id}
+                          </span>
+                        </DropdownMenuTrigger>
+
+                        <DropdownMenuContent align="end" className="min-w-40">
+                          <DropdownMenuItem>
+                            <Icon
+                              icon="mdi:source-pull"
+                              className="size-4"
+                              aria-hidden="true"
+                            />
+                            Open pull request
+                          </DropdownMenuItem>
+
+                          <DropdownMenuItem>
+                            <Icon
+                              icon="mdi:github"
+                              className="size-4"
+                              aria-hidden="true"
+                            />
+                            View repository
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
           </TableBody>
         </Table>
       </CardContent>
