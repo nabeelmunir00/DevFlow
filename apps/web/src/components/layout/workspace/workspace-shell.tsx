@@ -1,4 +1,7 @@
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
+
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+
 import { WorkspaceHeader } from "./workspace-header";
 import { WorkspaceSidebar } from "./workspace-sidebar";
 
@@ -9,16 +12,14 @@ interface WorkspaceShellProps {
 
 export function WorkspaceShell({ slug, children }: WorkspaceShellProps) {
   return (
-    <div className="min-h-dvh bg-background">
-      <div className="hidden lg:block">
-        <WorkspaceSidebar slug={slug} />
-      </div>
+    <SidebarProvider>
+      <WorkspaceSidebar slug={slug} />
 
-      <div className="lg:pl-64">
+      <SidebarInset>
         <WorkspaceHeader />
 
-        <main className="min-h-[calc(100dvh-4rem)]">{children}</main>
-      </div>
-    </div>
+        <main className="flex-1">{children}</main>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
