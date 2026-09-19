@@ -23,7 +23,7 @@ export function WorkspaceShell({ slug, user, children }: WorkspaceShellProps) {
       <WorkspaceSidebar slug={slug} user={user} />
 
       <SidebarInset>
-        <WorkspaceHeader />
+        <WorkspaceHeader slug={slug} user={user} />
 
         <main className="flex flex-1 flex-col">{children}</main>
       </SidebarInset>
