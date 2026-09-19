@@ -16,32 +16,25 @@ interface DashboardHomeProps {
 export function DashboardHome({ slug }: DashboardHomeProps) {
   return (
     <div className="flex flex-1 flex-col">
-      <div className="w-full px-7 py-5">
-        <div className="space-y-4">
+      <div className="w-full px-6 py-5 2xl:px-7">
+        <div className="space-y-3">
           <DashboardHeader />
 
           <WorkspaceMetrics />
 
           <WorkspaceBrief />
 
-          <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(320px,1fr)]">
-            {/* Left column */}
-            <div className="grid min-w-0 gap-4">
+          <div className="grid items-start gap-3 xl:grid-cols-[minmax(0,1.55fr)_minmax(320px,1fr)]">
+            <div className="grid min-w-0 gap-3">
               <AssignedTasks slug={slug} />
-
               <RecentProjects slug={slug} />
-
               <TeamActivity slug={slug} />
             </div>
 
-            {/* Right column */}
-            <div className="grid min-w-0 gap-4">
+            <div className="grid min-w-0 gap-3">
               <CurrentSprint slug={slug} />
-
               <PullRequests slug={slug} />
-
               <NeedsAttention slug={slug} />
-
               <UpcomingDeadline slug={slug} />
             </div>
           </div>
