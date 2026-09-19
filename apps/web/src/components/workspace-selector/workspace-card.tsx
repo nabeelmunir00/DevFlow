@@ -11,12 +11,16 @@ interface WorkspaceCardProps {
 const workspaceColors = [
   "bg-emerald-500",
   "bg-violet-500",
-  "bg-amber-500",
-  "bg-blue-500",
+  "bg-orange-500",
+  "bg-sky-500",
   "bg-rose-500",
-  "bg-cyan-500",
+  "bg-cyan-600",
+  "bg-fuchsia-500",
+  "bg-lime-600",
   "bg-indigo-500",
   "bg-pink-500",
+  "bg-teal-500",
+  "bg-blue-500",
 ];
 
 function getWorkspaceColor(value: string) {
@@ -64,8 +68,8 @@ export function WorkspaceCard({ organization }: WorkspaceCardProps) {
             {organization.name}
           </h2>
 
-          <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
-            <p className="mt-1 text-sm text-muted-foreground">
+          <div className=" flex items-center gap-2 text-sm text-muted-foreground">
+            <p className=" text-sm text-muted-foreground">
               {organization.memberCount}{" "}
               {organization.memberCount === 1 ? "member" : "members"}
               <span className="mx-1.5">·</span>

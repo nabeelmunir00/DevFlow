@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import { createOrganization } from "@/features/organizations/api/create-organization";
+import { Card, CardContent } from "../ui/card";
 
 interface CreateWorkspaceDialogProps {
   variant?: "card" | "button";
@@ -97,33 +98,52 @@ export function CreateWorkspaceDialog({
     }
   }
 
+  function handleNameChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const value = event.target.value;
+
+    setName(value);
+    setError(null);
+    setSlug(generateSlug(value));
+  }
+
+  function handleSlugChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const value = event.target.value;
+
+    setSlugEdited(true);
+    setSlug(generateSlug(value));
+    setError(null);
+  }
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger>
-        {variant === "card" ? (
-          <Button
-            variant="outline"
-            className="group h-24 w-full justify-start gap-5 px-5 shadow-none"
-          >
-            <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border border-dashed border-border bg-muted/30 transition-colors group-hover:bg-muted">
-              <Plus className="size-5 text-muted-foreground" />
-            </div>
+      <DialogTrigger
+        render={
+          variant === "card" ? (
+            <Card className="group cursor-pointer overflow-hidden py-0 shadow-none transition-colors hover:bg-muted/30">
+              <CardContent className="flex min-h-24 items-center gap-5 p-5">
+                <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border border-border bg-muted/30 transition-colors group-hover:bg-muted">
+                  <Plus className="size-5 text-muted-foreground" />
+                </div>
 
-            <div className="text-left">
-              <p className="font-medium text-foreground">Create a workspace</p>
+                <div className="min-w-0 flex-1 text-left">
+                  <h2 className="truncate font-heading text-base font-medium text-foreground">
+                    Create a workspace
+                  </h2>
 
-              <p className="mt-1 text-sm font-normal text-muted-foreground">
-                Start a new workspace for your team
-              </p>
-            </div>
-          </Button>
-        ) : (
-          <Button>
-            <Plus />
-            Create workspace
-          </Button>
-        )}
-      </DialogTrigger>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Start a new workspace for your team
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Button>
+              <Plus />
+              Create workspace
+            </Button>
+          )
+        }
+      />
 
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
@@ -145,17 +165,13 @@ export function CreateWorkspaceDialog({
             <Label htmlFor="workspace-name">Workspace name</Label>
 
             <Input
-              id="workspace-slug"
-              value={slug}
-              onChange={(event) => {
-                setSlugEdited(true);
-                setSlug(generateSlug(event.target.value));
-                setError(null);
-              }}
-              placeholder="devflow-studio"
-              autoComplete="off"
+              id="workspace-name"
+              value={name}
+              onChange={handleNameChange}
+              placeholder="DevFlow Studio"
+              autoComplete="organization"
+              autoFocus
               disabled={isSubmitting}
-              className="rounded-none border-0 shadow-none focus-visible:ring-0"
             />
 
             <p className="text-sm text-muted-foreground">
@@ -167,19 +183,15 @@ export function CreateWorkspaceDialog({
             <Label htmlFor="workspace-slug">Workspace URL</Label>
 
             <div className="flex overflow-hidden rounded-md border border-input bg-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background">
-              <div className="flex items-center border-r border-border bg-muted/50 px-3 text-sm text-muted-foreground">
+              <div className="flex shrink-0 items-center border-r border-border bg-muted/50 px-3 text-sm text-muted-foreground">
                 devflow.app/
               </div>
 
               <Input
                 id="workspace-slug"
                 value={slug}
-                onChange={(event) => {
-                  setSlugEdited(true);
-                  setSlug(generateSlug(event.target.value));
-                  setError(null);
-                }}
-                placeholder="acme-engineering"
+                onChange={handleSlugChange}
+                placeholder="devflow-studio"
                 autoComplete="off"
                 disabled={isSubmitting}
                 className="rounded-none border-0 shadow-none focus-visible:ring-0"
@@ -212,7 +224,9 @@ export function CreateWorkspaceDialog({
 
             <Button
               type="submit"
-              disabled={isSubmitting || !name.trim() || !slug.trim()}
+              disabled={
+                isSubmitting || !name.trim() || !slug.trim() || !slugEdited
+              }
             >
               {isSubmitting ? (
                 <>
