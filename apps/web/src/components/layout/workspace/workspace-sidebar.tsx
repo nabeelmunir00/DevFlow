@@ -5,6 +5,18 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icon } from "@iconify/react";
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
 import {
   Sidebar,
   SidebarContent,
@@ -16,6 +28,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarSeparator,
+  SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
 
 import {
@@ -23,17 +37,51 @@ import {
   workspaceSecondaryNavigation,
 } from "@/config/workspace-navigation";
 
+import type { WorkspaceUser } from "./workspace-shell";
+
 interface WorkspaceSidebarProps {
   slug: string;
+  user: WorkspaceUser;
 }
 
-export function WorkspaceSidebar({ slug }: WorkspaceSidebarProps) {
+function getInitials(value: string) {
+  return value
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join("");
+}
+
+function formatWorkspaceName(slug: string) {
+  return slug
+    .split("-")
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+export function WorkspaceSidebar({ slug, user }: WorkspaceSidebarProps) {
   const pathname = usePathname();
 
+  const { isMobile, state } = useSidebar();
+
+  const isCollapsed = state === "collapsed";
+
   const workspacePath = `/workspace/${slug}`;
+  const workspaceName = formatWorkspaceName(slug);
+
+  const workspaceInitials = getInitials(workspaceName) || "W";
+
+  const userInitials = getInitials(user.name || user.email) || "U";
 
   function getHref(href: string) {
-    return href ? `${workspacePath}/${href}` : workspacePath;
+    if (!href) {
+      return workspacePath;
+    }
+
+    return `${workspacePath}/${href}`;
   }
 
   function isActive(href: string) {
@@ -46,82 +94,134 @@ export function WorkspaceSidebar({ slug }: WorkspaceSidebarProps) {
     return pathname === target || pathname.startsWith(`${target}/`);
   }
 
-  const workspaceInitials = slug
-    .split("-")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((word) => word.charAt(0).toUpperCase())
-    .join("");
-
-  const workspaceName = slug
-    .split("-")
-    .filter(Boolean)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-
   return (
     <Sidebar
       collapsible="icon"
       variant="sidebar"
       className="border-r border-sidebar-border"
     >
-      {/* DevFlow */}
-      <SidebarHeader className="border-b border-sidebar-border p-0">
-        <div className="flex h-16 items-center px-4 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2">
-          <Link
-            href="/workspace"
-            aria-label="DevFlow workspaces"
-            className="flex min-w-0 items-center gap-3"
-          >
-            <Image
-              src="/logo.png"
-              alt=""
-              width={32}
-              height={32}
-              priority
-              className="size-8 shrink-0 object-contain"
-            />
+      {/* =====================================================
+          HEADER
+      ====================================================== */}
 
-            <span className="truncate font-heading text-lg font-semibold tracking-tight text-sidebar-foreground group-data-[collapsible=icon]:hidden">
-              DevFlow
-            </span>
-          </Link>
+      <SidebarHeader className="gap-2 border-b border-sidebar-border p-2">
+        {/* =================================================
+            BRAND + SIDEBAR TOGGLE
+        ================================================== */}
+
+        <div className="flex h-10 items-center">
+          {isCollapsed ? (
+            /* Collapsed state: show expand button */
+            <div className="flex w-full items-center justify-center">
+              <SidebarTrigger
+                className="size-8 rounded-md text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                aria-label="Expand sidebar"
+              />
+            </div>
+          ) : (
+            /* Expanded state: logo + title + collapse button */
+            <>
+              <Link
+                href="/workspace"
+                aria-label="DevFlow workspaces"
+                className="flex min-w-0 flex-1 items-center gap-2.5 overflow-hidden px-1"
+              >
+                <Image
+                  src="/logo.png"
+                  alt="DevFlow"
+                  width={30}
+                  height={30}
+                  priority
+                  className="size-[30px] shrink-0 object-contain"
+                />
+
+                <span className="truncate font-heading text-base font-semibold tracking-tight text-sidebar-foreground">
+                  DevFlow
+                </span>
+              </Link>
+
+              <SidebarTrigger
+                className="size-8 shrink-0 rounded-md text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                aria-label="Collapse sidebar"
+              />
+            </>
+          )}
         </div>
 
-        {/* Workspace switcher */}
-        <div className="px-2 pb-2 group-data-[collapsible=icon]:px-2">
+        {/* =================================================
+            WORKSPACE SWITCHER
+        ================================================== */}
+
+        <DropdownMenu>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton
-                size="lg"
-                tooltip={workspaceName}
-                className="h-auto min-h-14 gap-3 rounded-lg border border-sidebar-border bg-sidebar-accent/40 px-2.5 py-2 hover:bg-sidebar-accent data-[state=open]:bg-sidebar-accent"
+              <DropdownMenuTrigger
+                render={
+                  <SidebarMenuButton
+                    size="lg"
+                    tooltip={workspaceName}
+                    className="rounded-md data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                  />
+                }
               >
-                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary font-semibold text-primary-foreground">
-                  {workspaceInitials || "W"}
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary text-sm font-semibold text-primary-foreground">
+                  {workspaceInitials}
                 </div>
 
-                <div className="min-w-0 flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
-                  <span className="block truncate text-sm font-semibold text-sidebar-foreground">
+                <div className="grid min-w-0 flex-1 text-left leading-tight">
+                  <span className="truncate text-sm font-medium">
                     {workspaceName}
                   </span>
 
-                  <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                  <span className="truncate text-xs text-muted-foreground">
                     Workspace
                   </span>
                 </div>
 
                 <Icon
                   icon="solar:alt-arrow-down-linear"
-                  className="ml-auto size-4 shrink-0 text-muted-foreground group-data-[collapsible=icon]:hidden"
+                  className="ml-auto size-4 shrink-0 text-muted-foreground"
                 />
-              </SidebarMenuButton>
+              </DropdownMenuTrigger>
             </SidebarMenuItem>
           </SidebarMenu>
-        </div>
+
+          <DropdownMenuContent
+            align="start"
+            side={isMobile ? "bottom" : "right"}
+            sideOffset={8}
+            className="min-w-56 rounded-md"
+          >
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+                Workspace
+              </DropdownMenuLabel>
+
+              <DropdownMenuItem render={<Link href="/workspace" />}>
+                <Icon
+                  icon="solar:transfer-horizontal-linear"
+                  className="size-4"
+                />
+
+                <span>Switch workspace</span>
+              </DropdownMenuItem>
+
+              <DropdownMenuItem
+                render={<Link href={`${workspacePath}/settings`} />}
+              >
+                <Icon icon="solar:settings-linear" className="size-4" />
+
+                <span>Workspace settings</span>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </SidebarHeader>
 
-      {/* Navigation */}
+      {/* =====================================================
+          MAIN NAVIGATION
+      ====================================================== */}
+
       <SidebarContent>
         <SidebarGroup className="px-2 py-3">
           <SidebarGroupContent>
@@ -136,11 +236,23 @@ export function WorkspaceSidebar({ slug }: WorkspaceSidebarProps) {
                       tooltip={item.label}
                       isActive={active}
                       render={<Link href={href} />}
-                      className="h-9 gap-3 px-3 text-muted-foreground hover:text-sidebar-foreground data-[active=true]:bg-primary/10 data-[active=true]:font-medium data-[active=true]:text-primary"
+                      className="
+                        h-9
+                        gap-3
+                        rounded-md
+                        px-2.5
+                        text-muted-foreground
+                        transition-colors
+                        hover:bg-sidebar-accent
+                        hover:text-sidebar-accent-foreground
+                        data-[active=true]:bg-primary/10
+                        data-[active=true]:font-medium
+                        data-[active=true]:text-primary
+                      "
                     >
-                      <Icon icon={item.icon} className="size-5 shrink-0" />
+                      <Icon icon={item.icon} className="size-[18px] shrink-0" />
 
-                      <span>{item.label}</span>
+                      <span className="truncate">{item.label}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );
@@ -150,73 +262,149 @@ export function WorkspaceSidebar({ slug }: WorkspaceSidebarProps) {
         </SidebarGroup>
       </SidebarContent>
 
-      {/* Bottom navigation */}
-      <SidebarFooter className="p-0">
-        <SidebarSeparator className="mx-0 w-full" />
+      {/* =====================================================
+          FOOTER
+      ====================================================== */}
 
-        <SidebarGroup className="px-2 py-2">
-          <SidebarGroupContent>
-            <SidebarMenu className="gap-1">
-              {workspaceSecondaryNavigation.map((item) => {
-                const href = getHref(item.href);
-                const active = isActive(item.href);
+      <SidebarFooter className="gap-2 p-2">
+        {/* Secondary Navigation */}
 
-                return (
-                  <SidebarMenuItem key={item.label}>
-                    <SidebarMenuButton
-                      tooltip={item.label}
-                      isActive={active}
-                      render={<Link href={href} />}
-                      className="h-9 gap-3 px-3 text-muted-foreground hover:text-sidebar-foreground data-[active=true]:bg-primary/10 data-[active=true]:font-medium data-[active=true]:text-primary"
-                    >
-                      <Icon icon={item.icon} className="size-5 shrink-0" />
+        <SidebarMenu className="gap-1">
+          {workspaceSecondaryNavigation.map((item) => {
+            const href = getHref(item.href);
+            const active = isActive(item.href);
 
-                      <span>{item.label}</span>
+            return (
+              <SidebarMenuItem key={item.label}>
+                <SidebarMenuButton
+                  tooltip={item.label}
+                  isActive={active}
+                  render={<Link href={href} />}
+                  className="
+                    h-9
+                    gap-3
+                    rounded-md
+                    px-2.5
+                    text-muted-foreground
+                    transition-colors
+                    hover:bg-sidebar-accent
+                    hover:text-sidebar-accent-foreground
+                    data-[active=true]:bg-primary/10
+                    data-[active=true]:font-medium
+                    data-[active=true]:text-primary
+                  "
+                >
+                  <Icon icon={item.icon} className="size-[18px] shrink-0" />
 
-                      {item.href === "notifications" && (
-                        <span className="ml-auto flex size-5 items-center justify-center rounded-full bg-destructive text-xs font-medium text-destructive-foreground group-data-[collapsible=icon]:hidden">
-                          3
-                        </span>
-                      )}
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+                  <span className="truncate">{item.label}</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            );
+          })}
+        </SidebarMenu>
 
-        {/* Temporary user section */}
-        <div className="border-t border-sidebar-border p-2">
+        <SidebarSeparator className="mx-0" />
+
+        {/* =================================================
+            CURRENT USER
+        ================================================== */}
+
+        <DropdownMenu>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton
-                size="lg"
-                tooltip="Account"
-                className="h-auto min-h-12 gap-3 px-2"
+              <DropdownMenuTrigger
+                render={
+                  <SidebarMenuButton
+                    size="lg"
+                    tooltip={user.name}
+                    className="
+                      rounded-md
+                      data-[state=open]:bg-sidebar-accent
+                      data-[state=open]:text-sidebar-accent-foreground
+                    "
+                  />
+                }
               >
-                <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-medium text-foreground">
-                  U
-                </div>
+                <Avatar className="size-8 shrink-0 rounded-md">
+                  <AvatarImage src={user.imageUrl} alt={user.name} />
 
-                <div className="min-w-0 flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
-                  <span className="block truncate text-sm font-medium text-sidebar-foreground">
-                    Account
+                  <AvatarFallback className="rounded-md">
+                    {userInitials}
+                  </AvatarFallback>
+                </Avatar>
+
+                <div className="grid min-w-0 flex-1 text-left leading-tight">
+                  <span className="truncate text-sm font-medium">
+                    {user.name}
                   </span>
 
-                  <span className="block truncate text-xs text-muted-foreground">
-                    Signed in
+                  <span className="truncate text-xs text-muted-foreground">
+                    {user.email}
                   </span>
                 </div>
 
                 <Icon
                   icon="solar:menu-dots-bold"
-                  className="ml-auto size-4 text-muted-foreground group-data-[collapsible=icon]:hidden"
+                  className="ml-auto size-4 shrink-0 text-muted-foreground"
                 />
-              </SidebarMenuButton>
+              </DropdownMenuTrigger>
             </SidebarMenuItem>
           </SidebarMenu>
-        </div>
+
+          <DropdownMenuContent
+            align="end"
+            side={isMobile ? "bottom" : "right"}
+            sideOffset={8}
+            className="min-w-60 rounded-md"
+          >
+            {/* User information */}
+
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>
+                <div className="flex items-center gap-3">
+                  <Avatar className="size-9 rounded-md">
+                    <AvatarImage src={user.imageUrl} alt={user.name} />
+
+                    <AvatarFallback className="rounded-md">
+                      {userInitials}
+                    </AvatarFallback>
+                  </Avatar>
+
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{user.name}</p>
+
+                    <p className="truncate text-xs font-normal text-muted-foreground">
+                      {user.email}
+                    </p>
+                  </div>
+                </div>
+              </DropdownMenuLabel>
+            </DropdownMenuGroup>
+
+            <DropdownMenuSeparator />
+
+            {/* Account actions */}
+
+            <DropdownMenuGroup>
+              <DropdownMenuItem
+                render={<Link href={`${workspacePath}/settings`} />}
+              >
+                <Icon icon="solar:settings-linear" className="size-4" />
+
+                <span>Settings</span>
+              </DropdownMenuItem>
+
+              <DropdownMenuItem render={<Link href="/workspace" />}>
+                <Icon
+                  icon="solar:transfer-horizontal-linear"
+                  className="size-4"
+                />
+
+                <span>Switch workspace</span>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </SidebarFooter>
     </Sidebar>
   );
