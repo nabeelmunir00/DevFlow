@@ -1,7 +1,5 @@
 import { ArrowRight } from "lucide-react";
 
-import { SignUpButton } from "@clerk/nextjs";
-
 import { Button } from "@/components/ui/button";
 import { WorkspacePreview } from "@/components/marketing/workspace-preview";
 import Link from "next/link";

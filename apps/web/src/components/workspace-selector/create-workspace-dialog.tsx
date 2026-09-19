@@ -36,12 +36,6 @@ export function CreateWorkspaceDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (slugEdited) return;
-
-    setSlug(generateSlug(name));
-  }, [name, slugEdited]);
-
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -151,16 +145,17 @@ export function CreateWorkspaceDialog({
             <Label htmlFor="workspace-name">Workspace name</Label>
 
             <Input
-              id="workspace-name"
-              value={name}
+              id="workspace-slug"
+              value={slug}
               onChange={(event) => {
-                setName(event.target.value);
+                setSlugEdited(true);
+                setSlug(generateSlug(event.target.value));
                 setError(null);
               }}
-              placeholder="Acme Engineering"
+              placeholder="devflow-studio"
               autoComplete="off"
-              autoFocus
               disabled={isSubmitting}
+              className="rounded-none border-0 shadow-none focus-visible:ring-0"
             />
 
             <p className="text-sm text-muted-foreground">
