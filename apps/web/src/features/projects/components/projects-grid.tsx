@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import {
   CalendarDays,
   FolderOpen,
@@ -21,6 +23,7 @@ import type { Project } from "../types/project";
 import { ProjectStatusBadge } from "./project-status-badge";
 
 interface ProjectsGridProps {
+  slug: string;
   projects: Project[];
 }
 
@@ -40,7 +43,7 @@ const memberStyles = [
   "bg-warning/15 text-warning",
 ];
 
-export function ProjectsGrid({ projects }: ProjectsGridProps) {
+export function ProjectsGrid({ slug, projects }: ProjectsGridProps) {
   if (projects.length === 0) {
     return (
       <Card className="rounded-md border-border bg-card py-0 shadow-none">
@@ -61,6 +64,8 @@ export function ProjectsGrid({ projects }: ProjectsGridProps) {
           0,
         );
 
+        const projectHref = `/workspace/${slug}/projects/${project.id}`;
+
         return (
           <Card
             key={project.id}
@@ -69,7 +74,10 @@ export function ProjectsGrid({ projects }: ProjectsGridProps) {
             <CardContent className="p-4">
               {/* Header */}
               <div className="flex items-start justify-between gap-3">
-                <div className="flex min-w-0 items-start gap-3">
+                <Link
+                  href={projectHref}
+                  className="flex min-w-0 items-start gap-3"
+                >
                   <div
                     className={`flex size-10 shrink-0 items-center justify-center rounded-md text-sm font-semibold ${accentStyles[project.accent]}`}
                   >
@@ -91,7 +99,7 @@ export function ProjectsGrid({ projects }: ProjectsGridProps) {
                       {project.description}
                     </p>
                   </div>
-                </div>
+                </Link>
 
                 <DropdownMenu>
                   <DropdownMenuTrigger
@@ -110,18 +118,22 @@ export function ProjectsGrid({ projects }: ProjectsGridProps) {
                   </DropdownMenuTrigger>
 
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem>
-                      <FolderOpen className="size-4" />
+                    <DropdownMenuItem render={<Link href={projectHref} />}>
+                      <FolderOpen className="size-4" aria-hidden="true" />
                       Open project
                     </DropdownMenuItem>
 
                     <DropdownMenuItem>
-                      <Settings className="size-4" />
+                      <Settings className="size-4" aria-hidden="true" />
                       Project settings
                     </DropdownMenuItem>
 
                     <DropdownMenuItem>
-                      <Icon icon="mdi:github" className="size-4" />
+                      <Icon
+                        icon="mdi:github"
+                        className="size-4"
+                        aria-hidden="true"
+                      />
                       View repository
                     </DropdownMenuItem>
                   </DropdownMenuContent>

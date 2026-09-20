@@ -29,7 +29,6 @@ export interface PullRequest {
 }
 
 interface PullRequestsProps {
-  slug: string;
   pullRequests?: PullRequest[];
 }
 
@@ -79,7 +78,6 @@ const statusStyles: Record<
 };
 
 export function PullRequests({
-  slug,
   pullRequests = demoPullRequests,
 }: PullRequestsProps) {
   return (
@@ -87,7 +85,7 @@ export function PullRequests({
       <DashboardPanelHeader
         title="Pull requests"
         actionLabel="View all"
-        href={`/workspace/${slug}/github`}
+        href={`/workspace/github`}
       />
 
       <CardContent className="p-0">

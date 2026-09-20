@@ -24,7 +24,6 @@ export interface TeamActivityItem {
 }
 
 interface TeamActivityProps {
-  slug: string;
   activities?: TeamActivityItem[];
 }
 
@@ -62,7 +61,6 @@ const demoActivities: TeamActivityItem[] = [
 ];
 
 export function TeamActivity({
-  slug,
   activities = demoActivities,
 }: TeamActivityProps) {
   return (
@@ -70,7 +68,7 @@ export function TeamActivity({
       <DashboardPanelHeader
         title="Team activity"
         actionLabel="View all activity"
-        href={`/workspace/${slug}/activity`}
+        href={`/workspace/activity`}
       />
 
       <CardContent className="p-0">

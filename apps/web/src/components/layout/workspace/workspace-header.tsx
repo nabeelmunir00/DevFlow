@@ -1,5 +1,6 @@
 "use client";
 
+import { Fragment } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useClerk } from "@clerk/nextjs";
@@ -29,11 +30,17 @@ import {
 
 import { Input } from "@/components/ui/input";
 
+import { demoProjects } from "@/features/projects/components/data/demo-projects";
+
 import type { WorkspaceUser } from "./workspace-shell";
 
 interface WorkspaceHeaderProps {
-  slug: string;
   user: WorkspaceUser;
+}
+
+interface BreadcrumbData {
+  label: string;
+  href?: string;
 }
 
 function formatLabel(value: string) {
@@ -54,24 +61,61 @@ function getInitials(value: string) {
     .join("");
 }
 
-export function WorkspaceHeader({ slug, user }: WorkspaceHeaderProps) {
+function getBreadcrumbs(pathname: string): BreadcrumbData[] {
+  const segments = pathname.split("/").filter(Boolean);
+
+  const workspaceSegments = segments.slice(1);
+
+  const breadcrumbs: BreadcrumbData[] = [
+    {
+      label: "Workspace",
+      href: "/workspace",
+    },
+  ];
+
+  if (workspaceSegments.length === 0) {
+    breadcrumbs.push({
+      label: "Home",
+    });
+
+    return breadcrumbs;
+  }
+
+  const section = workspaceSegments[0];
+
+  if (section === "project") {
+    breadcrumbs.push({
+      label: "Projects",
+      href: "/workspace/project",
+    });
+
+    const projectId = workspaceSegments[1];
+
+    if (projectId) {
+      const project = demoProjects.find((item) => item.id === projectId);
+
+      breadcrumbs.push({
+        label: project?.name ?? formatLabel(projectId),
+      });
+    }
+
+    return breadcrumbs;
+  }
+
+  breadcrumbs.push({
+    label: formatLabel(section),
+  });
+
+  return breadcrumbs;
+}
+
+export function WorkspaceHeader({ user }: WorkspaceHeaderProps) {
   const pathname = usePathname();
   const { signOut } = useClerk();
 
-  const workspacePath = `/workspace/${slug}`;
-  const workspaceName = formatLabel(slug);
-
   const userInitials = getInitials(user.name || user.email) || "U";
 
-  const currentPath = pathname
-    .replace(workspacePath, "")
-    .split("/")
-    .filter(Boolean);
-
-  const currentPage =
-    currentPath.length > 0
-      ? formatLabel(currentPath[currentPath.length - 1])
-      : "Home";
+  const breadcrumbs = getBreadcrumbs(pathname);
 
   async function handleSignOut() {
     await signOut({
@@ -88,21 +132,38 @@ export function WorkspaceHeader({ slug, user }: WorkspaceHeaderProps) {
 
         <Breadcrumb className="min-w-0">
           <BreadcrumbList>
-            <BreadcrumbItem className="hidden sm:inline-flex">
-              <span className="truncate text-muted-foreground">
-                {workspaceName}
-              </span>
-            </BreadcrumbItem>
+            {breadcrumbs.map((breadcrumb, index) => {
+              const isLast = index === breadcrumbs.length - 1;
 
-            <BreadcrumbSeparator className="hidden sm:block">
-              <span className="text-muted-foreground">/</span>
-            </BreadcrumbSeparator>
+              return (
+                <Fragment key={`${breadcrumb.label}-${index}`}>
+                  {index > 0 ? (
+                    <BreadcrumbSeparator>
+                      <span className="text-muted-foreground">/</span>
+                    </BreadcrumbSeparator>
+                  ) : null}
 
-            <BreadcrumbItem>
-              <BreadcrumbPage className="truncate">
-                {currentPage}
-              </BreadcrumbPage>
-            </BreadcrumbItem>
+                  <BreadcrumbItem
+                    className={
+                      index === 0 ? "hidden sm:inline-flex" : undefined
+                    }
+                  >
+                    {isLast || !breadcrumb.href ? (
+                      <BreadcrumbPage className="truncate">
+                        {breadcrumb.label}
+                      </BreadcrumbPage>
+                    ) : (
+                      <Link
+                        href={breadcrumb.href}
+                        className="truncate text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        {breadcrumb.label}
+                      </Link>
+                    )}
+                  </BreadcrumbItem>
+                </Fragment>
+              );
+            })}
           </BreadcrumbList>
         </Breadcrumb>
 
@@ -119,6 +180,7 @@ export function WorkspaceHeader({ slug, user }: WorkspaceHeaderProps) {
             <Icon
               icon="solar:magnifer-linear"
               className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden="true"
             />
 
             <Input
@@ -141,7 +203,11 @@ export function WorkspaceHeader({ slug, user }: WorkspaceHeaderProps) {
             className="rounded-md md:hidden"
             aria-label="Search"
           >
-            <Icon icon="solar:magnifer-linear" className="size-[18px]" />
+            <Icon
+              icon="solar:magnifer-linear"
+              className="size-[18px]"
+              aria-hidden="true"
+            />
           </Button>
 
           {/* ==============================================
@@ -154,7 +220,11 @@ export function WorkspaceHeader({ slug, user }: WorkspaceHeaderProps) {
             className="rounded-md text-muted-foreground hover:text-foreground"
             aria-label="Notifications"
           >
-            <Icon icon="solar:bell-linear" className="size-[18px]" />
+            <Icon
+              icon="solar:bell-linear"
+              className="size-[18px]"
+              aria-hidden="true"
+            />
           </Button>
 
           {/* ==============================================
@@ -217,15 +287,13 @@ export function WorkspaceHeader({ slug, user }: WorkspaceHeaderProps) {
               {/* Workspace actions */}
 
               <DropdownMenuGroup>
-                <DropdownMenuItem
-                  render={<Link href={`${workspacePath}/settings`} />}
-                >
+                <DropdownMenuItem render={<Link href="/workspace/settings" />}>
                   <Icon icon="solar:settings-linear" className="size-4" />
 
                   <span>Settings</span>
                 </DropdownMenuItem>
 
-                <DropdownMenuItem render={<Link href="/workspace" />}>
+                <DropdownMenuItem render={<Link href="/select-workspace" />}>
                   <Icon
                     icon="solar:transfer-horizontal-linear"
                     className="size-4"

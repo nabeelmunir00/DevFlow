@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { Icon } from "@iconify/react";
 
@@ -21,6 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+
 import { DashboardPanelHeader } from "./dashboard-panel-header";
 
 type TaskPriority = "HIGH" | "MEDIUM" | "LOW";
@@ -35,7 +35,6 @@ export interface AssignedTask {
 }
 
 interface AssignedTasksProps {
-  slug: string;
   tasks?: AssignedTask[];
   onViewTask?: (task: AssignedTask) => void;
   onEditTask?: (task: AssignedTask) => void;
@@ -72,10 +71,25 @@ const demoTasks: AssignedTask[] = [
   },
 ];
 
-const priorityStyles: Record<TaskPriority, { label: string; color: string }> = {
-  HIGH: { label: "High", color: "#ff4d57" },
-  MEDIUM: { label: "Medium", color: "#ffd24a" },
-  LOW: { label: "Low", color: "#00d998" },
+const priorityStyles: Record<
+  TaskPriority,
+  {
+    label: string;
+    color: string;
+  }
+> = {
+  HIGH: {
+    label: "High",
+    color: "#ff4d57",
+  },
+  MEDIUM: {
+    label: "Medium",
+    color: "#ffd24a",
+  },
+  LOW: {
+    label: "Low",
+    color: "#00d998",
+  },
 };
 
 const projectColors: Record<string, string> = {
@@ -95,7 +109,6 @@ const dotClassName =
   "shadow-[inset_0_1px_2px_rgba(255,255,255,0.25)]";
 
 export function AssignedTasks({
-  slug,
   tasks = demoTasks,
   onViewTask,
   onEditTask,
@@ -110,18 +123,23 @@ export function AssignedTasks({
   function toggleTask(id: string, checked: boolean) {
     setSelectedTaskIds((previous) => {
       const next = new Set(previous);
-      if (checked) next.add(id);
-      else next.delete(id);
+
+      if (checked) {
+        next.add(id);
+      } else {
+        next.delete(id);
+      }
+
       return next;
     });
   }
 
   return (
-    <Card className="min-w-0 gap-0 overflow-hidden rounded-lg  border-border py-0 shadow-none">
+    <Card className="min-w-0 gap-0 overflow-hidden rounded-lg border-border py-0 shadow-none">
       <DashboardPanelHeader
         title="Assigned to me"
         actionLabel="View all tasks"
-        href={`/workspace/${slug}/task`}
+        href="/workspace/tasks"
       />
 
       <CardContent className="p-0 pb-1">
@@ -132,7 +150,7 @@ export function AssignedTasks({
           <TableHeader>
             <TableRow className="h- hover:bg-transparent">
               <TableHead className="h-9 w-14 px-0">
-                <div className="flex h-6 items-center justify-center border-r ">
+                <div className="flex h-6 items-center justify-center border-r">
                   <Checkbox
                     aria-label="Select all tasks"
                     className={checkboxClassName}
@@ -154,24 +172,25 @@ export function AssignedTasks({
               </TableHead>
 
               <TableHead className="h-9 w-[20%] px-2 text-xs font-normal">
-                <span className="underline  underline-offset-2">Project</span>
+                <span className="underline underline-offset-2">Project</span>
               </TableHead>
 
-              <TableHead className="h-9 w-[15%] px-2 text-xs font-normal ">
+              <TableHead className="h-9 w-[15%] px-2 text-xs font-normal">
                 <span className="underline underline-offset-2">Priority</span>
               </TableHead>
 
-              <TableHead className="h-9 w-[16%] px-2 text-xs font-normal ">
-                <span className="underline  underline-offset-2">Due</span>
+              <TableHead className="h-9 w-[16%] px-2 text-xs font-normal">
+                <span className="underline underline-offset-2">Due</span>
               </TableHead>
 
               <TableHead className="h-9 w-12 px-0">
-                <div className="flex h-6 items-center justify-center border-l ">
+                <div className="flex h-6 items-center justify-center border-l">
                   <Icon
                     icon="solar:menu-dots-bold"
-                    className="size-4 "
+                    className="size-4"
                     aria-hidden="true"
                   />
+
                   <span className="sr-only">Actions</span>
                 </div>
               </TableHead>
@@ -188,6 +207,7 @@ export function AssignedTasks({
             ) : (
               tasks.map((task) => {
                 const priority = priorityStyles[task.priority];
+
                 const isDueToday = task.due === "Today";
 
                 return (
@@ -214,6 +234,7 @@ export function AssignedTasks({
                     <TableCell className="px-2 py-0">
                       <div className="flex min-w-0 items-center gap-3">
                         <span className="shrink-0 text-primary">{task.id}</span>
+
                         <span
                           className="truncate font-normal"
                           title={task.title}
@@ -235,6 +256,7 @@ export function AssignedTasks({
                               "#5b78ff",
                           }}
                         />
+
                         <span className="truncate" title={task.project}>
                           {task.project}
                         </span>
@@ -246,8 +268,11 @@ export function AssignedTasks({
                         <span
                           aria-hidden="true"
                           className={dotClassName}
-                          style={{ backgroundColor: priority.color }}
+                          style={{
+                            backgroundColor: priority.color,
+                          }}
                         />
+
                         <span>{priority.label}</span>
                       </div>
                     </TableCell>
@@ -263,6 +288,7 @@ export function AssignedTasks({
                           className="size-4 shrink-0"
                           aria-hidden="true"
                         />
+
                         <span
                           className={
                             isDueToday
@@ -294,6 +320,7 @@ export function AssignedTasks({
                               className="size-4"
                               aria-hidden="true"
                             />
+
                             <span className="sr-only">
                               Actions for {task.id}
                             </span>
@@ -307,6 +334,7 @@ export function AssignedTasks({
                             >
                               View task
                             </DropdownMenuItem>
+
                             <DropdownMenuItem
                               disabled={!onEditTask}
                               onClick={() => onEditTask?.(task)}

@@ -29,7 +29,6 @@ export interface AttentionItem {
 }
 
 interface NeedsAttentionProps {
-  slug: string;
   items?: AttentionItem[];
 }
 
@@ -78,16 +77,13 @@ const statusStyles: Record<
   },
 };
 
-export function NeedsAttention({
-  slug,
-  items = demoItems,
-}: NeedsAttentionProps) {
+export function NeedsAttention({ items = demoItems }: NeedsAttentionProps) {
   return (
     <Card className="min-w-0 gap-0 overflow-hidden rounded-md border-border bg-card py-0 shadow-none">
       <DashboardPanelHeader
         title="Needs attention"
         actionLabel="View all"
-        href={`/workspace/${slug}/tasks`}
+        href={`/workspace/tasks`}
       />
 
       <CardContent className="p-0">

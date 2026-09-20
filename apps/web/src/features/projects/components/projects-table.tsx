@@ -1,3 +1,7 @@
+import Link from "next/link";
+import type { ReactNode } from "react";
+
+import { Icon } from "@iconify/react";
 import {
   ArrowUp,
   CalendarDays,
@@ -6,8 +10,6 @@ import {
   MoreHorizontal,
   Settings,
 } from "lucide-react";
-import { Icon } from "@iconify/react";
-import type { ReactNode } from "react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -33,6 +35,7 @@ import type { Project } from "../types/project";
 import { ProjectStatusBadge } from "./project-status-badge";
 
 interface ProjectsTableProps {
+  slug: string;
   projects: Project[];
   selectedProjectId?: string;
 }
@@ -84,6 +87,7 @@ function HeaderCell({
 }
 
 export function ProjectsTable({
+  slug,
   projects,
   selectedProjectId,
 }: ProjectsTableProps) {
@@ -177,15 +181,20 @@ export function ProjectsTable({
 
                 const isSelected = selectedProjectId === project.id;
 
+                const projectHref = `/workspace/${slug}/projects/${project.id}`;
+
                 return (
                   <TableRow
                     key={project.id}
                     data-state={isSelected ? "selected" : undefined}
-                    className="h-16 border-border transition-colors hover:bg-muted/30 data-[state=selected]:bg-primary/5"
+                    className="h-16 border-border transition-colors text-center hover:bg-muted/30 data-[state=selected]:bg-primary/5"
                   >
                     {/* Project */}
-                    <TableCell className="min-w-0 px-3 py-2">
-                      <div className="flex min-w-0 items-center gap-3">
+                    <TableCell className="min-w-0 px-3 py-2 text-start">
+                      <Link
+                        href={projectHref}
+                        className="flex min-w-0 items-center gap-3"
+                      >
                         <div
                           className={`flex size-11 shrink-0 items-center justify-center rounded-md text-sm font-semibold ${accentStyles[project.accent]}`}
                         >
@@ -213,7 +222,7 @@ export function ProjectsTable({
                             </span>
                           </div>
                         </div>
-                      </div>
+                      </Link>
                     </TableCell>
 
                     {/* Status */}
@@ -332,7 +341,9 @@ export function ProjectsTable({
                           </DropdownMenuTrigger>
 
                           <DropdownMenuContent align="end" className="min-w-40">
-                            <DropdownMenuItem>
+                            <DropdownMenuItem
+                              render={<Link href={projectHref} />}
+                            >
                               <FolderOpen
                                 className="size-4"
                                 aria-hidden="true"

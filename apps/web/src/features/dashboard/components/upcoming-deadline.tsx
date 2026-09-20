@@ -27,7 +27,6 @@ export interface UpcomingDeadlineItem {
 }
 
 interface UpcomingDeadlineProps {
-  slug: string;
   deadlines?: UpcomingDeadlineItem[];
 }
 
@@ -74,7 +73,6 @@ function getDateIconClassName(dueDate: string) {
 }
 
 export function UpcomingDeadline({
-  slug,
   deadlines = demoDeadlines,
 }: UpcomingDeadlineProps) {
   return (
@@ -82,7 +80,7 @@ export function UpcomingDeadline({
       <DashboardPanelHeader
         title="Upcoming deadline"
         actionLabel="View all"
-        href={`/workspace/${slug}/tasks`}
+        href={`/workspace/tasks`}
       />
 
       <CardContent className="p-0">

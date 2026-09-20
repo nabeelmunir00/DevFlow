@@ -12,18 +12,17 @@ export interface WorkspaceUser {
 }
 
 interface WorkspaceShellProps {
-  slug: string;
   user: WorkspaceUser;
   children: ReactNode;
 }
 
-export function WorkspaceShell({ slug, user, children }: WorkspaceShellProps) {
+export function WorkspaceShell({ user, children }: WorkspaceShellProps) {
   return (
     <SidebarProvider>
-      <WorkspaceSidebar slug={slug} user={user} />
+      <WorkspaceSidebar user={user} />
 
       <SidebarInset>
-        <WorkspaceHeader slug={slug} user={user} />
+        <WorkspaceHeader user={user} />
 
         <main className="flex flex-1 flex-col">{children}</main>
       </SidebarInset>

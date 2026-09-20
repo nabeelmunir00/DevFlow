@@ -40,7 +40,6 @@ import {
 import type { WorkspaceUser } from "./workspace-shell";
 
 interface WorkspaceSidebarProps {
-  slug: string;
   user: WorkspaceUser;
 }
 
@@ -54,25 +53,18 @@ function getInitials(value: string) {
     .join("");
 }
 
-function formatWorkspaceName(slug: string) {
-  return slug
-    .split("-")
-    .filter(Boolean)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-}
-
-export function WorkspaceSidebar({ slug, user }: WorkspaceSidebarProps) {
+export function WorkspaceSidebar({ user }: WorkspaceSidebarProps) {
   const pathname = usePathname();
 
   const { isMobile, state } = useSidebar();
 
   const isCollapsed = state === "collapsed";
 
-  const workspacePath = `/workspace/${slug}`;
-  const workspaceName = formatWorkspaceName(slug);
+  const workspacePath = "/workspace";
 
-  const workspaceInitials = getInitials(workspaceName) || "W";
+  const workspaceName = "Workspace";
+
+  const workspaceInitials = "W";
 
   const userInitials = getInitials(user.name || user.email) || "U";
 
@@ -111,7 +103,6 @@ export function WorkspaceSidebar({ slug, user }: WorkspaceSidebarProps) {
 
         <div className="flex h-10 items-center">
           {isCollapsed ? (
-            /* Collapsed state: show expand button */
             <div className="flex w-full items-center justify-center">
               <SidebarTrigger
                 className="size-8 rounded-md text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
@@ -119,11 +110,10 @@ export function WorkspaceSidebar({ slug, user }: WorkspaceSidebarProps) {
               />
             </div>
           ) : (
-            /* Expanded state: logo + title + collapse button */
             <>
               <Link
                 href="/workspace"
-                aria-label="DevFlow workspaces"
+                aria-label="DevFlow workspace"
                 className="flex min-w-0 flex-1 items-center gap-2.5 overflow-hidden px-1"
               >
                 <Image
@@ -197,7 +187,7 @@ export function WorkspaceSidebar({ slug, user }: WorkspaceSidebarProps) {
                 Workspace
               </DropdownMenuLabel>
 
-              <DropdownMenuItem render={<Link href="/workspace" />}>
+              <DropdownMenuItem render={<Link href="/select-workspace" />}>
                 <Icon
                   icon="solar:transfer-horizontal-linear"
                   className="size-4"
@@ -206,9 +196,7 @@ export function WorkspaceSidebar({ slug, user }: WorkspaceSidebarProps) {
                 <span>Switch workspace</span>
               </DropdownMenuItem>
 
-              <DropdownMenuItem
-                render={<Link href={`${workspacePath}/settings`} />}
-              >
+              <DropdownMenuItem render={<Link href="/workspace/settings" />}>
                 <Icon icon="solar:settings-linear" className="size-4" />
 
                 <span>Workspace settings</span>
@@ -357,8 +345,6 @@ export function WorkspaceSidebar({ slug, user }: WorkspaceSidebarProps) {
             sideOffset={8}
             className="min-w-60 rounded-md"
           >
-            {/* User information */}
-
             <DropdownMenuGroup>
               <DropdownMenuLabel>
                 <div className="flex items-center gap-3">
@@ -383,18 +369,14 @@ export function WorkspaceSidebar({ slug, user }: WorkspaceSidebarProps) {
 
             <DropdownMenuSeparator />
 
-            {/* Account actions */}
-
             <DropdownMenuGroup>
-              <DropdownMenuItem
-                render={<Link href={`${workspacePath}/settings`} />}
-              >
+              <DropdownMenuItem render={<Link href="/workspace/settings" />}>
                 <Icon icon="solar:settings-linear" className="size-4" />
 
                 <span>Settings</span>
               </DropdownMenuItem>
 
-              <DropdownMenuItem render={<Link href="/workspace" />}>
+              <DropdownMenuItem render={<Link href="/select-workspace" />}>
                 <Icon
                   icon="solar:transfer-horizontal-linear"
                   className="size-4"

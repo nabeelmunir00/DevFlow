@@ -1,4 +1,5 @@
 "use client";
+
 import { useState } from "react";
 import { Icon } from "@iconify/react";
 
@@ -21,6 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+
 import { DashboardPanelHeader } from "./dashboard-panel-header";
 
 type ProjectStatus = "ACTIVE" | "PLANNING" | "ON_HOLD";
@@ -34,7 +36,6 @@ export interface RecentProject {
 }
 
 interface RecentProjectsProps {
-  slug: string;
   projects?: RecentProject[];
   onOpenProject?: (project: RecentProject) => void;
   onProjectSettings?: (project: RecentProject) => void;
@@ -66,7 +67,11 @@ const demoProjects: RecentProject[] = [
 
 const statusStyles: Record<
   ProjectStatus,
-  { label: string; badge: string; dot: string }
+  {
+    label: string;
+    badge: string;
+    dot: string;
+  }
 > = {
   ACTIVE: {
     label: "Active",
@@ -98,7 +103,6 @@ const checkboxClassName =
   "data-[state=checked]:text-primary-foreground focus-visible:ring-ring/50";
 
 export function RecentProjects({
-  slug,
   projects = demoProjects,
   onOpenProject,
   onProjectSettings,
@@ -114,8 +118,13 @@ export function RecentProjects({
   function toggleProject(id: string, checked: boolean) {
     setSelectedProjectIds((previous) => {
       const next = new Set(previous);
-      if (checked) next.add(id);
-      else next.delete(id);
+
+      if (checked) {
+        next.add(id);
+      } else {
+        next.delete(id);
+      }
+
       return next;
     });
   }
@@ -125,7 +134,7 @@ export function RecentProjects({
       <DashboardPanelHeader
         title="Recently updated projects"
         actionLabel="View all projects"
-        href={`/workspace/${slug}/project`}
+        href="/workspace/project"
       />
 
       <CardContent className="p-0 pb-1">
@@ -180,6 +189,7 @@ export function RecentProjects({
                     className="size-4 text-muted-foreground"
                     aria-hidden="true"
                   />
+
                   <span className="sr-only">Actions</span>
                 </div>
               </TableHead>
@@ -231,6 +241,7 @@ export function RecentProjects({
                             projectDotClasses[project.name] ?? "bg-primary"
                           }`}
                         />
+
                         <span
                           className="truncate font-normal text-foreground"
                           title={project.name}
@@ -249,6 +260,7 @@ export function RecentProjects({
                           aria-hidden="true"
                           className={`size-2.5 shrink-0 rounded-full ${status.dot}`}
                         />
+
                         {status.label}
                       </Badge>
                     </TableCell>
@@ -258,6 +270,7 @@ export function RecentProjects({
                         <span className="w-9 shrink-0 text-[13px] text-foreground tabular-nums">
                           {project.progress}%
                         </span>
+
                         <Progress
                           value={project.progress}
                           aria-label={`${project.name} progress`}
@@ -293,6 +306,7 @@ export function RecentProjects({
                               className="size-4"
                               aria-hidden="true"
                             />
+
                             <span className="sr-only">
                               Actions for {project.name}
                             </span>
@@ -306,6 +320,7 @@ export function RecentProjects({
                             >
                               Open project
                             </DropdownMenuItem>
+
                             <DropdownMenuItem
                               disabled={!onProjectSettings}
                               onClick={() => onProjectSettings?.(project)}

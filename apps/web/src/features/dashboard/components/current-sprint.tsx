@@ -16,7 +16,6 @@ interface SprintData {
 }
 
 interface CurrentSprintProps {
-  slug: string;
   sprint?: SprintData;
 }
 
@@ -30,16 +29,13 @@ const demoSprint: SprintData = {
   progress: 69,
 };
 
-export function CurrentSprint({
-  slug,
-  sprint = demoSprint,
-}: CurrentSprintProps) {
+export function CurrentSprint({ sprint = demoSprint }: CurrentSprintProps) {
   return (
     <Card className="min-w-0 gap-0 overflow-hidden rounded-md border-border bg-card py-0 shadow-none">
       <DashboardPanelHeader
         title={sprint.name}
         actionLabel="View sprint"
-        href={`/workspace/${slug}/sprints`}
+        href="/workspace/sprints"
       />
 
       <CardContent className="p-4">
