@@ -149,35 +149,27 @@ export function AssignedTasks({
                 </div>
               </TableHead>
 
-              <TableHead className="h-9 px-2 text-xs font-normal text-[#c4cbd6]">
-                <span className="underline decoration-[#75808f]/40 underline-offset-2">
-                  Task
-                </span>
+              <TableHead className="h-9 px-2 text-xs font-normal">
+                <span className="underline underline-offset-2">Task</span>
               </TableHead>
 
-              <TableHead className="h-9 w-[20%] px-2 text-xs font-normal text-[#c4cbd6]">
-                <span className="underline decoration-[#75808f]/40 underline-offset-2">
-                  Project
-                </span>
+              <TableHead className="h-9 w-[20%] px-2 text-xs font-normal">
+                <span className="underline  underline-offset-2">Project</span>
               </TableHead>
 
-              <TableHead className="h-9 w-[15%] px-2 text-xs font-normal text-[#c4cbd6]">
-                <span className="underline decoration-[#75808f]/40 underline-offset-2">
-                  Priority
-                </span>
+              <TableHead className="h-9 w-[15%] px-2 text-xs font-normal ">
+                <span className="underline underline-offset-2">Priority</span>
               </TableHead>
 
-              <TableHead className="h-9 w-[16%] px-2 text-xs font-normal text-[#c4cbd6]">
-                <span className="underline decoration-[#75808f]/40 underline-offset-2">
-                  Due
-                </span>
+              <TableHead className="h-9 w-[16%] px-2 text-xs font-normal ">
+                <span className="underline  underline-offset-2">Due</span>
               </TableHead>
 
               <TableHead className="h-9 w-12 px-0">
-                <div className="flex h-6 items-center justify-center border-l border-[#303842]">
+                <div className="flex h-6 items-center justify-center border-l ">
                   <Icon
                     icon="solar:menu-dots-bold"
-                    className="size-4 text-[#d5dce5]"
+                    className="size-4 "
                     aria-hidden="true"
                   />
                   <span className="sr-only">Actions</span>
@@ -189,10 +181,7 @@ export function AssignedTasks({
           <TableBody>
             {tasks.length === 0 ? (
               <TableRow className="hover:bg-transparent">
-                <TableCell
-                  colSpan={6}
-                  className="h-28 text-center text-[13px] text-[#aab4c1]"
-                >
+                <TableCell colSpan={6} className="h-28 text-center text-[13px]">
                   No tasks assigned to you yet.
                 </TableCell>
               </TableRow>
@@ -207,7 +196,7 @@ export function AssignedTasks({
                     data-state={
                       selectedTaskIds.has(task.id) ? "selected" : undefined
                     }
-                    className="h-10 border-[#2b343d] transition-colors hover:bg-[#20262d] data-[state=selected]:bg-[#232d42]"
+                    className="h-10 transition-colors"
                   >
                     <TableCell className="px-0 py-0">
                       <div className="flex items-center justify-center">
@@ -224,9 +213,7 @@ export function AssignedTasks({
 
                     <TableCell className="px-2 py-0">
                       <div className="flex min-w-0 items-center gap-3">
-                        <span className="shrink-0 text-[#6285ff]">
-                          {task.id}
-                        </span>
+                        <span className="shrink-0 text-primary">{task.id}</span>
                         <span
                           className="truncate font-normal"
                           title={task.title}
@@ -268,7 +255,7 @@ export function AssignedTasks({
                     <TableCell className="px-2 py-0">
                       <div
                         className={`flex items-center gap-2 ${
-                          isDueToday ? "text-[#ffdc62]" : "text-[#edf0f5]"
+                          isDueToday ? "text-[#ffdc62]" : ""
                         }`}
                       >
                         <Icon
@@ -279,7 +266,7 @@ export function AssignedTasks({
                         <span
                           className={
                             isDueToday
-                              ? "truncate underline decoration-[#ffdc62]/55 underline-offset-2"
+                              ? "truncate underline underline-offset-2"
                               : "truncate"
                           }
                           title={task.due}
@@ -312,21 +299,18 @@ export function AssignedTasks({
                             </span>
                           </DropdownMenuTrigger>
 
-                          <DropdownMenuContent
-                            align="end"
-                            className="min-w-36 border-[#313a44] bg-[#1e242a] text-[#f1f3f5]"
-                          >
+                          <DropdownMenuContent align="end" className="min-w-36">
                             <DropdownMenuItem
                               disabled={!onViewTask}
                               onClick={() => onViewTask?.(task)}
-                              className="text-[13px] focus:bg-white/5 focus:text-white data-[highlighted]:bg-white/5 data-[highlighted]:text-white"
+                              className="text-[13px]"
                             >
                               View task
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               disabled={!onEditTask}
                               onClick={() => onEditTask?.(task)}
-                              className="text-[13px] focus:bg-white/5 focus:text-white data-[highlighted]:bg-white/5 data-[highlighted]:text-white"
+                              className="text-[13px]"
                             >
                               Edit task
                             </DropdownMenuItem>

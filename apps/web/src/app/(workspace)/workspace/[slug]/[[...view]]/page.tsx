@@ -1,4 +1,5 @@
 import { DashboardHome } from "@/features/dashboard/components/dashboard-home";
+import { ProjectsPage } from "@/features/projects/components/projects-page";
 
 interface WorkspaceViewPageProps {
   params: Promise<{
@@ -16,6 +17,10 @@ export default async function WorkspaceViewPage({
 
   if (section === "home") {
     return <DashboardHome slug={slug} />;
+  }
+
+  if (section === "projects") {
+    return <ProjectsPage slug={slug} />;
   }
 
   return null;
