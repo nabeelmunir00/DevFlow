@@ -35,7 +35,6 @@ import type { Project } from "../types/project";
 import { ProjectStatusBadge } from "./project-status-badge";
 
 interface ProjectsTableProps {
-  slug: string;
   projects: Project[];
   selectedProjectId?: string;
 }
@@ -87,12 +86,11 @@ function HeaderCell({
 }
 
 export function ProjectsTable({
-  slug,
   projects,
   selectedProjectId,
 }: ProjectsTableProps) {
   return (
-    <Card className="min-w-0 gap-0 overflow-hidden rounded-md border-border bg-card py-0 shadow-none">
+    <Card className="min-w-0 gap-0 overflow-hidden  rounded-md border-border bg-card py-0 shadow-none">
       <CardContent className="p-0">
         <Table aria-label="Workspace projects" className="w-full table-fixed">
           <TableHeader>
@@ -181,7 +179,7 @@ export function ProjectsTable({
 
                 const isSelected = selectedProjectId === project.id;
 
-                const projectHref = `/workspace/${slug}/projects/${project.id}`;
+                const projectHref = `/workspace/projects/${project.id}`;
 
                 return (
                   <TableRow

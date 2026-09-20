@@ -1,7 +1,6 @@
 import type { Project } from "../../types/project";
 
 interface ProjectDetailsPageProps {
-  slug: string;
   project: Project;
   activeTab: string;
 }

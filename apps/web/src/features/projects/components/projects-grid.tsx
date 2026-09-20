@@ -23,7 +23,6 @@ import type { Project } from "../types/project";
 import { ProjectStatusBadge } from "./project-status-badge";
 
 interface ProjectsGridProps {
-  slug: string;
   projects: Project[];
 }
 
@@ -43,7 +42,7 @@ const memberStyles = [
   "bg-warning/15 text-warning",
 ];
 
-export function ProjectsGrid({ slug, projects }: ProjectsGridProps) {
+export function ProjectsGrid({ projects }: ProjectsGridProps) {
   if (projects.length === 0) {
     return (
       <Card className="rounded-md border-border bg-card py-0 shadow-none">
@@ -64,7 +63,7 @@ export function ProjectsGrid({ slug, projects }: ProjectsGridProps) {
           0,
         );
 
-        const projectHref = `/workspace/${slug}/projects/${project.id}`;
+        const projectHref = `/workspace/projects/${project.id}`;
 
         return (
           <Card

@@ -8,11 +8,7 @@ import { ProjectsTable } from "./projects-table";
 import { type ProjectView, ProjectsToolbar } from "./projects-toolbar";
 import { demoProjects } from "./data/demo-projects";
 
-interface ProjectsPageProps {
-  slug: string;
-}
-
-export function ProjectsPage({ slug: _slug }: ProjectsPageProps) {
+export function ProjectsPage() {
   const [view, setView] = useState<ProjectView>("list");
 
   return (

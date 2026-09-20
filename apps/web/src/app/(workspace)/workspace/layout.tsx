@@ -19,12 +19,13 @@ export default async function WorkspaceLayout({
   }
 
   const email =
-    user.primaryEmailAddress?.emailAddress ??
-    user.emailAddresses[0]?.emailAddress ??
-    "";
+    user?.primaryEmailAddress?.emailAddress ??
+    user?.emailAddresses[0]?.emailAddress ??
+    "Nabeel@gmail.";
 
   const fullName =
-    user.fullName ?? [user.firstName, user.lastName].filter(Boolean).join(" ");
+    user?.fullName ??
+    [user?.firstName, user?.lastName].filter(Boolean).join(" ");
 
   const name = fullName || email;
 
@@ -33,7 +34,7 @@ export default async function WorkspaceLayout({
       user={{
         name,
         email,
-        imageUrl: user.imageUrl,
+        imageUrl: user?.imageUrl || "/logo.png",
       }}
     >
       {children}
