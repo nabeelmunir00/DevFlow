@@ -1,4 +1,13 @@
+import {
+  ArrowUp,
+  CalendarDays,
+  FolderKanban,
+  FolderOpen,
+  MoreHorizontal,
+  Settings,
+} from "lucide-react";
 import { Icon } from "@iconify/react";
+import type { ReactNode } from "react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -10,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
 import {
   Table,
   TableBody,
@@ -24,6 +34,13 @@ import { ProjectStatusBadge } from "./project-status-badge";
 
 interface ProjectsTableProps {
   projects: Project[];
+  selectedProjectId?: string;
+}
+
+interface HeaderCellProps {
+  children: ReactNode;
+  className?: string;
+  separator?: boolean;
 }
 
 const accentStyles: Record<Project["accent"], string> = {
@@ -35,183 +52,315 @@ const accentStyles: Record<Project["accent"], string> = {
   muted: "bg-muted text-foreground",
 };
 
-export function ProjectsTable({ projects }: ProjectsTableProps) {
+const memberStyles = [
+  "bg-primary/15 text-primary",
+  "bg-info/15 text-info",
+  "bg-success/15 text-success",
+  "bg-warning/15 text-warning",
+  "bg-muted text-muted-foreground",
+];
+
+function HeaderCell({
+  children,
+  className = "",
+  separator = true,
+}: HeaderCellProps) {
+  return (
+    <TableHead
+      className={`h-12 p-0 text-xs font-normal text-muted-foreground ${className}`}
+    >
+      <div className="flex h-full min-w-0 items-center">
+        {separator ? (
+          <Separator
+            orientation="vertical"
+            className="mx-3 my-3 h-5 shrink-0"
+          />
+        ) : null}
+
+        <div className="min-w-0 pr-3">{children}</div>
+      </div>
+    </TableHead>
+  );
+}
+
+export function ProjectsTable({
+  projects,
+  selectedProjectId,
+}: ProjectsTableProps) {
   return (
     <Card className="min-w-0 gap-0 overflow-hidden rounded-md border-border bg-card py-0 shadow-none">
-      <CardContent className="overflow-x-auto p-0">
-        <Table className="min-w-[1100px]">
+      <CardContent className="p-0">
+        <Table aria-label="Workspace projects" className="w-full table-fixed">
           <TableHeader>
-            <TableRow className="h-10 border-border hover:bg-transparent">
-              <TableHead className="min-w-64 px-3">
-                <div className="flex items-center gap-2">
-                  Project
-                  <Icon icon="solar:arrow-up-linear" className="size-3.5" />
+            <TableRow className="h-12 border-border hover:bg-transparent">
+              {/* Project */}
+              <HeaderCell separator={false} className="w-64">
+                <div className="flex items-center gap-2 px-3">
+                  <span>Project</span>
+
+                  <ArrowUp
+                    className="size-3.5 text-muted-foreground"
+                    aria-hidden="true"
+                  />
                 </div>
-              </TableHead>
+              </HeaderCell>
 
-              <TableHead className="w-32">Status</TableHead>
+              {/* Status */}
+              <HeaderCell className="w-32">Status</HeaderCell>
 
-              <TableHead className="w-36">Members</TableHead>
+              {/* Members */}
+              <HeaderCell className="hidden w-36 lg:table-cell">
+                Members
+              </HeaderCell>
 
-              <TableHead className="w-44">Progress</TableHead>
+              {/* Progress */}
+              <HeaderCell className="hidden w-44 md:table-cell">
+                Progress
+              </HeaderCell>
 
-              <TableHead className="w-24">Open tasks</TableHead>
+              {/* Open tasks */}
+              <HeaderCell className="hidden w-24 xl:table-cell">
+                Open tasks
+              </HeaderCell>
 
-              <TableHead className="w-24">Sprint</TableHead>
+              {/* Sprint */}
+              <HeaderCell className="hidden w-28 xl:table-cell">
+                Sprint
+              </HeaderCell>
 
-              <TableHead className="w-28">Due date</TableHead>
+              {/* Due date */}
+              <HeaderCell className="hidden w-32 lg:table-cell">
+                Due date
+              </HeaderCell>
 
-              <TableHead className="w-44">Repository</TableHead>
+              {/* Repository */}
+              <HeaderCell className="hidden w-44 xl:table-cell">
+                Repository
+              </HeaderCell>
 
-              <TableHead className="w-12">
+              {/* Actions */}
+              <TableHead className="w-12 px-0">
                 <span className="sr-only">Actions</span>
               </TableHead>
             </TableRow>
           </TableHeader>
 
           <TableBody>
-            {projects.map((project) => {
-              const visibleMembers = project.members.slice(0, 3);
-              const remainingMembers =
-                project.members.length - visibleMembers.length;
+            {projects.length === 0 ? (
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={9} className="h-36 text-center">
+                  <div className="flex flex-col items-center justify-center gap-2">
+                    <div className="flex size-10 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                      <FolderKanban className="size-5" aria-hidden="true" />
+                    </div>
 
-              return (
-                <TableRow
-                  key={project.id}
-                  className="h-[70px] border-border transition-colors hover:bg-muted/30"
-                >
-                  <TableCell className="px-3 py-2">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <div
-                        className={`flex size-11 shrink-0 items-center justify-center rounded-md text-sm font-semibold ${accentStyles[project.accent]}`}
-                      >
-                        {project.key}
-                      </div>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">
+                        No projects found
+                      </p>
 
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-foreground">
-                          {project.name}
-                        </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Create a project to get started.
+                      </p>
+                    </div>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : (
+              projects.map((project) => {
+                const visibleMembers = project.members.slice(0, 3);
 
-                        <div className="mt-1 flex min-w-0 items-center gap-2">
-                          <span className="rounded-sm border border-info/30 bg-info/10 px-1 text-[10px] text-info">
-                            {project.key}
-                          </span>
+                const remainingMembers = Math.max(
+                  project.members.length - visibleMembers.length,
+                  0,
+                );
 
-                          <span className="truncate text-xs text-muted-foreground">
-                            {project.description}
-                          </span>
+                const isSelected = selectedProjectId === project.id;
+
+                return (
+                  <TableRow
+                    key={project.id}
+                    data-state={isSelected ? "selected" : undefined}
+                    className="h-16 border-border transition-colors hover:bg-muted/30 data-[state=selected]:bg-primary/5"
+                  >
+                    {/* Project */}
+                    <TableCell className="min-w-0 px-3 py-2">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div
+                          className={`flex size-11 shrink-0 items-center justify-center rounded-md text-sm font-semibold ${accentStyles[project.accent]}`}
+                        >
+                          {project.key}
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <p
+                            className="truncate text-sm font-medium leading-5 text-foreground"
+                            title={project.name}
+                          >
+                            {project.name}
+                          </p>
+
+                          <div className="mt-1 flex min-w-0 items-center gap-2">
+                            <span className="shrink-0 rounded-sm border border-primary/25 bg-primary/10 px-1 text-xs font-medium leading-none text-primary">
+                              {project.key}
+                            </span>
+
+                            <span
+                              className="hidden truncate text-xs text-muted-foreground sm:block"
+                              title={project.description}
+                            >
+                              {project.description}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </TableCell>
+                    </TableCell>
 
-                  <TableCell>
-                    <ProjectStatusBadge status={project.status} />
-                  </TableCell>
+                    {/* Status */}
+                    <TableCell className="px-3 py-0">
+                      <ProjectStatusBadge status={project.status} />
+                    </TableCell>
 
-                  <TableCell>
-                    <div className="flex items-center">
-                      {visibleMembers.map((member, index) => (
-                        <Avatar
-                          key={member.id}
-                          className="-ml-1 first:ml-0 size-7 border-2 border-card"
-                          style={{
-                            zIndex: visibleMembers.length - index,
-                          }}
+                    {/* Members */}
+                    <TableCell className="hidden px-3 py-0 lg:table-cell">
+                      <div className="flex items-center">
+                        <div className="flex -space-x-1.5">
+                          {visibleMembers.map((member, index) => (
+                            <Avatar
+                              key={member.id}
+                              className="size-7 border-2 border-card"
+                              title={member.name}
+                            >
+                              <AvatarFallback
+                                className={`text-xs font-medium ${
+                                  memberStyles[index % memberStyles.length]
+                                }`}
+                              >
+                                {member.initials}
+                              </AvatarFallback>
+                            </Avatar>
+                          ))}
+                        </div>
+
+                        {remainingMembers > 0 ? (
+                          <span className="ml-2 whitespace-nowrap text-xs tabular-nums text-muted-foreground">
+                            +{remainingMembers}
+                          </span>
+                        ) : null}
+                      </div>
+                    </TableCell>
+
+                    {/* Progress */}
+                    <TableCell className="hidden px-3 py-0 md:table-cell">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <Progress
+                          value={project.progress}
+                          aria-label={`${project.name} progress`}
+                          className="h-2 min-w-0 flex-1 rounded-full bg-muted"
+                        />
+
+                        <span className="w-9 shrink-0 text-right text-xs tabular-nums text-foreground">
+                          {project.progress}%
+                        </span>
+                      </div>
+                    </TableCell>
+
+                    {/* Open tasks */}
+                    <TableCell className="hidden px-3 py-0 text-sm tabular-nums text-foreground xl:table-cell">
+                      {project.openTasks}
+                    </TableCell>
+
+                    {/* Sprint */}
+                    <TableCell className="hidden px-3 py-0 xl:table-cell">
+                      <span className="whitespace-nowrap text-sm text-foreground">
+                        {project.sprint}
+                      </span>
+                    </TableCell>
+
+                    {/* Due date */}
+                    <TableCell className="hidden px-3 py-0 lg:table-cell">
+                      <div className="flex items-center gap-2 whitespace-nowrap text-sm text-foreground">
+                        <CalendarDays
+                          className="size-4 shrink-0 text-muted-foreground"
+                          aria-hidden="true"
+                        />
+
+                        <span className="tabular-nums">{project.dueDate}</span>
+                      </div>
+                    </TableCell>
+
+                    {/* Repository */}
+                    <TableCell className="hidden px-3 py-0 xl:table-cell">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <Icon
+                          icon="mdi:github"
+                          className="size-4 shrink-0 text-foreground"
+                          aria-hidden="true"
+                        />
+
+                        <span
+                          className="truncate text-sm font-medium text-primary"
+                          title={project.repository}
                         >
-                          <AvatarFallback className="text-[10px]">
-                            {member.initials}
-                          </AvatarFallback>
-                        </Avatar>
-                      ))}
-
-                      {remainingMembers > 0 ? (
-                        <span className="ml-2 text-xs text-muted-foreground">
-                          +{remainingMembers}
+                          {project.repository}
                         </span>
-                      ) : null}
-                    </div>
-                  </TableCell>
+                      </div>
+                    </TableCell>
 
-                  <TableCell>
-                    <div className="flex min-w-0 items-center gap-3">
-                      <Progress
-                        value={project.progress}
-                        className="h-2 flex-1"
-                      />
+                    {/* Actions */}
+                    <TableCell className="px-1 py-0">
+                      <div className="flex justify-center">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger
+                            render={
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="size-8 rounded-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                              />
+                            }
+                          >
+                            <MoreHorizontal
+                              className="size-4"
+                              aria-hidden="true"
+                            />
 
-                      <span className="w-9 text-right text-xs tabular-nums text-foreground">
-                        {project.progress}%
-                      </span>
-                    </div>
-                  </TableCell>
+                            <span className="sr-only">
+                              Actions for {project.name}
+                            </span>
+                          </DropdownMenuTrigger>
 
-                  <TableCell className="text-sm tabular-nums text-foreground">
-                    {project.openTasks}
-                  </TableCell>
+                          <DropdownMenuContent align="end" className="min-w-40">
+                            <DropdownMenuItem>
+                              <FolderOpen
+                                className="size-4"
+                                aria-hidden="true"
+                              />
+                              Open project
+                            </DropdownMenuItem>
 
-                  <TableCell className="whitespace-nowrap text-sm text-foreground">
-                    {project.sprint}
-                  </TableCell>
+                            <DropdownMenuItem>
+                              <Settings className="size-4" aria-hidden="true" />
+                              Project settings
+                            </DropdownMenuItem>
 
-                  <TableCell>
-                    <div className="flex items-center gap-2 whitespace-nowrap text-sm text-foreground">
-                      <Icon
-                        icon="solar:calendar-linear"
-                        className="size-4 text-muted-foreground"
-                        aria-hidden="true"
-                      />
-
-                      {project.dueDate}
-                    </div>
-                  </TableCell>
-
-                  <TableCell>
-                    <div className="flex min-w-0 items-center gap-2">
-                      <Icon
-                        icon="mdi:github"
-                        className="size-5 shrink-0"
-                        aria-hidden="true"
-                      />
-
-                      <span className="truncate text-sm text-primary">
-                        {project.repository}
-                      </span>
-                    </div>
-                  </TableCell>
-
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger
-                        render={
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="size-8 rounded-sm text-muted-foreground"
-                          />
-                        }
-                      >
-                        <Icon icon="solar:menu-dots-bold" className="size-4" />
-
-                        <span className="sr-only">
-                          Actions for {project.name}
-                        </span>
-                      </DropdownMenuTrigger>
-
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem>Open project</DropdownMenuItem>
-
-                        <DropdownMenuItem>Project settings</DropdownMenuItem>
-
-                        <DropdownMenuItem>View repository</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
+                            <DropdownMenuItem>
+                              <Icon
+                                icon="mdi:github"
+                                className="size-4"
+                                aria-hidden="true"
+                              />
+                              View repository
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
           </TableBody>
         </Table>
       </CardContent>
