@@ -120,7 +120,7 @@ export function AssignedTasks({
     <Card className="min-w-0 gap-0 overflow-hidden rounded-lg  border-border py-0 shadow-none">
       <DashboardPanelHeader
         title="Assigned to me"
-        actionLabel="View all"
+        actionLabel="View all tasks"
         href={`/workspace/${slug}/task`}
       />
 

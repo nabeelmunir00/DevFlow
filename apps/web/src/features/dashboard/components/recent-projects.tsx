@@ -1,6 +1,4 @@
 "use client";
-
-import Link from "next/link";
 import { useState } from "react";
 import { Icon } from "@iconify/react";
 
@@ -23,6 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { DashboardPanelHeader } from "./dashboard-panel-header";
 
 type ProjectStatus = "ACTIVE" | "PLANNING" | "ON_HOLD";
 
@@ -123,28 +122,16 @@ export function RecentProjects({
 
   return (
     <Card className="min-w-0 gap-0 overflow-hidden rounded-lg border-border bg-card py-0 text-foreground shadow-none">
-      <div className="flex h-[42px] items-center justify-between gap-3 border-b border-border px-4">
-        <h2 className="truncate text-[17px] leading-5 font-semibold tracking-[-0.02em]">
-          Recently updated projects
-        </h2>
-
-        <Link
-          href={`/workspace/${slug}/projects`}
-          className="inline-flex shrink-0 items-center gap-2 rounded-sm text-[13px] text-primary transition-colors hover:text-primary/80 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
-        >
-          View all projects
-          <Icon
-            icon="solar:arrow-right-linear"
-            className="size-[18px]"
-            aria-hidden="true"
-          />
-        </Link>
-      </div>
+      <DashboardPanelHeader
+        title="Recently updated projects"
+        actionLabel="View all projects"
+        href={`/workspace/${slug}/project`}
+      />
 
       <CardContent className="p-0 pb-1">
         <Table
           aria-label="Recently updated projects"
-          className="min-w-[720px] table-fixed text-[13px]"
+          className="min-w-3/5 table-fixed text-sm"
         >
           <TableHeader className="bg-muted/40">
             <TableRow className="h-9 border-border hover:bg-transparent">

@@ -24,11 +24,11 @@ export function DashboardPanelHeader({
           render={<Link href={href} />}
           variant="ghost"
           size="sm"
-          className="h-7 gap-1 px-2 text-xs font-normal text-muted-foreground hover:text-foreground"
+          className="h-7 gap-1 px-2 text-sm text-primary font-normal  hover:text-primary"
         >
           {actionLabel}
 
-          <Icon icon="solar:arrow-right-linear" className="size-3.5" />
+          <Icon icon="solar:arrow-right-linear" className="size-5" />
         </Button>
       ) : null}
     </div>

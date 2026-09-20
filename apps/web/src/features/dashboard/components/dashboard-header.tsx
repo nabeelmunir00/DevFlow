@@ -2,6 +2,7 @@
 
 import { useUser } from "@clerk/nextjs";
 import { Icon } from "@iconify/react";
+import { Calendar, ChevronDown, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
@@ -27,18 +28,19 @@ export function DashboardHeader() {
           type="button"
           variant="outline"
           size="sm"
-          className="h-9 gap-2 rounded-md px-3 font-normal"
+          className="h-10 gap-2 rounded-md px-3 font-normal"
         >
-          <Icon icon="solar:calendar-linear" className="size-4" />
+          <Calendar className="size-5 " />
           Last 7 days
-          <Icon
-            icon="solar:alt-arrow-down-linear"
-            className="size-3.5 text-muted-foreground"
-          />
+          <ChevronDown className="size-4" />
         </Button>
 
-        <Button type="button" size="sm" className="h-9 gap-1.5 rounded-md px-4">
-          <Icon icon="solar:add-linear" className="size-4" />
+        <Button
+          type="button"
+          size="sm"
+          className="h-10 gap-1.5 rounded-md px-4"
+        >
+          <Plus />
           Create
         </Button>
       </div>

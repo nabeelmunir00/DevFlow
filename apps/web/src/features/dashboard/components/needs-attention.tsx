@@ -139,12 +139,6 @@ export function NeedsAttention({
 
                     <TableCell className="min-w-0 px-2 py-0">
                       <div className="flex min-w-0 items-center gap-2">
-                        <Icon
-                          icon="solar:danger-triangle-linear"
-                          className="size-4 shrink-0 text-muted-foreground"
-                          aria-hidden="true"
-                        />
-
                         <span
                           className="truncate text-sm font-medium text-foreground"
                           title={item.title}
