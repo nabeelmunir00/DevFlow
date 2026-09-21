@@ -23,6 +23,9 @@ import { TaskStatusSelect } from "./task-status-select";
 
 interface TasksTableProps {
   tasks: ProjectTaskSummary[];
+  selectedTaskIds: Set<string>;
+  onTaskSelectionChange: (taskId: string, selected: boolean) => void;
+  onSelectAllChange: (selected: boolean) => void;
 }
 
 const priorityStyles: Record<
@@ -50,24 +53,46 @@ const priorityStyles: Record<
   },
 };
 
-export function TasksTable({ tasks }: TasksTableProps) {
+export function TasksTable({
+  tasks,
+  selectedTaskIds,
+  onTaskSelectionChange,
+  onSelectAllChange,
+}: TasksTableProps) {
+  const selectedVisibleCount = tasks.reduce(
+    (count, task) => (selectedTaskIds.has(task.id) ? count + 1 : count),
+    0,
+  );
+
+  const allSelected = tasks.length > 0 && selectedVisibleCount === tasks.length;
+
+  const partiallySelected = selectedVisibleCount > 0 && !allSelected;
+
+  const selectAllState = allSelected
+    ? true
+    : partiallySelected
+      ? "indeterminate"
+      : false;
+
   return (
     <div className="min-w-0 overflow-hidden rounded-lg border border-border">
       <Table>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
             <TableHead className="w-12 text-center">
-              <Checkbox aria-label="Select all tasks" />
+              <Checkbox
+                checked={selectAllState}
+                onCheckedChange={(checked) =>
+                  onSelectAllChange(checked === true)
+                }
+                aria-label="Select all visible tasks"
+              />
             </TableHead>
 
             <TableHead className="w-24">Key</TableHead>
-
             <TableHead>Title</TableHead>
-
             <TableHead className="w-36">Status</TableHead>
-
             <TableHead className="w-28">Priority</TableHead>
-
             <TableHead className="w-44">Assignee</TableHead>
 
             <TableHead className="hidden w-28 lg:table-cell">Sprint</TableHead>
@@ -88,11 +113,24 @@ export function TasksTable({ tasks }: TasksTableProps) {
           {tasks.length > 0 ? (
             tasks.map((task) => {
               const priority = priorityStyles[task.priority];
+              const isSelected = selectedTaskIds.has(task.id);
 
               return (
-                <TableRow key={task.id}>
+                <TableRow
+                  key={task.id}
+                  data-state={isSelected ? "selected" : undefined}
+                  className={
+                    isSelected ? "bg-primary/5 hover:bg-primary/10" : undefined
+                  }
+                >
                   <TableCell className="text-center">
-                    <Checkbox aria-label={`Select ${task.title}`} />
+                    <Checkbox
+                      checked={isSelected}
+                      onCheckedChange={(checked) =>
+                        onTaskSelectionChange(task.id, checked === true)
+                      }
+                      aria-label={`Select ${task.title}`}
+                    />
                   </TableCell>
 
                   <TableCell>
@@ -120,7 +158,6 @@ export function TasksTable({ tasks }: TasksTableProps) {
                         className={`size-2.5 shrink-0 rounded-full ${priority.dot}`}
                         aria-hidden="true"
                       />
-
                       <span>{priority.label}</span>
                     </div>
                   </TableCell>
@@ -138,7 +175,7 @@ export function TasksTable({ tasks }: TasksTableProps) {
                   </TableCell>
 
                   <TableCell className="hidden whitespace-nowrap lg:table-cell">
-                    {task.sprint ?? "Sprint 06"}
+                    {task.sprint ?? "—"}
                   </TableCell>
 
                   <TableCell className="hidden whitespace-nowrap md:table-cell">
