@@ -61,6 +61,8 @@ export interface ProjectTaskSummary {
   attachments?: number;
 
   pullRequest?: number;
+  sprint?: string;
+  estimate?: string;
 }
 
 export interface ProjectActivityItem {
