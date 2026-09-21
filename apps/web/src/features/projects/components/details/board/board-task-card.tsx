@@ -32,10 +32,7 @@ interface BoardTaskCardProps {
 
 const priorityStyles: Record<
   ProjectTaskPriority,
-  {
-    label: string;
-    dot: string;
-  }
+  { label: string; dot: string }
 > = {
   LOW: {
     label: "Low",
@@ -55,10 +52,6 @@ const priorityStyles: Record<
   },
 };
 
-/*
- * Keep layout animations enabled after dragging.
- * This gives surrounding cards a smoother reorder animation.
- */
 const animateLayoutChanges: AnimateLayoutChanges = (args) =>
   defaultAnimateLayoutChanges({
     ...args,
@@ -75,11 +68,8 @@ export function BoardTaskCard({ task, isOverlay = false }: BoardTaskCardProps) {
     isDragging,
   } = useSortable({
     id: task.id,
-
     disabled: isOverlay,
-
     animateLayoutChanges,
-
     data: {
       type: "task",
       task,
@@ -89,15 +79,8 @@ export function BoardTaskCard({ task, isOverlay = false }: BoardTaskCardProps) {
 
   const priority = priorityStyles[task.priority];
 
-  /*
-   * dnd-kit controls ONLY the outer wrapper position.
-   *
-   * Motion controls the visual animation inside it.
-   * Keeping them separate prevents transform conflicts.
-   */
-  const sortableStyle = {
+  const style = {
     transform: CSS.Transform.toString(transform),
-
     transition:
       transition ??
       (isDragging ? undefined : "transform 200ms cubic-bezier(0.2, 0, 0, 1)"),
@@ -106,7 +89,7 @@ export function BoardTaskCard({ task, isOverlay = false }: BoardTaskCardProps) {
   return (
     <div
       ref={setNodeRef}
-      style={sortableStyle}
+      style={style}
       {...(!isOverlay ? attributes : {})}
       {...(!isOverlay ? listeners : {})}
       className={[
@@ -118,10 +101,6 @@ export function BoardTaskCard({ task, isOverlay = false }: BoardTaskCardProps) {
         .filter(Boolean)
         .join(" ")}
     >
-      {/*
-       * Keep the original card visible as a subtle placeholder
-       * while DragOverlay follows the pointer.
-       */}
       <motion.div
         initial={false}
         animate={{
@@ -147,10 +126,6 @@ export function BoardTaskCard({ task, isOverlay = false }: BoardTaskCardProps) {
               : "border-border shadow-none hover:border-foreground/20",
           ].join(" ")}
         >
-          {/* =================================================
-              TOP
-          ================================================== */}
-
           <div className="flex min-w-0 items-center justify-between gap-3">
             <button
               type="button"
@@ -161,20 +136,15 @@ export function BoardTaskCard({ task, isOverlay = false }: BoardTaskCardProps) {
             </button>
 
             <div className="flex shrink-0 items-center gap-2">
-              {/* Priority */}
-
               <div className="flex items-center gap-1.5">
                 <span
                   className={`size-2.5 shrink-0 rounded-full ${priority.dot}`}
                   aria-hidden="true"
                 />
-
                 <span className="text-xs text-muted-foreground">
                   {priority.label}
                 </span>
               </div>
-
-              {/* More options */}
 
               <Button
                 type="button"
@@ -189,10 +159,6 @@ export function BoardTaskCard({ task, isOverlay = false }: BoardTaskCardProps) {
             </div>
           </div>
 
-          {/* =================================================
-              CONTENT
-          ================================================== */}
-
           <h3 className="mt-1.5 text-sm font-semibold leading-5 text-foreground">
             {task.title}
           </h3>
@@ -201,10 +167,6 @@ export function BoardTaskCard({ task, isOverlay = false }: BoardTaskCardProps) {
             {task.description ??
               "Task details and implementation requirements."}
           </p>
-
-          {/* =================================================
-              ASSIGNEE / LABEL / DATE
-          ================================================== */}
 
           <div className="mt-3 flex min-w-0 flex-wrap items-center gap-2">
             <Avatar className="size-7 shrink-0">
@@ -221,48 +183,31 @@ export function BoardTaskCard({ task, isOverlay = false }: BoardTaskCardProps) {
 
             <div className="ml-auto flex items-center gap-1.5 text-xs text-muted-foreground">
               <CalendarDays className="size-4 shrink-0" aria-hidden="true" />
-
               <span className="whitespace-nowrap">{task.dueDate}</span>
             </div>
           </div>
 
-          {/* =================================================
-              TASK META
-          ================================================== */}
-
           <div className="mt-3 flex min-w-0 items-center gap-3 text-xs text-muted-foreground">
-            {/* Subtasks */}
-
             <div className="flex items-center gap-1">
               <CheckSquare className="size-4" aria-hidden="true" />
-
               <span className="tabular-nums">
                 {task.completedSubtasks ?? 0}/{task.totalSubtasks ?? 0}
               </span>
             </div>
 
-            {/* Comments */}
-
             <div className="flex items-center gap-1">
               <MessageCircle className="size-4" aria-hidden="true" />
-
               <span className="tabular-nums">{task.comments ?? 0}</span>
             </div>
 
-            {/* Attachments */}
-
             <div className="flex items-center gap-1">
               <Paperclip className="size-4" aria-hidden="true" />
-
               <span className="tabular-nums">{task.attachments ?? 0}</span>
             </div>
-
-            {/* Pull request */}
 
             {task.pullRequest && (
               <div className="ml-auto flex min-w-0 items-center gap-1 text-primary">
                 <GitBranch className="size-4 shrink-0" aria-hidden="true" />
-
                 <span className="truncate underline underline-offset-2">
                   #{task.pullRequest}
                 </span>

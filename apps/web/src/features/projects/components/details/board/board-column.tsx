@@ -71,8 +71,6 @@ export function BoardColumn({
           : "border-border bg-card/30",
       ].join(" ")}
     >
-      {/* Column Header */}
-
       <div className="flex h-10 shrink-0 items-center justify-between gap-3 px-1">
         <div className="flex min-w-0 items-center gap-2.5">
           <span
@@ -111,8 +109,6 @@ export function BoardColumn({
           </Button>
         </div>
       </div>
-
-      {/* Tasks */}
 
       <SortableContext
         items={tasks.map((task) => task.id)}

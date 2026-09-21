@@ -40,27 +40,11 @@ interface BoardColumnConfig {
 }
 
 const columns: BoardColumnConfig[] = [
-  {
-    status: "TODO",
-    title: "Todo",
-  },
-  {
-    status: "IN_PROGRESS",
-    title: "In Progress",
-  },
-  {
-    status: "IN_REVIEW",
-    title: "In Review",
-  },
-  {
-    status: "DONE",
-    title: "Done",
-  },
+  { status: "TODO", title: "Todo" },
+  { status: "IN_PROGRESS", title: "In Progress" },
+  { status: "IN_REVIEW", title: "In Review" },
+  { status: "DONE", title: "Done" },
 ];
-
-/* =========================================================
-   HELPERS
-========================================================= */
 
 function isTaskStatus(value: string): value is ProjectTaskStatus {
   return columns.some((column) => column.status === value);
@@ -81,42 +65,17 @@ function getColumnStatus(
   return getTaskById(tasks, id)?.status ?? null;
 }
 
-/* =========================================================
-   COMPONENT
-========================================================= */
-
 export function ProjectBoard({ project }: ProjectBoardProps) {
   const [tasks, setTasks] = useState<ProjectTaskSummary[]>(project.recentTasks);
 
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
 
-  /*
-   * Controls which entire column should receive
-   * destination highlighting.
-   */
   const [overColumnStatus, setOverColumnStatus] =
     useState<ProjectTaskStatus | null>(null);
 
-  const lastDestinationStatusRef = useRef<ProjectTaskStatus | null>(null);
-
-  /*
-   * Snapshot before dragging starts.
-   *
-   * onDragOver changes local state optimistically,
-   * so this allows us to restore everything when
-   * dragging is cancelled.
-   */
   const dragStartTasksRef = useRef<ProjectTaskSummary[] | null>(null);
 
-  /*
-   * Prevent duplicate cross-column updates when
-   * dnd-kit repeatedly reports the same target.
-   */
-  const lastOverIdRef = useRef<string | null>(null);
-
-  /* =====================================================
-     SENSORS
-  ====================================================== */
+  const lastDestinationStatusRef = useRef<ProjectTaskStatus | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -124,22 +83,16 @@ export function ProjectBoard({ project }: ProjectBoardProps) {
         distance: 6,
       },
     }),
-
     useSensor(TouchSensor, {
       activationConstraint: {
         delay: 180,
         tolerance: 5,
       },
     }),
-
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
   );
-
-  /* =====================================================
-     ACTIVE TASK
-  ====================================================== */
 
   const activeTask = useMemo(
     () =>
@@ -149,9 +102,13 @@ export function ProjectBoard({ project }: ProjectBoardProps) {
     [tasks, activeTaskId],
   );
 
-  /* =====================================================
-     DRAG START
-  ====================================================== */
+  function resetDragState() {
+    setActiveTaskId(null);
+    setOverColumnStatus(null);
+
+    dragStartTasksRef.current = null;
+    lastDestinationStatusRef.current = null;
+  }
 
   function handleDragStart(event: DragStartEvent) {
     const activeId = String(event.active.id);
@@ -160,149 +117,17 @@ export function ProjectBoard({ project }: ProjectBoardProps) {
       ...task,
     }));
 
-    lastOverIdRef.current = null;
     lastDestinationStatusRef.current = null;
 
     setActiveTaskId(activeId);
     setOverColumnStatus(null);
   }
 
-  /* =====================================================
-     DRAG OVER
-
-     This handles:
-     - destination column detection
-     - full-column highlighting
-     - empty columns
-     - live cross-column movement
-  ====================================================== */
-
-  /* =====================================================
-     DRAG END
-  ====================================================== */
-
-  function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
-
-    const activeId = String(active.id);
-
-    /*
-     * Clear drag visual state.
-     */
-    setActiveTaskId(null);
-    setOverColumnStatus(null);
-
-    lastOverIdRef.current = null;
-
-    /*
-     * Dropped outside board.
-     *
-     * Restore original state.
-     */
-    if (!over) {
-      if (dragStartTasksRef.current) {
-        setTasks(dragStartTasksRef.current);
-      }
-
-      dragStartTasksRef.current = null;
-
-      return;
-    }
-
-    const overId = String(over.id);
-
-    /*
-     * Cross-column status changes have
-     * already happened inside handleDragOver.
-     *
-     * Here we finalize exact ordering.
-     */
-    setTasks((currentTasks) => {
-      const currentActiveTask = getTaskById(currentTasks, activeId);
-
-      if (!currentActiveTask) {
-        return currentTasks;
-      }
-
-      /*
-       * Dropped directly onto column
-       * whitespace.
-       *
-       * onDragOver already handled this.
-       */
-      if (isTaskStatus(overId)) {
-        return currentTasks;
-      }
-
-      const overTask = getTaskById(currentTasks, overId);
-
-      if (!overTask) {
-        return currentTasks;
-      }
-
-      /*
-       * Safety check.
-       */
-      if (currentActiveTask.status !== overTask.status) {
-        return currentTasks;
-      }
-
-      const status = currentActiveTask.status;
-
-      const columnTasks = currentTasks.filter((task) => task.status === status);
-
-      const oldIndex = columnTasks.findIndex((task) => task.id === activeId);
-
-      const newIndex = columnTasks.findIndex((task) => task.id === overId);
-
-      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) {
-        return currentTasks;
-      }
-
-      /*
-       * Final same-column ordering.
-       */
-      const reorderedColumnTasks = arrayMove(columnTasks, oldIndex, newIndex);
-
-      /*
-       * Rebuild global task array without
-       * affecting the order of other columns.
-       */
-      let columnIndex = 0;
-
-      return currentTasks.map((task) => {
-        if (task.status !== status) {
-          return task;
-        }
-
-        const reorderedTask = reorderedColumnTasks[columnIndex];
-
-        columnIndex += 1;
-
-        return reorderedTask ?? task;
-      });
-    });
-
-    /*
-     * API persistence will eventually happen
-     * here.
-     *
-     * Example:
-     *
-     * await moveTask({
-     *   taskId: activeId,
-     *   status: finalStatus,
-     *   position: finalPosition,
-     * });
-     */
-
-    dragStartTasksRef.current = null;
-  }
-
   function handleDragOver(event: DragOverEvent) {
     const { active, over } = event;
 
     if (!over) {
+      setOverColumnStatus(null);
       return;
     }
 
@@ -315,17 +140,7 @@ export function ProjectBoard({ project }: ProjectBoardProps) {
       return;
     }
 
-    /*
-     * Remember last valid destination.
-     *
-     * Even if collision becomes unstable for one frame,
-     * dragEnd still knows where the task belongs.
-     */
     lastDestinationStatusRef.current = destinationStatus;
-
-    /*
-     * Highlight entire destination column.
-     */
     setOverColumnStatus(destinationStatus);
 
     if (activeId === overId) {
@@ -342,11 +157,6 @@ export function ProjectBoard({ project }: ProjectBoardProps) {
       const currentDestinationStatus =
         getColumnStatus(currentTasks, overId) ?? destinationStatus;
 
-      /*
-       * Already inside destination column.
-       *
-       * Don't keep changing status.
-       */
       if (currentActiveTask.status === currentDestinationStatus) {
         return currentTasks;
       }
@@ -360,24 +170,15 @@ export function ProjectBoard({ project }: ProjectBoardProps) {
         (task) => task.id !== activeId,
       );
 
-      /*
-       * Pointer is over column itself.
-       */
       if (isTaskStatus(overId)) {
         const destinationTasks = remainingTasks.filter(
           (task) => task.status === currentDestinationStatus,
         );
 
-        /*
-         * Empty column.
-         */
         if (destinationTasks.length === 0) {
           return [...remainingTasks, updatedActiveTask];
         }
 
-        /*
-         * Append at bottom.
-         */
         const lastDestinationTask =
           destinationTasks[destinationTasks.length - 1];
 
@@ -396,9 +197,6 @@ export function ProjectBoard({ project }: ProjectBoardProps) {
         return nextTasks;
       }
 
-      /*
-       * Pointer is over another task.
-       */
       const overTaskIndex = remainingTasks.findIndex(
         (task) => task.id === overId,
       );
@@ -415,35 +213,97 @@ export function ProjectBoard({ project }: ProjectBoardProps) {
     });
   }
 
-  /* =====================================================
-     DRAG CANCEL
-  ====================================================== */
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+
+    const activeId = String(active.id);
+    const overId = over ? String(over.id) : null;
+
+    const finalDestinationStatus =
+      (overId ? getColumnStatus(tasks, overId) : null) ??
+      lastDestinationStatusRef.current;
+
+    if (!finalDestinationStatus) {
+      if (dragStartTasksRef.current) {
+        setTasks(dragStartTasksRef.current);
+      }
+
+      resetDragState();
+      return;
+    }
+
+    setTasks((currentTasks) => {
+      const currentActiveTask = getTaskById(currentTasks, activeId);
+
+      if (!currentActiveTask) {
+        return currentTasks;
+      }
+
+      let nextTasks: ProjectTaskSummary[] = currentTasks.map(
+        (task): ProjectTaskSummary =>
+          task.id === activeId
+            ? {
+                ...task,
+                status: finalDestinationStatus,
+              }
+            : task,
+      );
+
+      if (!overId || isTaskStatus(overId)) {
+        return nextTasks;
+      }
+
+      const overTask = getTaskById(nextTasks, overId);
+
+      if (!overTask || overTask.status !== finalDestinationStatus) {
+        return nextTasks;
+      }
+
+      const columnTasks = nextTasks.filter(
+        (task) => task.status === finalDestinationStatus,
+      );
+
+      const oldIndex = columnTasks.findIndex((task) => task.id === activeId);
+
+      const newIndex = columnTasks.findIndex((task) => task.id === overId);
+
+      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) {
+        return nextTasks;
+      }
+
+      const reorderedColumnTasks = arrayMove(columnTasks, oldIndex, newIndex);
+
+      let columnIndex = 0;
+
+      nextTasks = nextTasks.map((task) => {
+        if (task.status !== finalDestinationStatus) {
+          return task;
+        }
+
+        const reorderedTask = reorderedColumnTasks[columnIndex];
+
+        columnIndex += 1;
+
+        return reorderedTask ?? task;
+      });
+
+      return nextTasks;
+    });
+
+    resetDragState();
+  }
 
   function handleDragCancel() {
     if (dragStartTasksRef.current) {
       setTasks(dragStartTasksRef.current);
     }
 
-    setActiveTaskId(null);
-    setOverColumnStatus(null);
-
-    dragStartTasksRef.current = null;
-    lastOverIdRef.current = null;
-    lastDestinationStatusRef.current = null;
+    resetDragState();
   }
-  /* =====================================================
-     RENDER
-  ====================================================== */
 
   return (
     <div className="min-w-0">
-      {/* =================================================
-          TOOLBAR
-      ================================================== */}
-
       <div className="mb-4 flex min-w-0 flex-wrap items-center gap-3">
-        {/* Search */}
-
         <div className="relative min-w-52 flex-1 lg:max-w-64">
           <Search
             className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
@@ -452,8 +312,6 @@ export function ProjectBoard({ project }: ProjectBoardProps) {
 
           <Input placeholder="Search tasks..." className="h-10 pl-9" />
         </div>
-
-        {/* Assignee */}
 
         <Button
           type="button"
@@ -464,8 +322,6 @@ export function ProjectBoard({ project }: ProjectBoardProps) {
           <ChevronDown className="size-4 text-muted-foreground" />
         </Button>
 
-        {/* Priority */}
-
         <Button
           type="button"
           variant="outline"
@@ -474,8 +330,6 @@ export function ProjectBoard({ project }: ProjectBoardProps) {
           Priority
           <ChevronDown className="size-4 text-muted-foreground" />
         </Button>
-
-        {/* Label */}
 
         <Button
           type="button"
@@ -486,19 +340,14 @@ export function ProjectBoard({ project }: ProjectBoardProps) {
           <ChevronDown className="size-4 text-muted-foreground" />
         </Button>
 
-        {/* Sprint */}
-
         <Button
           type="button"
           variant="outline"
           className="h-10 gap-4 font-normal"
         >
           {project.sprint}
-
           <ChevronDown className="size-4 text-muted-foreground" />
         </Button>
-
-        {/* Group */}
 
         <Button
           type="button"
@@ -509,17 +358,11 @@ export function ProjectBoard({ project }: ProjectBoardProps) {
           <ChevronDown className="size-4 text-muted-foreground" />
         </Button>
 
-        {/* Add Task */}
-
         <Button type="button" className="ml-auto h-10 gap-2">
           <Plus className="size-4" />
           Add task
         </Button>
       </div>
-
-      {/* =================================================
-          BOARD
-      ================================================== */}
 
       <DndContext
         sensors={sensors}
@@ -535,17 +378,6 @@ export function ProjectBoard({ project }: ProjectBoardProps) {
               (task) => task.status === column.status,
             );
 
-            /*
-             * IMPORTANT:
-             *
-             * Destination highlighting is controlled
-             * by ProjectBoard instead of relying on
-             * BoardColumn's local `isOver`.
-             *
-             * Therefore hovering ANY task inside the
-             * destination still highlights the
-             * entire column.
-             */
             const isDragOver =
               activeTaskId !== null && overColumnStatus === column.status;
 
@@ -560,10 +392,6 @@ export function ProjectBoard({ project }: ProjectBoardProps) {
             );
           })}
         </div>
-
-        {/* =================================================
-            DRAG OVERLAY
-        ================================================== */}
 
         <DragOverlay
           adjustScale={false}
