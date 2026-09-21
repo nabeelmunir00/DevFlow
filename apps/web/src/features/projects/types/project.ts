@@ -40,16 +40,26 @@ export type ProjectTaskPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
 export interface ProjectTaskSummary {
   id: string;
   title: string;
+  description?: string;
+
   status: ProjectTaskStatus;
   priority: ProjectTaskPriority;
-  dueDate: string;
-  assignee?: ProjectMember;
-  description?: string;
+
+  assignee: {
+    id: string;
+    name: string;
+    initials: string;
+  };
+
   label?: string;
+  dueDate: string;
+
   completedSubtasks?: number;
   totalSubtasks?: number;
+
   comments?: number;
   attachments?: number;
+
   pullRequest?: number;
 }
 
