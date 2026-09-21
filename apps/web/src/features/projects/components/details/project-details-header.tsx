@@ -64,7 +64,7 @@ export function ProjectDetailsHeader({
             LEFT — PROJECT IDENTITY
         ====================================================== */}
 
-        <div className="flex min-w-0 items-center gap-3">
+        <div className="flex min-w-0  items-center gap-3">
           {/* Project icon */}
 
           <div
@@ -146,68 +146,60 @@ export function ProjectDetailsHeader({
               <ProjectStatusBadge status={project.status} />
             </div>
           </div>
-        </div>
+          <div className="flex min-w-0 items-center gap-3 justify-between lg:justify-end">
+            {/* Members */}
 
-        {/* =====================================================
-            RIGHT — MEMBERS + ACTIONS
-        ====================================================== */}
-
-        <div className="flex min-w-0 items-center gap-3 lg:justify-end">
-          {/* Members */}
-
-          <div className="flex items-center">
-            <div className="flex -space-x-2">
-              {visibleMembers.map((member, index) => (
-                <Avatar
-                  key={member.id}
-                  className="size-8 border-2 border-background"
-                  title={member.name}
-                >
-                  <AvatarFallback
-                    className={`text-xs font-medium ${
-                      memberStyles[index % memberStyles.length]
-                    }`}
+            <div className="md:flex hidden items-center">
+              <div className="flex -space-x-2">
+                {visibleMembers.map((member, index) => (
+                  <Avatar
+                    key={member.id}
+                    className="size-12 border-2 border-background"
+                    title={member.name}
                   >
-                    {member.initials}
-                  </AvatarFallback>
-                </Avatar>
-              ))}
+                    <AvatarFallback
+                      className={`text-xs font-medium ${
+                        memberStyles[index % memberStyles.length]
+                      }`}
+                    >
+                      {member.initials}
+                    </AvatarFallback>
+                  </Avatar>
+                ))}
 
-              {remainingMembers > 0 ? (
-                <Avatar className="size-8 border-2 border-background">
-                  <AvatarFallback className="bg-muted text-xs font-medium text-muted-foreground">
-                    +{remainingMembers}
-                  </AvatarFallback>
-                </Avatar>
-              ) : null}
+                {remainingMembers > 0 ? (
+                  <Avatar className="size-12 border-2 border-background">
+                    <AvatarFallback className="bg-muted text-xs font-medium text-muted-foreground">
+                      +{remainingMembers}
+                    </AvatarFallback>
+                  </Avatar>
+                ) : null}
+              </div>
             </div>
+
+            {/* Add member */}
+
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="size-12 rounded-full"
+              aria-label="Add project member"
+              onClick={onAddMember}
+            >
+              <Plus className="size-4" aria-hidden="true" />
+            </Button>
           </div>
-
-          {/* Add member */}
-
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="size-8 rounded-md"
-            aria-label="Add project member"
-            onClick={onAddMember}
-          >
-            <Plus className="size-4" aria-hidden="true" />
-          </Button>
-
-          {/* Create */}
-
-          <Button
-            type="button"
-            size="sm"
-            className="h-8 rounded-md px-3"
-            onClick={onCreate}
-          >
-            <Plus className="size-4" aria-hidden="true" />
-            Create
-          </Button>
         </div>
+        <Button
+          type="button"
+          size="sm"
+          className="h-12 md:w-32 w-full text-md rounded-md px-4"
+          onClick={onCreate}
+        >
+          <Plus className="size-5" aria-hidden="true" />
+          Create
+        </Button>
       </div>
     </div>
   );

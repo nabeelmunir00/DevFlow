@@ -87,15 +87,6 @@ export function ProjectDetailsPage({ project }: ProjectDetailsPageProps) {
 
       <ProjectDetailsHeader project={project} />
 
-      {/* =====================================================
-          PROJECT TABS
-
-          URL always stays:
-          /workspace/project/[projectId]
-
-          Tabs only change local UI state.
-      ====================================================== */}
-
       <Tabs
         value={activeTab}
         onValueChange={(value) => setActiveTab(value as ProjectTab)}
@@ -105,7 +96,7 @@ export function ProjectDetailsPage({ project }: ProjectDetailsPageProps) {
             TAB NAVIGATION
         ==================================================== */}
 
-        <div className="min-w-0 border-b border-border">
+        <div className="min-w-0 max-w-sm md:max-w-full border-b border-border overflow-hidden">
           <div className="overflow-x-auto px-4 sm:px-6 2xl:px-7">
             <TabsList className="h-12 w-max min-w-full justify-start gap-0 rounded-none bg-transparent p-0">
               {projectTabs.map((tab) => (
@@ -150,7 +141,7 @@ export function ProjectDetailsPage({ project }: ProjectDetailsPageProps) {
             TAB CONTENT
         ==================================================== */}
 
-        <div className="min-w-0 px-4 py-5 sm:px-6 2xl:px-7">
+        <div className="min-w-0 px-4  py-5 sm:px-6 2xl:px-7">
           {/* Overview */}
 
           <TabsContent value="overview" className="m-0 min-w-0">
