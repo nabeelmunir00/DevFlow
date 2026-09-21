@@ -90,13 +90,14 @@ export function ProjectsTable({
   selectedProjectId,
 }: ProjectsTableProps) {
   return (
-    <Card className="min-w-0 gap-0 overflow-hidden  rounded-md border-border bg-card py-0 shadow-none">
-      <CardContent className="p-0">
+    <Card className="min-w-0 gap-0 overflow-hidden rounded-md border-border bg-card py-0 shadow-none">
+      <CardContent className="min-w-0 p-0">
         <Table aria-label="Workspace projects" className="w-full table-fixed">
           <TableHeader>
             <TableRow className="h-12 border-border hover:bg-transparent">
-              {/* Project */}
-              <HeaderCell separator={false} className="w-64">
+              {/* Project — always visible */}
+
+              <HeaderCell separator={false} className="w-auto">
                 <div className="flex items-center gap-2 px-3">
                   <span>Project</span>
 
@@ -107,40 +108,50 @@ export function ProjectsTable({
                 </div>
               </HeaderCell>
 
-              {/* Status */}
-              <HeaderCell className="w-32">Status</HeaderCell>
+              {/* Status — sm+ */}
 
-              {/* Members */}
-              <HeaderCell className="hidden w-36 lg:table-cell">
+              <HeaderCell className="hidden w-28 sm:table-cell lg:w-32">
+                Status
+              </HeaderCell>
+
+              {/* Members — lg+ */}
+
+              <HeaderCell className="hidden w-28 lg:table-cell xl:w-36">
                 Members
               </HeaderCell>
 
-              {/* Progress */}
-              <HeaderCell className="hidden w-44 md:table-cell">
+              {/* Progress — md+ */}
+
+              <HeaderCell className="hidden w-36 md:table-cell lg:w-40 xl:w-44">
                 Progress
               </HeaderCell>
 
-              {/* Open tasks */}
-              <HeaderCell className="hidden w-24 xl:table-cell">
+              {/* Open tasks — 2xl+ */}
+
+              <HeaderCell className="hidden w-24 2xl:table-cell">
                 Open tasks
               </HeaderCell>
 
-              {/* Sprint */}
-              <HeaderCell className="hidden w-28 xl:table-cell">
+              {/* Sprint — 2xl+ */}
+
+              <HeaderCell className="hidden w-28 2xl:table-cell">
                 Sprint
               </HeaderCell>
 
-              {/* Due date */}
-              <HeaderCell className="hidden w-32 lg:table-cell">
+              {/* Due date — xl+ */}
+
+              <HeaderCell className="hidden w-32 xl:table-cell">
                 Due date
               </HeaderCell>
 
-              {/* Repository */}
-              <HeaderCell className="hidden w-44 xl:table-cell">
+              {/* Repository — 2xl+ */}
+
+              <HeaderCell className="hidden w-44 2xl:table-cell">
                 Repository
               </HeaderCell>
 
-              {/* Actions */}
+              {/* Actions — always visible */}
+
               <TableHead className="w-12 px-0">
                 <span className="sr-only">Actions</span>
               </TableHead>
@@ -185,13 +196,14 @@ export function ProjectsTable({
                   <TableRow
                     key={project.id}
                     data-state={isSelected ? "selected" : undefined}
-                    className="h-16 border-border transition-colors text-center hover:bg-muted/30 data-[state=selected]:bg-primary/5"
+                    className="h-16 border-border text-center transition-colors hover:bg-muted/30 data-[state=selected]:bg-primary/5"
                   >
-                    {/* Project */}
-                    <TableCell className="min-w-0 px-3 py-2 text-start">
+                    {/* Project — always visible */}
+
+                    <TableCell className="min-w-0 overflow-hidden px-3 py-2 text-start">
                       <Link
                         href={projectHref}
-                        className="flex min-w-0 items-center gap-3"
+                        className="flex min-w-0 items-center gap-3 overflow-hidden"
                       >
                         <div
                           className={`flex size-11 shrink-0 items-center justify-center rounded-md text-sm font-semibold ${accentStyles[project.accent]}`}
@@ -199,7 +211,7 @@ export function ProjectsTable({
                           {project.key}
                         </div>
 
-                        <div className="min-w-0 flex-1">
+                        <div className="min-w-0 flex-1 overflow-hidden">
                           <p
                             className="truncate text-sm font-medium leading-5 text-foreground"
                             title={project.name}
@@ -213,7 +225,7 @@ export function ProjectsTable({
                             </span>
 
                             <span
-                              className="hidden truncate text-xs text-muted-foreground sm:block"
+                              className="hidden min-w-0 truncate text-xs text-muted-foreground sm:block"
                               title={project.description}
                             >
                               {project.description}
@@ -223,14 +235,18 @@ export function ProjectsTable({
                       </Link>
                     </TableCell>
 
-                    {/* Status */}
-                    <TableCell className="px-3 py-0">
-                      <ProjectStatusBadge status={project.status} />
+                    {/* Status — sm+ */}
+
+                    <TableCell className="hidden px-3 py-0 sm:table-cell">
+                      <div className="flex justify-center">
+                        <ProjectStatusBadge status={project.status} />
+                      </div>
                     </TableCell>
 
-                    {/* Members */}
+                    {/* Members — lg+ */}
+
                     <TableCell className="hidden px-3 py-0 lg:table-cell">
-                      <div className="flex items-center">
+                      <div className="flex items-center justify-center">
                         <div className="flex -space-x-1.5">
                           {visibleMembers.map((member, index) => (
                             <Avatar
@@ -257,7 +273,8 @@ export function ProjectsTable({
                       </div>
                     </TableCell>
 
-                    {/* Progress */}
+                    {/* Progress — md+ */}
+
                     <TableCell className="hidden px-3 py-0 md:table-cell">
                       <div className="flex min-w-0 items-center gap-3">
                         <Progress
@@ -272,21 +289,24 @@ export function ProjectsTable({
                       </div>
                     </TableCell>
 
-                    {/* Open tasks */}
-                    <TableCell className="hidden px-3 py-0 text-sm tabular-nums text-foreground xl:table-cell">
+                    {/* Open tasks — 2xl+ */}
+
+                    <TableCell className="hidden px-3 py-0 text-sm tabular-nums text-foreground 2xl:table-cell">
                       {project.openTasks}
                     </TableCell>
 
-                    {/* Sprint */}
-                    <TableCell className="hidden px-3 py-0 xl:table-cell">
+                    {/* Sprint — 2xl+ */}
+
+                    <TableCell className="hidden px-3 py-0 2xl:table-cell">
                       <span className="whitespace-nowrap text-sm text-foreground">
                         {project.sprint}
                       </span>
                     </TableCell>
 
-                    {/* Due date */}
-                    <TableCell className="hidden px-3 py-0 lg:table-cell">
-                      <div className="flex items-center gap-2 whitespace-nowrap text-sm text-foreground">
+                    {/* Due date — xl+ */}
+
+                    <TableCell className="hidden px-3 py-0 xl:table-cell">
+                      <div className="flex items-center justify-center gap-2 whitespace-nowrap text-sm text-foreground">
                         <CalendarDays
                           className="size-4 shrink-0 text-muted-foreground"
                           aria-hidden="true"
@@ -296,9 +316,10 @@ export function ProjectsTable({
                       </div>
                     </TableCell>
 
-                    {/* Repository */}
-                    <TableCell className="hidden px-3 py-0 xl:table-cell">
-                      <div className="flex min-w-0 items-center gap-2">
+                    {/* Repository — 2xl+ */}
+
+                    <TableCell className="hidden px-3 py-0 2xl:table-cell">
+                      <div className="flex min-w-0 items-center justify-center gap-2">
                         <Icon
                           icon="mdi:github"
                           className="size-4 shrink-0 text-foreground"
@@ -306,7 +327,7 @@ export function ProjectsTable({
                         />
 
                         <span
-                          className="truncate text-sm font-medium text-primary"
+                          className="min-w-0 truncate text-sm font-medium text-primary"
                           title={project.repository}
                         >
                           {project.repository}
@@ -314,8 +335,9 @@ export function ProjectsTable({
                       </div>
                     </TableCell>
 
-                    {/* Actions */}
-                    <TableCell className="px-1 py-0">
+                    {/* Actions — always visible */}
+
+                    <TableCell className="w-12 px-1 py-0">
                       <div className="flex justify-center">
                         <DropdownMenu>
                           <DropdownMenuTrigger
