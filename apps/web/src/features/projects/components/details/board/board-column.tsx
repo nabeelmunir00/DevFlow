@@ -1,4 +1,11 @@
+"use client";
+
 import { Ellipsis, Plus } from "lucide-react";
+import { useDroppable } from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 
 import { Button } from "@/components/ui/button";
 
@@ -23,8 +30,23 @@ const statusDot: Record<ProjectTaskStatus, string> = {
 };
 
 export function BoardColumn({ title, status, tasks }: BoardColumnProps) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: status,
+    data: {
+      type: "column",
+      status,
+    },
+  });
+
   return (
-    <section className="min-w-0 rounded-lg border border-border bg-card/30 p-2">
+    <section
+      ref={setNodeRef}
+      className={[
+        "min-w-0 rounded-lg border bg-card/30 p-2",
+        "transition-[border-color,background-color,box-shadow] duration-200 ease-out",
+        isOver ? "border-primary/40 bg-primary/5 shadow-sm" : "border-border",
+      ].join(" ")}
+    >
       {/* =====================================================
           COLUMN HEADER
       ====================================================== */}
@@ -69,20 +91,33 @@ export function BoardColumn({ title, status, tasks }: BoardColumnProps) {
       </div>
 
       {/* =====================================================
-          TASKS
+          SORTABLE TASKS
       ====================================================== */}
 
-      <div className="mt-2 grid min-w-0 content-start gap-2">
-        {tasks.map((task) => (
-          <BoardTaskCard key={task.id} task={task} />
-        ))}
+      <SortableContext
+        items={tasks.map((task) => task.id)}
+        strategy={verticalListSortingStrategy}
+      >
+        <div className="mt-2 grid min-h-24 min-w-0 content-start gap-2">
+          {tasks.map((task) => (
+            <BoardTaskCard key={task.id} task={task} />
+          ))}
 
-        {tasks.length === 0 && (
-          <div className="flex min-h-24 items-center justify-center rounded-md border border-dashed border-border">
-            <span className="text-xs text-muted-foreground">No tasks</span>
-          </div>
-        )}
-      </div>
+          {tasks.length === 0 && (
+            <div
+              className={[
+                "flex min-h-24 items-center justify-center rounded-md border border-dashed px-4",
+                "transition-[border-color,background-color,color] duration-200 ease-out",
+                isOver
+                  ? "border-primary/50 bg-primary/5 text-primary"
+                  : "border-border text-muted-foreground",
+              ].join(" ")}
+            >
+              <span className="text-xs">Drop tasks here</span>
+            </div>
+          )}
+        </div>
+      </SortableContext>
     </section>
   );
 }
