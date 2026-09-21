@@ -8,8 +8,12 @@ import {
   MessageCircle,
   Paperclip,
 } from "lucide-react";
+import {
+  defaultAnimateLayoutChanges,
+  useSortable,
+  type AnimateLayoutChanges,
+} from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useSortable } from "@dnd-kit/sortable";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -36,45 +40,45 @@ const priorityStyles: Record<
     label: "Low",
     dot: "bg-success",
   },
-
   MEDIUM: {
     label: "Medium",
     dot: "bg-primary",
   },
-
   HIGH: {
     label: "High",
     dot: "bg-destructive",
   },
-
   URGENT: {
     label: "Urgent",
     dot: "bg-destructive",
   },
 };
 
-export function BoardTaskCard({ task, isOverlay = false }: BoardTaskCardProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
-    id: task.id,
-    disabled: isOverlay,
-    data: {
-      type: "task",
-      task,
-    },
+const animateLayoutChanges: AnimateLayoutChanges = (args) =>
+  defaultAnimateLayoutChanges({
+    ...args,
+    wasDragging: true,
   });
+
+export function BoardTaskCard({ task, isOverlay = false }: BoardTaskCardProps) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } =
+    useSortable({
+      id: task.id,
+      disabled: isOverlay,
+      animateLayoutChanges,
+      data: {
+        type: "task",
+        task,
+      },
+    });
 
   const priority = priorityStyles[task.priority];
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
+    transition: isDragging
+      ? undefined
+      : "transform 200ms cubic-bezier(0.2, 0, 0, 1)",
   };
 
   return (
@@ -84,9 +88,10 @@ export function BoardTaskCard({ task, isOverlay = false }: BoardTaskCardProps) {
       {...(!isOverlay ? attributes : {})}
       {...(!isOverlay ? listeners : {})}
       className={[
-        "touch-none",
+        "touch-none outline-none",
+        "motion-reduce:transition-none",
         !isOverlay && "cursor-grab active:cursor-grabbing",
-        isDragging && "relative z-10 opacity-30",
+        isDragging && "relative z-10 opacity-25",
         isOverlay && "cursor-grabbing",
       ]
         .filter(Boolean)
@@ -94,16 +99,15 @@ export function BoardTaskCard({ task, isOverlay = false }: BoardTaskCardProps) {
     >
       <Card
         className={[
-          "gap-0 rounded-md border-border bg-card p-3",
-          "transition-[border-color,box-shadow,transform] duration-200 ease-out",
+          "gap-0 rounded-md border-border bg-card p-3 shadow-none",
+          "transition-[border-color,box-shadow,transform,opacity] duration-200 ease-out",
+          "motion-reduce:transition-none",
           isOverlay
-            ? "scale-[1.02] border-primary/40 shadow-xl"
-            : "shadow-none hover:border-foreground/20",
+            ? "scale-[1.02] border-primary/40 shadow-lg"
+            : "hover:border-foreground/20",
         ].join(" ")}
       >
-        {/* =================================================
-            TOP ROW
-        ================================================== */}
+        {/* Top */}
 
         <div className="flex min-w-0 items-center justify-between gap-3">
           <button
@@ -139,9 +143,7 @@ export function BoardTaskCard({ task, isOverlay = false }: BoardTaskCardProps) {
           </div>
         </div>
 
-        {/* =================================================
-            TITLE + DESCRIPTION
-        ================================================== */}
+        {/* Content */}
 
         <h3 className="mt-1.5 text-sm font-semibold leading-5 text-foreground">
           {task.title}
@@ -151,9 +153,7 @@ export function BoardTaskCard({ task, isOverlay = false }: BoardTaskCardProps) {
           {task.description ?? "Task details and implementation requirements."}
         </p>
 
-        {/* =================================================
-            ASSIGNEE / LABEL / DUE DATE
-        ================================================== */}
+        {/* Assignee */}
 
         <div className="mt-3 flex min-w-0 flex-wrap items-center gap-2">
           <Avatar className="size-7 shrink-0">
@@ -175,9 +175,7 @@ export function BoardTaskCard({ task, isOverlay = false }: BoardTaskCardProps) {
           </div>
         </div>
 
-        {/* =================================================
-            META
-        ================================================== */}
+        {/* Meta */}
 
         <div className="mt-3 flex min-w-0 items-center gap-3 text-xs text-muted-foreground">
           <div className="flex items-center gap-1">

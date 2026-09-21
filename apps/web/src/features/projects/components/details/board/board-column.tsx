@@ -44,7 +44,8 @@ export function BoardColumn({ title, status, tasks }: BoardColumnProps) {
       className={[
         "min-w-0 rounded-lg border bg-card/30 p-2",
         "transition-[border-color,background-color,box-shadow] duration-200 ease-out",
-        isOver ? "border-primary/40 bg-primary/5 shadow-sm" : "border-border",
+        "motion-reduce:transition-none",
+        isOver ? "border-primary/50 bg-primary/5 shadow-sm" : "border-border",
       ].join(" ")}
     >
       {/* =====================================================
