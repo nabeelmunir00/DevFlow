@@ -2,28 +2,68 @@
 
 import { useMemo, useState } from "react";
 
-import type { ProjectDetails } from "../../../types/project";
+import type {
+  ProjectDetails,
+  ProjectMember,
+  ProjectTaskPriority,
+  ProjectTaskStatus,
+  ProjectTaskSummary,
+} from "../../../types/project";
 
 import { TaskViewTabs, type TaskView } from "./task-view-tabs";
 import { TasksBulkActions } from "./tasks-bulk-actions";
 import { TasksTable } from "./tasks-table";
-import { TasksToolbar } from "./tasks-toolbar";
+import { TasksToolbar, type TaskColumn, type TaskSort } from "./tasks-toolbar";
 
 interface ProjectTasksProps {
   project: ProjectDetails;
 }
 
+const defaultColumns: TaskColumn[] = [
+  "status",
+  "priority",
+  "assignee",
+  "sprint",
+  "due",
+  "estimate",
+  "pr",
+];
+
+const priorityOrder: Record<ProjectTaskPriority, number> = {
+  URGENT: 0,
+  HIGH: 1,
+  MEDIUM: 2,
+  LOW: 3,
+};
+
 export function ProjectTasks({ project }: ProjectTasksProps) {
+  const [tasks, setTasks] = useState<ProjectTaskSummary[]>(project.recentTasks);
+
   const [view, setView] = useState<TaskView>("all");
   const [search, setSearch] = useState("");
+
+  const [statusFilter, setStatusFilter] = useState<ProjectTaskStatus | "ALL">(
+    "ALL",
+  );
+
+  const [priorityFilter, setPriorityFilter] = useState<
+    ProjectTaskPriority | "ALL"
+  >("ALL");
+
+  const [sort, setSort] = useState<TaskSort>("default");
+
+  const [visibleColumns, setVisibleColumns] = useState<Set<TaskColumn>>(
+    new Set(defaultColumns),
+  );
+
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(
     new Set(),
   );
 
-  const tasks = useMemo(() => {
+  const filteredTasks = useMemo(() => {
     const query = search.trim().toLowerCase();
 
-    return project.recentTasks.filter((task) => {
+    const result = tasks.filter((task) => {
       const matchesView =
         view === "all" ||
         (view === "open" && task.status !== "DONE") ||
@@ -32,19 +72,45 @@ export function ProjectTasks({ project }: ProjectTasksProps) {
       const matchesSearch =
         !query ||
         task.id.toLowerCase().includes(query) ||
-        task.title.toLowerCase().includes(query);
+        task.title.toLowerCase().includes(query) ||
+        task.assignee.name.toLowerCase().includes(query);
 
-      return matchesView && matchesSearch;
+      const matchesStatus =
+        statusFilter === "ALL" || task.status === statusFilter;
+
+      const matchesPriority =
+        priorityFilter === "ALL" || task.priority === priorityFilter;
+
+      return matchesView && matchesSearch && matchesStatus && matchesPriority;
     });
-  }, [project.recentTasks, search, view]);
 
-  const openCount = project.recentTasks.filter(
-    (task) => task.status !== "DONE",
-  ).length;
+    if (sort === "title-asc") {
+      return result.toSorted((a, b) => a.title.localeCompare(b.title));
+    }
 
-  const completedCount = project.recentTasks.filter(
-    (task) => task.status === "DONE",
-  ).length;
+    if (sort === "title-desc") {
+      return result.toSorted((a, b) => b.title.localeCompare(a.title));
+    }
+
+    if (sort === "due-asc") {
+      return result.toSorted((a, b) => a.dueDate.localeCompare(b.dueDate));
+    }
+
+    if (sort === "priority") {
+      return result.toSorted(
+        (a, b) => priorityOrder[a.priority] - priorityOrder[b.priority],
+      );
+    }
+
+    return result;
+  }, [tasks, search, view, statusFilter, priorityFilter, sort]);
+
+  const openCount = useMemo(
+    () => tasks.filter((task) => task.status !== "DONE").length,
+    [tasks],
+  );
+
+  const completedCount = tasks.length - openCount;
 
   function handleTaskSelection(taskId: string, selected: boolean) {
     setSelectedTaskIds((current) => {
@@ -64,7 +130,7 @@ export function ProjectTasks({ project }: ProjectTasksProps) {
     setSelectedTaskIds((current) => {
       const next = new Set(current);
 
-      tasks.forEach((task) => {
+      filteredTasks.forEach((task) => {
         if (selected) {
           next.add(task.id);
         } else {
@@ -76,19 +142,96 @@ export function ProjectTasks({ project }: ProjectTasksProps) {
     });
   }
 
+  function handleTaskStatusChange(taskId: string, status: ProjectTaskStatus) {
+    setTasks((current) =>
+      current.map((task) =>
+        task.id === taskId
+          ? {
+              ...task,
+              status,
+            }
+          : task,
+      ),
+    );
+  }
+
+  function handleBulkStatusChange(status: ProjectTaskStatus) {
+    setTasks((current) =>
+      current.map((task) =>
+        selectedTaskIds.has(task.id)
+          ? {
+              ...task,
+              status,
+            }
+          : task,
+      ),
+    );
+  }
+
+  function handleAssigneeChange(member: ProjectMember) {
+    setTasks((current) =>
+      current.map((task) =>
+        selectedTaskIds.has(task.id)
+          ? {
+              ...task,
+              assignee: member,
+            }
+          : task,
+      ),
+    );
+  }
+
+  function handleSprintChange(sprint: string) {
+    setTasks((current) =>
+      current.map((task) =>
+        selectedTaskIds.has(task.id)
+          ? {
+              ...task,
+              sprint,
+            }
+          : task,
+      ),
+    );
+  }
+
+  function handleColumnToggle(column: TaskColumn) {
+    setVisibleColumns((current) => {
+      const next = new Set(current);
+
+      if (next.has(column)) {
+        next.delete(column);
+      } else {
+        next.add(column);
+      }
+
+      return next;
+    });
+  }
+
   function handleClearSelection() {
     setSelectedTaskIds(new Set());
   }
 
   return (
     <div className="min-w-0 space-y-4">
-      <TasksToolbar search={search} onSearchChange={setSearch} />
+      <TasksToolbar
+        search={search}
+        statusFilter={statusFilter}
+        priorityFilter={priorityFilter}
+        sort={sort}
+        visibleColumns={visibleColumns}
+        onSearchChange={setSearch}
+        onStatusFilterChange={setStatusFilter}
+        onPriorityFilterChange={setPriorityFilter}
+        onSortChange={setSort}
+        onColumnToggle={handleColumnToggle}
+      />
 
       <TaskViewTabs
         value={view}
         onValueChange={setView}
         counts={{
-          all: project.recentTasks.length,
+          all: tasks.length,
           open: openCount,
           completed: completedCount,
         }}
@@ -96,12 +239,18 @@ export function ProjectTasks({ project }: ProjectTasksProps) {
 
       <TasksBulkActions
         selectedCount={selectedTaskIds.size}
+        members={project.members}
+        onStatusChange={handleBulkStatusChange}
+        onAssigneeChange={handleAssigneeChange}
+        onSprintChange={handleSprintChange}
         onClear={handleClearSelection}
       />
 
       <TasksTable
-        tasks={tasks}
+        tasks={filteredTasks}
+        visibleColumns={visibleColumns}
         selectedTaskIds={selectedTaskIds}
+        onTaskStatusChange={handleTaskStatusChange}
         onTaskSelectionChange={handleTaskSelection}
         onSelectAllChange={handleSelectAll}
       />

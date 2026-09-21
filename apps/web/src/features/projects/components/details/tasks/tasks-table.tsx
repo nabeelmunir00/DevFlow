@@ -16,14 +16,18 @@ import {
 
 import type {
   ProjectTaskPriority,
+  ProjectTaskStatus,
   ProjectTaskSummary,
 } from "../../../types/project";
 
+import type { TaskColumn } from "./tasks-toolbar";
 import { TaskStatusSelect } from "./task-status-select";
 
 interface TasksTableProps {
   tasks: ProjectTaskSummary[];
+  visibleColumns: Set<TaskColumn>;
   selectedTaskIds: Set<string>;
+  onTaskStatusChange: (taskId: string, status: ProjectTaskStatus) => void;
   onTaskSelectionChange: (taskId: string, selected: boolean) => void;
   onSelectAllChange: (selected: boolean) => void;
 }
@@ -55,7 +59,9 @@ const priorityStyles: Record<
 
 export function TasksTable({
   tasks,
+  visibleColumns,
   selectedTaskIds,
+  onTaskStatusChange,
   onTaskSelectionChange,
   onSelectAllChange,
 }: TasksTableProps) {
@@ -74,6 +80,8 @@ export function TasksTable({
       ? "indeterminate"
       : false;
 
+  const columnCount = 4 + visibleColumns.size;
+
   return (
     <div className="min-w-0 overflow-hidden rounded-lg border border-border">
       <Table>
@@ -91,19 +99,38 @@ export function TasksTable({
 
             <TableHead className="w-24">Key</TableHead>
             <TableHead>Title</TableHead>
-            <TableHead className="w-36">Status</TableHead>
-            <TableHead className="w-28">Priority</TableHead>
-            <TableHead className="w-44">Assignee</TableHead>
 
-            <TableHead className="hidden w-28 lg:table-cell">Sprint</TableHead>
+            {visibleColumns.has("status") && (
+              <TableHead className="w-36">Status</TableHead>
+            )}
 
-            <TableHead className="hidden w-24 md:table-cell">Due</TableHead>
+            {visibleColumns.has("priority") && (
+              <TableHead className="w-28">Priority</TableHead>
+            )}
 
-            <TableHead className="hidden w-24 xl:table-cell">
-              Estimate
-            </TableHead>
+            {visibleColumns.has("assignee") && (
+              <TableHead className="w-44">Assignee</TableHead>
+            )}
 
-            <TableHead className="hidden w-24 lg:table-cell">PR</TableHead>
+            {visibleColumns.has("sprint") && (
+              <TableHead className="hidden w-28 lg:table-cell">
+                Sprint
+              </TableHead>
+            )}
+
+            {visibleColumns.has("due") && (
+              <TableHead className="hidden w-24 md:table-cell">Due</TableHead>
+            )}
+
+            {visibleColumns.has("estimate") && (
+              <TableHead className="hidden w-24 xl:table-cell">
+                Estimate
+              </TableHead>
+            )}
+
+            {visibleColumns.has("pr") && (
+              <TableHead className="hidden w-24 lg:table-cell">PR</TableHead>
+            )}
 
             <TableHead className="w-12" />
           </TableRow>
@@ -113,6 +140,7 @@ export function TasksTable({
           {tasks.length > 0 ? (
             tasks.map((task) => {
               const priority = priorityStyles[task.priority];
+
               const isSelected = selectedTaskIds.has(task.id);
 
               return (
@@ -148,56 +176,75 @@ export function TasksTable({
                     </span>
                   </TableCell>
 
-                  <TableCell>
-                    <TaskStatusSelect value={task.status} />
-                  </TableCell>
-
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`size-2.5 shrink-0 rounded-full ${priority.dot}`}
-                        aria-hidden="true"
+                  {visibleColumns.has("status") && (
+                    <TableCell>
+                      <TaskStatusSelect
+                        value={task.status}
+                        onValueChange={(status) =>
+                          onTaskStatusChange(task.id, status)
+                        }
                       />
-                      <span>{priority.label}</span>
-                    </div>
-                  </TableCell>
+                    </TableCell>
+                  )}
 
-                  <TableCell>
-                    <div className="flex min-w-0 items-center gap-2">
-                      <Avatar className="size-7 shrink-0">
-                        <AvatarFallback className="text-xs">
-                          {task.assignee.initials}
-                        </AvatarFallback>
-                      </Avatar>
+                  {visibleColumns.has("priority") && (
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`size-2.5 shrink-0 rounded-full ${priority.dot}`}
+                          aria-hidden="true"
+                        />
+                        <span>{priority.label}</span>
+                      </div>
+                    </TableCell>
+                  )}
 
-                      <span className="truncate">{task.assignee.name}</span>
-                    </div>
-                  </TableCell>
+                  {visibleColumns.has("assignee") && (
+                    <TableCell>
+                      <div className="flex min-w-0 items-center gap-2">
+                        <Avatar className="size-7 shrink-0">
+                          <AvatarFallback className="text-xs">
+                            {task.assignee.initials}
+                          </AvatarFallback>
+                        </Avatar>
 
-                  <TableCell className="hidden whitespace-nowrap lg:table-cell">
-                    {task.sprint ?? "—"}
-                  </TableCell>
+                        <span className="truncate">{task.assignee.name}</span>
+                      </div>
+                    </TableCell>
+                  )}
 
-                  <TableCell className="hidden whitespace-nowrap md:table-cell">
-                    {task.dueDate}
-                  </TableCell>
+                  {visibleColumns.has("sprint") && (
+                    <TableCell className="hidden whitespace-nowrap lg:table-cell">
+                      {task.sprint ?? "—"}
+                    </TableCell>
+                  )}
 
-                  <TableCell className="hidden whitespace-nowrap xl:table-cell">
-                    {task.estimate ?? "—"}
-                  </TableCell>
+                  {visibleColumns.has("due") && (
+                    <TableCell className="hidden whitespace-nowrap md:table-cell">
+                      {task.dueDate}
+                    </TableCell>
+                  )}
 
-                  <TableCell className="hidden lg:table-cell">
-                    {task.pullRequest ? (
-                      <button
-                        type="button"
-                        className="flex items-center gap-1.5 text-primary hover:underline"
-                      >
-                        <GitBranch className="size-4" />#{task.pullRequest}
-                      </button>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
+                  {visibleColumns.has("estimate") && (
+                    <TableCell className="hidden whitespace-nowrap xl:table-cell">
+                      {task.estimate ?? "—"}
+                    </TableCell>
+                  )}
+
+                  {visibleColumns.has("pr") && (
+                    <TableCell className="hidden lg:table-cell">
+                      {task.pullRequest ? (
+                        <button
+                          type="button"
+                          className="flex items-center gap-1.5 text-primary hover:underline"
+                        >
+                          <GitBranch className="size-4" />#{task.pullRequest}
+                        </button>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                  )}
 
                   <TableCell>
                     <Button
@@ -216,7 +263,7 @@ export function TasksTable({
           ) : (
             <TableRow>
               <TableCell
-                colSpan={11}
+                colSpan={columnCount}
                 className="h-32 text-center text-muted-foreground"
               >
                 No tasks found.
