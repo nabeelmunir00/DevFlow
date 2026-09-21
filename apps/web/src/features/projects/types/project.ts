@@ -4,6 +4,14 @@ export type ProjectStatus =
   | "ON_TRACK"
   | "BLOCKED";
 
+export type ProjectAccent =
+  | "primary"
+  | "info"
+  | "success"
+  | "warning"
+  | "destructive"
+  | "muted";
+
 export interface ProjectMember {
   id: string;
   name: string;
@@ -22,5 +30,54 @@ export interface Project {
   sprint: string;
   dueDate: string;
   repository: string;
-  accent: "primary" | "info" | "success" | "warning" | "destructive" | "muted";
+  accent: ProjectAccent;
+}
+
+export type ProjectTaskStatus = "TODO" | "IN_PROGRESS" | "IN_REVIEW" | "DONE";
+
+export type ProjectTaskPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+
+export interface ProjectTaskSummary {
+  id: string;
+  title: string;
+  status: ProjectTaskStatus;
+  priority: ProjectTaskPriority;
+  dueDate: string;
+  assignee?: ProjectMember;
+}
+
+export interface ProjectActivityItem {
+  id: string;
+  message: string;
+  actor: ProjectMember;
+  createdAt: string;
+}
+
+export interface ProjectDeadline {
+  id: string;
+  title: string;
+  date: string;
+}
+
+export interface ProjectDetails extends Project {
+  goal: string;
+
+  startDate: string;
+  endDate: string;
+
+  owner: ProjectMember;
+  lead: ProjectMember;
+
+  createdAt: string;
+  updatedAt: string;
+
+  completedTasks: number;
+  totalTasks: number;
+
+  repositoryUrl: string;
+  defaultBranch: string;
+
+  recentTasks: ProjectTaskSummary[];
+  recentActivity: ProjectActivityItem[];
+  upcomingDeadlines: ProjectDeadline[];
 }

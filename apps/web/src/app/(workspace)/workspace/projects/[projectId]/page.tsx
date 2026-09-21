@@ -1,7 +1,6 @@
-import { notFound } from "next/navigation";
-
-import { demoProjects } from "@/features/projects/components/data/demo-projects";
 import { ProjectDetailsPage } from "@/features/projects/components/details/project-details-page";
+import { demoProjectDetails } from "@/features/projects/types/demo-project-details";
+import { notFound } from "next/navigation";
 
 interface ProjectDetailsRouteProps {
   params: Promise<{
@@ -14,11 +13,13 @@ export default async function ProjectDetailsRoute({
 }: ProjectDetailsRouteProps) {
   const { projectId } = await params;
 
-  const project = demoProjects.find((project) => project.id === projectId);
+  const project = demoProjectDetails.find(
+    (project) => project.id === projectId,
+  );
 
   if (!project) {
     notFound();
   }
 
-  return <ProjectDetailsPage activeTab="overview" project={project} />;
+  return <ProjectDetailsPage project={project} />;
 }

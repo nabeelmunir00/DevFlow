@@ -4,10 +4,12 @@ import { useState } from "react";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import type { Project } from "../../types/project";
+import type { ProjectDetails } from "../../types/project";
+
+import { ProjectDetailsHeader } from "./project-details-header";
 
 interface ProjectDetailsPageProps {
-  project: Project;
+  project: ProjectDetails;
 }
 
 export type ProjectTab =
@@ -81,78 +83,60 @@ export function ProjectDetailsPage({ project }: ProjectDetailsPageProps) {
     <div className="flex min-w-0 flex-1 flex-col">
       {/* =====================================================
           PROJECT HEADER
-          Temporary foundation.
-          Next step: extract into project-details-header.tsx
       ====================================================== */}
 
-      <div className="border-b border-border">
-        <div className="flex min-w-0 flex-col gap-4 px-4 py-5 sm:px-6 2xl:px-7">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-md bg-primary text-sm font-semibold text-primary-foreground">
-              {project.key}
-            </div>
+      <ProjectDetailsHeader project={project} />
 
-            <div className="min-w-0">
-              <h1 className="truncate text-lg font-semibold text-foreground">
-                {project.name}
-              </h1>
+      {/* =====================================================
+          PROJECT TABS
 
-              <div className="mt-1 flex min-w-0 items-center gap-2">
-                <span className="shrink-0 text-xs font-medium text-muted-foreground">
-                  {project.key}
-                </span>
+          URL always stays:
+          /workspace/project/[projectId]
 
-                <span
-                  aria-hidden="true"
-                  className="size-1 rounded-full bg-muted-foreground"
-                />
+          Tabs only change local UI state.
+      ====================================================== */}
 
-                <span className="truncate text-xs text-muted-foreground">
-                  {project.description}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => setActiveTab(value as ProjectTab)}
+        className="min-w-0 gap-0"
+      >
         {/* ===================================================
-            PROJECT TABS
-
-            Same URL:
-            /workspace/project/[projectId]
-
-            Tab switching does NOT create nested routes.
+            TAB NAVIGATION
         ==================================================== */}
 
-        <Tabs
-          value={activeTab}
-          onValueChange={(value) => setActiveTab(value as ProjectTab)}
-          className="min-w-0 gap-0"
-        >
-          <div className="min-w-0 overflow-x-auto border-t border-border px-4 sm:px-6 2xl:px-7">
-            <TabsList className="h-12 w-max min-w-full justify-start gap-1 rounded-none bg-transparent p-0">
+        <div className="min-w-0 border-b border-border">
+          <div className="overflow-x-auto px-4 sm:px-6 2xl:px-7">
+            <TabsList className="h-12 w-max min-w-full justify-start gap-0 rounded-none bg-transparent p-0">
               {projectTabs.map((tab) => (
                 <TabsTrigger
                   key={tab.value}
                   value={tab.value}
                   className="
+                    relative
                     h-12
                     flex-none
                     rounded-none
-                    border-x-0
-                    border-b-2
-                    border-t-0
-                    border-transparent
+                    border-0
                     bg-transparent
                     px-3
                     text-sm
                     font-normal
                     text-muted-foreground
                     shadow-none
-                    data-[state=active]:border-primary
+                    transition-colors
+                    hover:text-foreground
                     data-[state=active]:bg-transparent
                     data-[state=active]:text-foreground
                     data-[state=active]:shadow-none
+                    after:absolute
+                    after:inset-x-3
+                    after:bottom-0
+                    after:h-0.5
+                    after:scale-x-0
+                    after:bg-primary
+                    after:transition-transform
+                    data-[state=active]:after:scale-x-100
                   "
                 >
                   {tab.label}
@@ -160,46 +144,62 @@ export function ProjectDetailsPage({ project }: ProjectDetailsPageProps) {
               ))}
             </TabsList>
           </div>
+        </div>
 
-          {/* =================================================
-              PAGE CONTENT
-          ================================================== */}
+        {/* ===================================================
+            TAB CONTENT
+        ==================================================== */}
 
-          <div className="min-w-0 px-4 py-5 sm:px-6 2xl:px-7">
-            <TabsContent value="overview" className="m-0 min-w-0">
-              <ProjectTabPlaceholder title="Project overview" />
-            </TabsContent>
+        <div className="min-w-0 px-4 py-5 sm:px-6 2xl:px-7">
+          {/* Overview */}
 
-            <TabsContent value="board" className="m-0 min-w-0">
-              <ProjectTabPlaceholder title="Project board" />
-            </TabsContent>
+          <TabsContent value="overview" className="m-0 min-w-0">
+            <ProjectTabPlaceholder title="Project overview" />
+          </TabsContent>
 
-            <TabsContent value="tasks" className="m-0 min-w-0">
-              <ProjectTabPlaceholder title="Project tasks" />
-            </TabsContent>
+          {/* Board */}
 
-            <TabsContent value="sprints" className="m-0 min-w-0">
-              <ProjectTabPlaceholder title="Project sprints" />
-            </TabsContent>
+          <TabsContent value="board" className="m-0 min-w-0">
+            <ProjectTabPlaceholder title="Project board" />
+          </TabsContent>
 
-            <TabsContent value="github" className="m-0 min-w-0">
-              <ProjectTabPlaceholder title="GitHub integration" />
-            </TabsContent>
+          {/* Tasks */}
 
-            <TabsContent value="activity" className="m-0 min-w-0">
-              <ProjectTabPlaceholder title="Project activity" />
-            </TabsContent>
+          <TabsContent value="tasks" className="m-0 min-w-0">
+            <ProjectTabPlaceholder title="Project tasks" />
+          </TabsContent>
 
-            <TabsContent value="analytics" className="m-0 min-w-0">
-              <ProjectTabPlaceholder title="Project analytics" />
-            </TabsContent>
+          {/* Sprints */}
 
-            <TabsContent value="settings" className="m-0 min-w-0">
-              <ProjectTabPlaceholder title="Project settings" />
-            </TabsContent>
-          </div>
-        </Tabs>
-      </div>
+          <TabsContent value="sprints" className="m-0 min-w-0">
+            <ProjectTabPlaceholder title="Project sprints" />
+          </TabsContent>
+
+          {/* GitHub */}
+
+          <TabsContent value="github" className="m-0 min-w-0">
+            <ProjectTabPlaceholder title="GitHub integration" />
+          </TabsContent>
+
+          {/* Activity */}
+
+          <TabsContent value="activity" className="m-0 min-w-0">
+            <ProjectTabPlaceholder title="Project activity" />
+          </TabsContent>
+
+          {/* Analytics */}
+
+          <TabsContent value="analytics" className="m-0 min-w-0">
+            <ProjectTabPlaceholder title="Project analytics" />
+          </TabsContent>
+
+          {/* Settings */}
+
+          <TabsContent value="settings" className="m-0 min-w-0">
+            <ProjectTabPlaceholder title="Project settings" />
+          </TabsContent>
+        </div>
+      </Tabs>
     </div>
   );
 }
