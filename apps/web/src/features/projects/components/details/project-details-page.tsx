@@ -8,6 +8,7 @@ import type { ProjectDetails } from "../../types/project";
 
 import { ProjectDetailsHeader } from "./project-details-header";
 import { ProjectOverview } from "./overview/project-overview";
+import { ProjectBoard } from "./board/project-board";
 
 interface ProjectDetailsPageProps {
   project: ProjectDetails;
@@ -182,7 +183,7 @@ export function ProjectDetailsPage({ project }: ProjectDetailsPageProps) {
           {/* Board */}
 
           <TabsContent value="board" className="m-0 min-w-0">
-            <ProjectTabPlaceholder title="Project board" />
+            <ProjectBoard project={project} />
           </TabsContent>
 
           {/* Tasks */}

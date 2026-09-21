@@ -44,6 +44,13 @@ export interface ProjectTaskSummary {
   priority: ProjectTaskPriority;
   dueDate: string;
   assignee?: ProjectMember;
+  description?: string;
+  label?: string;
+  completedSubtasks?: number;
+  totalSubtasks?: number;
+  comments?: number;
+  attachments?: number;
+  pullRequest?: number;
 }
 
 export interface ProjectActivityItem {

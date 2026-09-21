@@ -15,7 +15,7 @@ export default async function WorkspaceLayout({
   const user = await currentUser();
 
   if (!user) {
-    redirect("/");
+    // redirect("/");
   }
 
   const email =
