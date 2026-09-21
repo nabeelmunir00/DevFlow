@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { ProjectDetails } from "../../types/project";
 
 import { ProjectDetailsHeader } from "./project-details-header";
+import { ProjectOverview } from "./overview/project-overview";
 
 interface ProjectDetailsPageProps {
   project: ProjectDetails;
@@ -175,7 +176,7 @@ export function ProjectDetailsPage({ project }: ProjectDetailsPageProps) {
           {/* Overview */}
 
           <TabsContent value="overview" className="m-0 min-w-0">
-            <ProjectTabPlaceholder title="Project overview" />
+            <ProjectOverview project={project} />
           </TabsContent>
 
           {/* Board */}
