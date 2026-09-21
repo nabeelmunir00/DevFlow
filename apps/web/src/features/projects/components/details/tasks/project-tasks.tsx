@@ -13,7 +13,12 @@ import type {
 import { TaskViewTabs, type TaskView } from "./task-view-tabs";
 import { TasksBulkActions } from "./tasks-bulk-actions";
 import { TasksTable } from "./tasks-table";
-import { TasksToolbar, type TaskColumn, type TaskSort } from "./tasks-toolbar";
+import {
+  TasksToolbar,
+  type TaskColumn,
+  type TaskGroup,
+  type TaskSort,
+} from "./tasks-toolbar";
 
 interface ProjectTasksProps {
   project: ProjectDetails;
@@ -41,16 +46,14 @@ export function ProjectTasks({ project }: ProjectTasksProps) {
 
   const [view, setView] = useState<TaskView>("all");
   const [search, setSearch] = useState("");
-
   const [statusFilter, setStatusFilter] = useState<ProjectTaskStatus | "ALL">(
     "ALL",
   );
-
   const [priorityFilter, setPriorityFilter] = useState<
     ProjectTaskPriority | "ALL"
   >("ALL");
-
   const [sort, setSort] = useState<TaskSort>("default");
+  const [group, setGroup] = useState<TaskGroup>("status");
 
   const [visibleColumns, setVisibleColumns] = useState<Set<TaskColumn>>(
     new Set(defaultColumns),
@@ -144,26 +147,14 @@ export function ProjectTasks({ project }: ProjectTasksProps) {
 
   function handleTaskStatusChange(taskId: string, status: ProjectTaskStatus) {
     setTasks((current) =>
-      current.map((task) =>
-        task.id === taskId
-          ? {
-              ...task,
-              status,
-            }
-          : task,
-      ),
+      current.map((task) => (task.id === taskId ? { ...task, status } : task)),
     );
   }
 
   function handleBulkStatusChange(status: ProjectTaskStatus) {
     setTasks((current) =>
       current.map((task) =>
-        selectedTaskIds.has(task.id)
-          ? {
-              ...task,
-              status,
-            }
-          : task,
+        selectedTaskIds.has(task.id) ? { ...task, status } : task,
       ),
     );
   }
@@ -171,12 +162,7 @@ export function ProjectTasks({ project }: ProjectTasksProps) {
   function handleAssigneeChange(member: ProjectMember) {
     setTasks((current) =>
       current.map((task) =>
-        selectedTaskIds.has(task.id)
-          ? {
-              ...task,
-              assignee: member,
-            }
-          : task,
+        selectedTaskIds.has(task.id) ? { ...task, assignee: member } : task,
       ),
     );
   }
@@ -184,12 +170,7 @@ export function ProjectTasks({ project }: ProjectTasksProps) {
   function handleSprintChange(sprint: string) {
     setTasks((current) =>
       current.map((task) =>
-        selectedTaskIds.has(task.id)
-          ? {
-              ...task,
-              sprint,
-            }
-          : task,
+        selectedTaskIds.has(task.id) ? { ...task, sprint } : task,
       ),
     );
   }
@@ -219,11 +200,13 @@ export function ProjectTasks({ project }: ProjectTasksProps) {
         statusFilter={statusFilter}
         priorityFilter={priorityFilter}
         sort={sort}
+        group={group}
         visibleColumns={visibleColumns}
         onSearchChange={setSearch}
         onStatusFilterChange={setStatusFilter}
         onPriorityFilterChange={setPriorityFilter}
         onSortChange={setSort}
+        onGroupChange={setGroup}
         onColumnToggle={handleColumnToggle}
       />
 
@@ -248,6 +231,7 @@ export function ProjectTasks({ project }: ProjectTasksProps) {
 
       <TasksTable
         tasks={filteredTasks}
+        group={group}
         visibleColumns={visibleColumns}
         selectedTaskIds={selectedTaskIds}
         onTaskStatusChange={handleTaskStatusChange}

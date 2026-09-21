@@ -33,6 +33,8 @@ export type TaskSort =
   | "due-asc"
   | "priority";
 
+export type TaskGroup = "none" | "status";
+
 export type TaskColumn =
   | "status"
   | "priority"
@@ -47,19 +49,17 @@ interface TasksToolbarProps {
   statusFilter: ProjectTaskStatus | "ALL";
   priorityFilter: ProjectTaskPriority | "ALL";
   sort: TaskSort;
+  group: TaskGroup;
   visibleColumns: Set<TaskColumn>;
   onSearchChange: (value: string) => void;
   onStatusFilterChange: (value: ProjectTaskStatus | "ALL") => void;
   onPriorityFilterChange: (value: ProjectTaskPriority | "ALL") => void;
   onSortChange: (value: TaskSort) => void;
+  onGroupChange: (value: TaskGroup) => void;
   onColumnToggle: (column: TaskColumn) => void;
 }
 
-const statuses: {
-  value: ProjectTaskStatus;
-  label: string;
-  dot: string;
-}[] = [
+const statuses = [
   {
     value: "TODO",
     label: "To do",
@@ -80,13 +80,13 @@ const statuses: {
     label: "Done",
     dot: "bg-success",
   },
-];
-
-const priorities: {
-  value: ProjectTaskPriority;
+] satisfies {
+  value: ProjectTaskStatus;
   label: string;
   dot: string;
-}[] = [
+}[];
+
+const priorities = [
   {
     value: "LOW",
     label: "Low",
@@ -107,7 +107,11 @@ const priorities: {
     label: "Urgent",
     dot: "bg-destructive",
   },
-];
+] satisfies {
+  value: ProjectTaskPriority;
+  label: string;
+  dot: string;
+}[];
 
 const sortOptions: {
   value: TaskSort;
@@ -138,11 +142,13 @@ export function TasksToolbar({
   statusFilter,
   priorityFilter,
   sort,
+  group,
   visibleColumns,
   onSearchChange,
   onStatusFilterChange,
   onPriorityFilterChange,
   onSortChange,
+  onGroupChange,
   onColumnToggle,
 }: TasksToolbarProps) {
   const hasFilters = statusFilter !== "ALL" || priorityFilter !== "ALL";
@@ -206,7 +212,11 @@ export function TasksToolbar({
                 key={status.value}
                 onClick={() => onStatusFilterChange(status.value)}
               >
-                <span className={`size-2.5 rounded-full ${status.dot}`} />
+                <span
+                  className={`size-2.5 rounded-full ${status.dot}`}
+                  aria-hidden="true"
+                />
+
                 {status.label}
 
                 {statusFilter === status.value && (
@@ -228,7 +238,11 @@ export function TasksToolbar({
                 key={priority.value}
                 onClick={() => onPriorityFilterChange(priority.value)}
               >
-                <span className={`size-2.5 rounded-full ${priority.dot}`} />
+                <span
+                  className={`size-2.5 rounded-full ${priority.dot}`}
+                  aria-hidden="true"
+                />
+
                 {priority.label}
 
                 {priorityFilter === priority.value && (
@@ -271,14 +285,35 @@ export function TasksToolbar({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <Button
-        type="button"
-        variant="outline"
-        className="h-10 gap-2 font-normal"
-      >
-        Group by Status
-        <ChevronDown className="size-4 text-muted-foreground" />
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              type="button"
+              variant="outline"
+              className="h-10 gap-2 font-normal"
+            />
+          }
+        >
+          {group === "status" ? "Group by Status" : "Group by"}
+
+          <ChevronDown className="size-4 text-muted-foreground" />
+        </DropdownMenuTrigger>
+
+        <DropdownMenuContent align="start">
+          <DropdownMenuGroup>
+            <DropdownMenuItem onClick={() => onGroupChange("none")}>
+              No grouping
+              {group === "none" && <Check className="ml-auto size-4" />}
+            </DropdownMenuItem>
+
+            <DropdownMenuItem onClick={() => onGroupChange("status")}>
+              Status
+              {group === "status" && <Check className="ml-auto size-4" />}
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       <DropdownMenu>
         <DropdownMenuTrigger
