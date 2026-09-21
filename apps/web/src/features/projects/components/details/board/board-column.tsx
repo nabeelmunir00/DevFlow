@@ -1,11 +1,12 @@
 "use client";
 
-import { Ellipsis, Plus } from "lucide-react";
 import { useDroppable } from "@dnd-kit/core";
 import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import { Ellipsis, Plus } from "lucide-react";
+import { motion } from "motion/react";
 
 import { Button } from "@/components/ui/button";
 
@@ -20,6 +21,7 @@ interface BoardColumnProps {
   title: string;
   status: ProjectTaskStatus;
   tasks: ProjectTaskSummary[];
+  isDragOver?: boolean;
 }
 
 const statusDot: Record<ProjectTaskStatus, string> = {
@@ -29,8 +31,13 @@ const statusDot: Record<ProjectTaskStatus, string> = {
   DONE: "bg-success",
 };
 
-export function BoardColumn({ title, status, tasks }: BoardColumnProps) {
-  const { setNodeRef, isOver } = useDroppable({
+export function BoardColumn({
+  title,
+  status,
+  tasks,
+  isDragOver = false,
+}: BoardColumnProps) {
+  const { setNodeRef } = useDroppable({
     id: status,
     data: {
       type: "column",
@@ -39,23 +46,37 @@ export function BoardColumn({ title, status, tasks }: BoardColumnProps) {
   });
 
   return (
-    <section
+    <motion.section
       ref={setNodeRef}
+      layout
+      initial={false}
+      animate={{
+        scale: isDragOver ? 1.005 : 1,
+      }}
+      transition={{
+        layout: {
+          duration: 0.2,
+          ease: [0.2, 0, 0, 1],
+        },
+        scale: {
+          duration: 0.15,
+          ease: "easeOut",
+        },
+      }}
       className={[
-        "min-w-0 rounded-lg border bg-card/30 p-2",
-        "transition-[border-color,background-color,box-shadow] duration-200 ease-out",
-        "motion-reduce:transition-none",
-        isOver ? "border-primary/50 bg-primary/5 shadow-sm" : "border-border",
+        "flex min-h-80 min-w-0 flex-col rounded-lg border p-2",
+        "transition-[border-color,background-color,box-shadow] duration-150",
+        isDragOver
+          ? "border-primary/60 bg-primary/5 shadow-sm"
+          : "border-border bg-card/30",
       ].join(" ")}
     >
-      {/* =====================================================
-          COLUMN HEADER
-      ====================================================== */}
+      {/* Column Header */}
 
-      <div className="flex h-10 items-center justify-between gap-3 px-1">
+      <div className="flex h-10 shrink-0 items-center justify-between gap-3 px-1">
         <div className="flex min-w-0 items-center gap-2.5">
           <span
-            className={`size-4 shrink-0 rounded-full ${statusDot[status]}`}
+            className={`size-3 shrink-0 rounded-full ${statusDot[status]}`}
             aria-hidden="true"
           />
 
@@ -91,34 +112,39 @@ export function BoardColumn({ title, status, tasks }: BoardColumnProps) {
         </div>
       </div>
 
-      {/* =====================================================
-          SORTABLE TASKS
-      ====================================================== */}
+      {/* Tasks */}
 
       <SortableContext
         items={tasks.map((task) => task.id)}
         strategy={verticalListSortingStrategy}
       >
-        <div className="mt-2 grid min-h-24 min-w-0 content-start gap-2">
+        <div className="flex min-h-64 flex-1 flex-col gap-2 pt-2">
           {tasks.map((task) => (
             <BoardTaskCard key={task.id} task={task} />
           ))}
 
           {tasks.length === 0 && (
-            <div
+            <motion.div
+              initial={false}
+              animate={{
+                opacity: isDragOver ? 1 : 0.65,
+              }}
+              transition={{
+                duration: 0.15,
+              }}
               className={[
-                "flex min-h-24 items-center justify-center rounded-md border border-dashed px-4",
-                "transition-[border-color,background-color,color] duration-200 ease-out",
-                isOver
+                "flex min-h-32 flex-1 items-center justify-center rounded-md border border-dashed",
+                "transition-[border-color,background-color,color] duration-150",
+                isDragOver
                   ? "border-primary/50 bg-primary/5 text-primary"
                   : "border-border text-muted-foreground",
               ].join(" ")}
             >
-              <span className="text-xs">Drop tasks here</span>
-            </div>
+              <span className="text-xs">Drop task here</span>
+            </motion.div>
           )}
         </div>
       </SortableContext>
-    </section>
+    </motion.section>
   );
 }

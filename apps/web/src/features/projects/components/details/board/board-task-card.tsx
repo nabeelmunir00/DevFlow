@@ -14,6 +14,7 @@ import {
   type AnimateLayoutChanges,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { motion } from "motion/react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -54,6 +55,10 @@ const priorityStyles: Record<
   },
 };
 
+/*
+ * Keep layout animations enabled after dragging.
+ * This gives surrounding cards a smoother reorder animation.
+ */
 const animateLayoutChanges: AnimateLayoutChanges = (args) =>
   defaultAnimateLayoutChanges({
     ...args,
@@ -61,154 +66,211 @@ const animateLayoutChanges: AnimateLayoutChanges = (args) =>
   });
 
 export function BoardTaskCard({ task, isOverlay = false }: BoardTaskCardProps) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } =
-    useSortable({
-      id: task.id,
-      disabled: isOverlay,
-      animateLayoutChanges,
-      data: {
-        type: "task",
-        task,
-      },
-    });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: task.id,
+
+    disabled: isOverlay,
+
+    animateLayoutChanges,
+
+    data: {
+      type: "task",
+      task,
+      status: task.status,
+    },
+  });
 
   const priority = priorityStyles[task.priority];
 
-  const style = {
+  /*
+   * dnd-kit controls ONLY the outer wrapper position.
+   *
+   * Motion controls the visual animation inside it.
+   * Keeping them separate prevents transform conflicts.
+   */
+  const sortableStyle = {
     transform: CSS.Transform.toString(transform),
-    transition: isDragging
-      ? undefined
-      : "transform 200ms cubic-bezier(0.2, 0, 0, 1)",
+
+    transition:
+      transition ??
+      (isDragging ? undefined : "transform 200ms cubic-bezier(0.2, 0, 0, 1)"),
   };
 
   return (
     <div
       ref={setNodeRef}
-      style={style}
+      style={sortableStyle}
       {...(!isOverlay ? attributes : {})}
       {...(!isOverlay ? listeners : {})}
       className={[
-        "touch-none outline-none",
-        "motion-reduce:transition-none",
+        "relative touch-none outline-none",
         !isOverlay && "cursor-grab active:cursor-grabbing",
-        isDragging && "relative z-10 opacity-25",
+        isDragging && "z-10",
         isOverlay && "cursor-grabbing",
       ]
         .filter(Boolean)
         .join(" ")}
     >
-      <Card
-        className={[
-          "gap-0 rounded-md border-border bg-card p-3 shadow-none",
-          "transition-[border-color,box-shadow,transform,opacity] duration-200 ease-out",
-          "motion-reduce:transition-none",
-          isOverlay
-            ? "scale-[1.02] border-primary/40 shadow-lg"
-            : "hover:border-foreground/20",
-        ].join(" ")}
+      {/*
+       * Keep the original card visible as a subtle placeholder
+       * while DragOverlay follows the pointer.
+       */}
+      <motion.div
+        initial={false}
+        animate={{
+          scale: isOverlay ? 1.02 : 1,
+          y: isOverlay ? -4 : 0,
+          opacity: isDragging && !isOverlay ? 0.22 : 1,
+        }}
+        transition={{
+          type: "spring",
+          stiffness: 420,
+          damping: 32,
+          mass: 0.65,
+        }}
+        className="motion-reduce:transform-none"
       >
-        {/* Top */}
+        <Card
+          className={[
+            "gap-0 rounded-md border bg-card p-3",
+            "transition-[border-color,box-shadow] duration-200 ease-out",
+            "motion-reduce:transition-none",
+            isOverlay
+              ? "border-primary/50 shadow-lg"
+              : "border-border shadow-none hover:border-foreground/20",
+          ].join(" ")}
+        >
+          {/* =================================================
+              TOP
+          ================================================== */}
 
-        <div className="flex min-w-0 items-center justify-between gap-3">
-          <button
-            type="button"
-            className="truncate text-left text-sm font-medium text-primary underline underline-offset-2"
-            onPointerDown={(event) => event.stopPropagation()}
-          >
-            {task.id}
-          </button>
-
-          <div className="flex shrink-0 items-center gap-2">
-            <div className="flex items-center gap-1.5">
-              <span
-                className={`size-2.5 shrink-0 rounded-full ${priority.dot}`}
-                aria-hidden="true"
-              />
-
-              <span className="text-xs text-muted-foreground">
-                {priority.label}
-              </span>
-            </div>
-
-            <Button
+          <div className="flex min-w-0 items-center justify-between gap-3">
+            <button
               type="button"
-              variant="ghost"
-              size="icon"
-              className="size-6 text-muted-foreground"
-              aria-label={`More options for ${task.title}`}
+              className="truncate text-left text-sm font-medium text-primary underline underline-offset-2"
               onPointerDown={(event) => event.stopPropagation()}
             >
-              <Ellipsis className="size-4" />
-            </Button>
-          </div>
-        </div>
+              {task.id}
+            </button>
 
-        {/* Content */}
+            <div className="flex shrink-0 items-center gap-2">
+              {/* Priority */}
 
-        <h3 className="mt-1.5 text-sm font-semibold leading-5 text-foreground">
-          {task.title}
-        </h3>
+              <div className="flex items-center gap-1.5">
+                <span
+                  className={`size-2.5 shrink-0 rounded-full ${priority.dot}`}
+                  aria-hidden="true"
+                />
 
-        <p className="mt-1.5 line-clamp-2 text-sm leading-5 text-muted-foreground">
-          {task.description ?? "Task details and implementation requirements."}
-        </p>
+                <span className="text-xs text-muted-foreground">
+                  {priority.label}
+                </span>
+              </div>
 
-        {/* Assignee */}
+              {/* More options */}
 
-        <div className="mt-3 flex min-w-0 flex-wrap items-center gap-2">
-          <Avatar className="size-7 shrink-0">
-            <AvatarFallback className="text-xs">
-              {task.assignee.initials}
-            </AvatarFallback>
-          </Avatar>
-
-          {task.label && (
-            <span className="rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground">
-              {task.label}
-            </span>
-          )}
-
-          <div className="ml-auto flex items-center gap-1.5 text-xs text-muted-foreground">
-            <CalendarDays className="size-4 shrink-0" aria-hidden="true" />
-
-            <span className="whitespace-nowrap">{task.dueDate}</span>
-          </div>
-        </div>
-
-        {/* Meta */}
-
-        <div className="mt-3 flex min-w-0 items-center gap-3 text-xs text-muted-foreground">
-          <div className="flex items-center gap-1">
-            <CheckSquare className="size-4" aria-hidden="true" />
-
-            <span className="tabular-nums">
-              {task.completedSubtasks ?? 0}/{task.totalSubtasks ?? 0}
-            </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-6 text-muted-foreground"
+                aria-label={`More options for ${task.title}`}
+                onPointerDown={(event) => event.stopPropagation()}
+              >
+                <Ellipsis className="size-4" />
+              </Button>
+            </div>
           </div>
 
-          <div className="flex items-center gap-1">
-            <MessageCircle className="size-4" aria-hidden="true" />
+          {/* =================================================
+              CONTENT
+          ================================================== */}
 
-            <span className="tabular-nums">{task.comments ?? 0}</span>
+          <h3 className="mt-1.5 text-sm font-semibold leading-5 text-foreground">
+            {task.title}
+          </h3>
+
+          <p className="mt-1.5 line-clamp-2 text-sm leading-5 text-muted-foreground">
+            {task.description ??
+              "Task details and implementation requirements."}
+          </p>
+
+          {/* =================================================
+              ASSIGNEE / LABEL / DATE
+          ================================================== */}
+
+          <div className="mt-3 flex min-w-0 flex-wrap items-center gap-2">
+            <Avatar className="size-7 shrink-0">
+              <AvatarFallback className="text-xs">
+                {task.assignee.initials}
+              </AvatarFallback>
+            </Avatar>
+
+            {task.label && (
+              <span className="rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground">
+                {task.label}
+              </span>
+            )}
+
+            <div className="ml-auto flex items-center gap-1.5 text-xs text-muted-foreground">
+              <CalendarDays className="size-4 shrink-0" aria-hidden="true" />
+
+              <span className="whitespace-nowrap">{task.dueDate}</span>
+            </div>
           </div>
 
-          <div className="flex items-center gap-1">
-            <Paperclip className="size-4" aria-hidden="true" />
+          {/* =================================================
+              TASK META
+          ================================================== */}
 
-            <span className="tabular-nums">{task.attachments ?? 0}</span>
-          </div>
+          <div className="mt-3 flex min-w-0 items-center gap-3 text-xs text-muted-foreground">
+            {/* Subtasks */}
 
-          {task.pullRequest && (
-            <div className="ml-auto flex min-w-0 items-center gap-1 text-primary">
-              <GitBranch className="size-4 shrink-0" aria-hidden="true" />
+            <div className="flex items-center gap-1">
+              <CheckSquare className="size-4" aria-hidden="true" />
 
-              <span className="truncate underline underline-offset-2">
-                #{task.pullRequest}
+              <span className="tabular-nums">
+                {task.completedSubtasks ?? 0}/{task.totalSubtasks ?? 0}
               </span>
             </div>
-          )}
-        </div>
-      </Card>
+
+            {/* Comments */}
+
+            <div className="flex items-center gap-1">
+              <MessageCircle className="size-4" aria-hidden="true" />
+
+              <span className="tabular-nums">{task.comments ?? 0}</span>
+            </div>
+
+            {/* Attachments */}
+
+            <div className="flex items-center gap-1">
+              <Paperclip className="size-4" aria-hidden="true" />
+
+              <span className="tabular-nums">{task.attachments ?? 0}</span>
+            </div>
+
+            {/* Pull request */}
+
+            {task.pullRequest && (
+              <div className="ml-auto flex min-w-0 items-center gap-1 text-primary">
+                <GitBranch className="size-4 shrink-0" aria-hidden="true" />
+
+                <span className="truncate underline underline-offset-2">
+                  #{task.pullRequest}
+                </span>
+              </div>
+            )}
+          </div>
+        </Card>
+      </motion.div>
     </div>
   );
 }
