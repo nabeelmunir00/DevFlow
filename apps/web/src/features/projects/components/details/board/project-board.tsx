@@ -13,7 +13,7 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { ChevronDown, Plus, Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -55,6 +55,10 @@ const columns: BoardColumnConfig[] = [
     title: "Done",
   },
 ];
+
+function isTaskStatus(value: string): value is ProjectTaskStatus {
+  return columns.some((column) => column.status === value);
+}
 
 export function ProjectBoard({ project }: ProjectBoardProps) {
   const [tasks, setTasks] = useState<ProjectTaskSummary[]>(project.recentTasks);
@@ -122,49 +126,167 @@ export function ProjectBoard({ project }: ProjectBoardProps) {
     }
 
     setTasks((currentTasks) => {
-      const activeTaskIndex = currentTasks.findIndex(
-        (task) => task.id === activeId,
-      );
+      const activeTask = currentTasks.find((task) => task.id === activeId);
 
-      if (activeTaskIndex === -1) {
+      if (!activeTask) {
         return currentTasks;
       }
 
       const overTask = currentTasks.find((task) => task.id === overId);
 
-      const overColumn = columns.find((column) => column.status === overId);
+      /* =================================================
+         CASE 1
+         DROP DIRECTLY ON COLUMN
+      ================================================== */
 
-      /*
-       * Dropped directly on a column.
-       */
-
-      if (overColumn) {
-        return currentTasks.map((task) =>
-          task.id === activeId
-            ? {
-                ...task,
-                status: overColumn.status,
-              }
-            : task,
+      if (isTaskStatus(overId)) {
+        const sourceTasks = currentTasks.filter(
+          (task) => task.status === activeTask.status,
         );
+
+        const destinationTasks = currentTasks.filter(
+          (task) => task.status === overId,
+        );
+
+        /*
+         * Same column:
+         * Dropping on the column itself doesn't need
+         * a position change.
+         */
+
+        if (activeTask.status === overId) {
+          return currentTasks;
+        }
+
+        const updatedTask: ProjectTaskSummary = {
+          ...activeTask,
+          status: overId,
+        };
+
+        const remainingTasks = currentTasks.filter(
+          (task) => task.id !== activeId,
+        );
+
+        /*
+         * Put the task at the end of the destination column.
+         */
+
+        const lastDestinationTask =
+          destinationTasks[destinationTasks.length - 1];
+
+        if (!lastDestinationTask) {
+          return [...remainingTasks, updatedTask];
+        }
+
+        const lastIndex = remainingTasks.findIndex(
+          (task) => task.id === lastDestinationTask.id,
+        );
+
+        const nextTasks = [...remainingTasks];
+
+        nextTasks.splice(lastIndex + 1, 0, updatedTask);
+
+        return nextTasks;
       }
 
-      /*
-       * Dropped on another task.
-       */
+      /* =================================================
+         CASE 2
+         DROP ON ANOTHER TASK
+      ================================================== */
 
-      if (overTask) {
-        return currentTasks.map((task) =>
-          task.id === activeId
-            ? {
-                ...task,
-                status: overTask.status,
-              }
-            : task,
-        );
+      if (!overTask) {
+        return currentTasks;
       }
 
-      return currentTasks;
+      const sourceStatus = activeTask.status;
+      const destinationStatus = overTask.status;
+
+      /* =================================================
+         CASE 2A
+         SAME COLUMN REORDER
+      ================================================== */
+
+      if (sourceStatus === destinationStatus) {
+        const columnTasks = currentTasks.filter(
+          (task) => task.status === sourceStatus,
+        );
+
+        const oldColumnIndex = columnTasks.findIndex(
+          (task) => task.id === activeId,
+        );
+
+        const newColumnIndex = columnTasks.findIndex(
+          (task) => task.id === overId,
+        );
+
+        if (oldColumnIndex === -1 || newColumnIndex === -1) {
+          return currentTasks;
+        }
+
+        const reorderedColumnTasks = arrayMove(
+          columnTasks,
+          oldColumnIndex,
+          newColumnIndex,
+        );
+
+        /*
+         * Rebuild the global array while preserving
+         * positions belonging to other columns.
+         */
+
+        let columnIndex = 0;
+
+        return currentTasks.map((task) => {
+          if (task.status !== sourceStatus) {
+            return task;
+          }
+
+          const reorderedTask = reorderedColumnTasks[columnIndex];
+
+          columnIndex += 1;
+
+          return reorderedTask ?? task;
+        });
+      }
+
+      /* =================================================
+         CASE 2B
+         CROSS COLUMN MOVE
+      ================================================== */
+
+      const updatedActiveTask: ProjectTaskSummary = {
+        ...activeTask,
+        status: destinationStatus,
+      };
+
+      /*
+       * Remove active task first.
+       */
+
+      const remainingTasks = currentTasks.filter(
+        (task) => task.id !== activeId,
+      );
+
+      /*
+       * Find the target task after removing active task.
+       */
+
+      const overIndex = remainingTasks.findIndex((task) => task.id === overId);
+
+      if (overIndex === -1) {
+        return currentTasks;
+      }
+
+      const nextTasks = [...remainingTasks];
+
+      /*
+       * Insert at the exact position of the task
+       * we're dropping over.
+       */
+
+      nextTasks.splice(overIndex, 0, updatedActiveTask);
+
+      return nextTasks;
     });
   }
 
@@ -178,9 +300,9 @@ export function ProjectBoard({ project }: ProjectBoardProps) {
 
   return (
     <div className="min-w-0">
-      {/* =====================================================
+      {/* =================================================
           TOOLBAR
-      ====================================================== */}
+      ================================================== */}
 
       <div className="mb-4 flex min-w-0 flex-wrap items-center gap-3">
         <div className="relative min-w-52 flex-1 lg:max-w-64">
@@ -243,9 +365,9 @@ export function ProjectBoard({ project }: ProjectBoardProps) {
         </Button>
       </div>
 
-      {/* =====================================================
-          DRAG & DROP BOARD
-      ====================================================== */}
+      {/* =================================================
+          BOARD
+      ================================================== */}
 
       <DndContext
         sensors={sensors}
@@ -275,9 +397,9 @@ export function ProjectBoard({ project }: ProjectBoardProps) {
             DRAG OVERLAY
         ================================================== */}
 
-        <DragOverlay dropAnimation={null}>
+        <DragOverlay>
           {activeTask ? (
-            <div className="scale-[1.02] opacity-95 shadow-xl">
+            <div className="scale-[1.02] cursor-grabbing opacity-95 shadow-xl">
               <BoardTaskCard task={activeTask} isOverlay />
             </div>
           ) : null}
