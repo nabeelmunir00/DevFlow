@@ -14,12 +14,8 @@ interface ProjectOverviewProps {
 
 export function ProjectOverview({ project }: ProjectOverviewProps) {
   return (
-    <div className="grid min-w-0 items-start gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(18rem,1fr)]">
-      {/* =====================================================
-          LEFT COLUMN
-      ====================================================== */}
-
-      <div className="grid min-w-0 gap-4">
+    <div className="grid min-w-0 items-start gap-5 xl:grid-cols-[minmax(0,1.7fr)_minmax(19rem,0.8fr)]">
+      <div className="grid min-w-0 content-start gap-5">
         <AboutProject description={project.description} goal={project.goal} />
 
         <RecentProjectTasks tasks={project.recentTasks} />
@@ -27,11 +23,7 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
         <RecentProjectActivity project={project} />
       </div>
 
-      {/* =====================================================
-          RIGHT COLUMN
-      ====================================================== */}
-
-      <div className="grid min-w-0 content-start gap-4">
+      <div className="grid min-w-0 content-start gap-5">
         <ProjectProgress project={project} />
 
         <ProjectDetailsCard project={project} />
