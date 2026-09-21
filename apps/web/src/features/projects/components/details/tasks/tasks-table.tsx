@@ -1,6 +1,13 @@
 "use client";
 
-import { ChevronDown, Ellipsis, GitBranch } from "lucide-react";
+import { Fragment } from "react";
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Ellipsis,
+  GitBranch,
+} from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -28,6 +35,11 @@ interface TasksTableProps {
   group: TaskGroup;
   visibleColumns: Set<TaskColumn>;
   selectedTaskIds: Set<string>;
+  currentPage: number;
+  totalPages: number;
+  totalTasks: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
   onTaskStatusChange: (taskId: string, status: ProjectTaskStatus) => void;
   onTaskSelectionChange: (taskId: string, selected: boolean) => void;
   onSelectAllChange: (selected: boolean) => void;
@@ -43,7 +55,10 @@ interface TaskRowProps {
 
 const priorityStyles: Record<
   ProjectTaskPriority,
-  { label: string; dot: string }
+  {
+    label: string;
+    dot: string;
+  }
 > = {
   LOW: {
     label: "Low",
@@ -212,11 +227,31 @@ function TaskRow({
   );
 }
 
+function getVisiblePages(currentPage: number, totalPages: number) {
+  if (totalPages <= 5) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  let start = Math.max(1, currentPage - 2);
+  let end = Math.min(totalPages, start + 4);
+
+  if (end - start < 4) {
+    start = Math.max(1, end - 4);
+  }
+
+  return Array.from({ length: end - start + 1 }, (_, index) => start + index);
+}
+
 export function TasksTable({
   tasks,
   group,
   visibleColumns,
   selectedTaskIds,
+  currentPage,
+  totalPages,
+  totalTasks,
+  pageSize,
+  onPageChange,
   onTaskStatusChange,
   onTaskSelectionChange,
   onSelectAllChange,
@@ -238,6 +273,13 @@ export function TasksTable({
 
   const columnCount = 4 + visibleColumns.size;
 
+  const startTask = totalTasks === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+
+  const endTask =
+    totalTasks === 0 ? 0 : Math.min(currentPage * pageSize, totalTasks);
+
+  const visiblePages = getVisiblePages(currentPage, totalPages);
+
   return (
     <div className="min-w-0 overflow-hidden rounded-lg border border-border">
       <Table>
@@ -249,7 +291,7 @@ export function TasksTable({
                 onCheckedChange={(checked) =>
                   onSelectAllChange(checked === true)
                 }
-                aria-label="Select all visible tasks"
+                aria-label="Select all tasks on this page"
               />
             </TableHead>
 
@@ -330,11 +372,8 @@ export function TasksTable({
               }
 
               return (
-                <>
-                  <TableRow
-                    key={`${statusGroup.status}-header`}
-                    className="bg-muted/40 hover:bg-muted/40"
-                  >
+                <Fragment key={statusGroup.status}>
+                  <TableRow className="bg-muted/40 hover:bg-muted/40">
                     <TableCell colSpan={columnCount} className="h-10 py-2">
                       <div className="flex items-center gap-2">
                         <ChevronDown className="size-4 text-muted-foreground" />
@@ -365,66 +404,65 @@ export function TasksTable({
                       onSelectionChange={onTaskSelectionChange}
                     />
                   ))}
-                </>
+                </Fragment>
               );
             })}
         </TableBody>
       </Table>
 
-      <div className="flex min-h-14 items-center justify-between border-t border-border px-4">
+      <div className="flex min-h-14 flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-2">
         <p className="text-sm text-muted-foreground">
-          Showing {tasks.length} tasks
+          {totalTasks === 0
+            ? "Showing 0 tasks"
+            : `Showing ${startTask}–${endTask} of ${totalTasks} tasks`}
         </p>
 
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="size-8"
-            disabled
-          >
-            <span aria-hidden="true">‹</span>
-            <span className="sr-only">Previous page</span>
-          </Button>
+        {totalPages > 1 && (
+          <div className="flex items-center gap-1">
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="size-8"
+              disabled={currentPage === 1}
+              onClick={() => onPageChange(currentPage - 1)}
+              aria-label="Previous page"
+            >
+              <ChevronLeft className="size-4" />
+            </Button>
 
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="size-8 border-primary bg-primary/10 text-primary"
-          >
-            1
-          </Button>
+            {visiblePages.map((page) => (
+              <Button
+                key={page}
+                type="button"
+                variant={page === currentPage ? "secondary" : "outline"}
+                size="icon"
+                className={
+                  page === currentPage
+                    ? "size-8 border border-primary bg-primary/10 text-primary"
+                    : "size-8"
+                }
+                onClick={() => onPageChange(page)}
+                aria-label={`Page ${page}`}
+                aria-current={page === currentPage ? "page" : undefined}
+              >
+                {page}
+              </Button>
+            ))}
 
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="size-8"
-          >
-            2
-          </Button>
-
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="size-8"
-          >
-            3
-          </Button>
-
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="size-8"
-          >
-            <span aria-hidden="true">›</span>
-            <span className="sr-only">Next page</span>
-          </Button>
-        </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="size-8"
+              disabled={currentPage === totalPages}
+              onClick={() => onPageChange(currentPage + 1)}
+              aria-label="Next page"
+            >
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

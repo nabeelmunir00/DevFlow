@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import type {
   ProjectDetails,
@@ -24,6 +24,8 @@ interface ProjectTasksProps {
   project: ProjectDetails;
 }
 
+const PAGE_SIZE = 3;
+
 const defaultColumns: TaskColumn[] = [
   "status",
   "priority",
@@ -46,12 +48,15 @@ export function ProjectTasks({ project }: ProjectTasksProps) {
 
   const [view, setView] = useState<TaskView>("all");
   const [search, setSearch] = useState("");
+
   const [statusFilter, setStatusFilter] = useState<ProjectTaskStatus | "ALL">(
     "ALL",
   );
+
   const [priorityFilter, setPriorityFilter] = useState<
     ProjectTaskPriority | "ALL"
   >("ALL");
+
   const [sort, setSort] = useState<TaskSort>("default");
   const [group, setGroup] = useState<TaskGroup>("status");
 
@@ -62,6 +67,8 @@ export function ProjectTasks({ project }: ProjectTasksProps) {
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(
     new Set(),
   );
+
+  const [currentPage, setCurrentPage] = useState(1);
 
   const filteredTasks = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -108,6 +115,22 @@ export function ProjectTasks({ project }: ProjectTasksProps) {
     return result;
   }, [tasks, search, view, statusFilter, priorityFilter, sort]);
 
+  const totalPages = Math.max(1, Math.ceil(filteredTasks.length / PAGE_SIZE));
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, view, statusFilter, priorityFilter, sort]);
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages));
+  }, [totalPages]);
+
+  const paginatedTasks = useMemo(() => {
+    const startIndex = (currentPage - 1) * PAGE_SIZE;
+
+    return filteredTasks.slice(startIndex, startIndex + PAGE_SIZE);
+  }, [filteredTasks, currentPage]);
+
   const openCount = useMemo(
     () => tasks.filter((task) => task.status !== "DONE").length,
     [tasks],
@@ -133,7 +156,7 @@ export function ProjectTasks({ project }: ProjectTasksProps) {
     setSelectedTaskIds((current) => {
       const next = new Set(current);
 
-      filteredTasks.forEach((task) => {
+      paginatedTasks.forEach((task) => {
         if (selected) {
           next.add(task.id);
         } else {
@@ -147,14 +170,26 @@ export function ProjectTasks({ project }: ProjectTasksProps) {
 
   function handleTaskStatusChange(taskId: string, status: ProjectTaskStatus) {
     setTasks((current) =>
-      current.map((task) => (task.id === taskId ? { ...task, status } : task)),
+      current.map((task) =>
+        task.id === taskId
+          ? {
+              ...task,
+              status,
+            }
+          : task,
+      ),
     );
   }
 
   function handleBulkStatusChange(status: ProjectTaskStatus) {
     setTasks((current) =>
       current.map((task) =>
-        selectedTaskIds.has(task.id) ? { ...task, status } : task,
+        selectedTaskIds.has(task.id)
+          ? {
+              ...task,
+              status,
+            }
+          : task,
       ),
     );
   }
@@ -162,7 +197,12 @@ export function ProjectTasks({ project }: ProjectTasksProps) {
   function handleAssigneeChange(member: ProjectMember) {
     setTasks((current) =>
       current.map((task) =>
-        selectedTaskIds.has(task.id) ? { ...task, assignee: member } : task,
+        selectedTaskIds.has(task.id)
+          ? {
+              ...task,
+              assignee: member,
+            }
+          : task,
       ),
     );
   }
@@ -170,7 +210,12 @@ export function ProjectTasks({ project }: ProjectTasksProps) {
   function handleSprintChange(sprint: string) {
     setTasks((current) =>
       current.map((task) =>
-        selectedTaskIds.has(task.id) ? { ...task, sprint } : task,
+        selectedTaskIds.has(task.id)
+          ? {
+              ...task,
+              sprint,
+            }
+          : task,
       ),
     );
   }
@@ -230,10 +275,15 @@ export function ProjectTasks({ project }: ProjectTasksProps) {
       />
 
       <TasksTable
-        tasks={filteredTasks}
+        tasks={paginatedTasks}
         group={group}
         visibleColumns={visibleColumns}
         selectedTaskIds={selectedTaskIds}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalTasks={filteredTasks.length}
+        pageSize={PAGE_SIZE}
+        onPageChange={setCurrentPage}
         onTaskStatusChange={handleTaskStatusChange}
         onTaskSelectionChange={handleTaskSelection}
         onSelectAllChange={handleSelectAll}
