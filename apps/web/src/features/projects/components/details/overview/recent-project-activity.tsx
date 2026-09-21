@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 
 import type { ProjectDetails } from "../../../types/project";
+import { Title } from "@/components/header-and-link";
 
 interface RecentProjectActivityProps {
   project: ProjectDetails;
@@ -20,16 +21,16 @@ const avatarStyles = [
 
 export function RecentProjectActivity({ project }: RecentProjectActivityProps) {
   return (
-    <Card className="gap-0 overflow-hidden rounded-md border-border bg-card py-0 shadow-none">
+    <Card className="gap-0 overflow-hidden rounded-md border-border bg-card py-0 px-3 shadow-none">
       {/* ================================================
           HEADER
       ================================================= */}
 
-      <div className="px-4 py-3">
-        <h2 className="font-heading text-base font-semibold text-foreground">
-          Recent activity
-        </h2>
-      </div>
+      <Title
+        title="Recent activity"
+        actionLabel="View all activity"
+        href="/workspace/activitys"
+      />
 
       <Separator />
 

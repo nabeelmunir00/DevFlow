@@ -5,22 +5,23 @@ import { Separator } from "@/components/ui/separator";
 
 import type { ProjectDetails } from "../../../types/project";
 
+import { Title } from "@/components/header-and-link";
+
 interface UpcomingDeadlinesProps {
   project: ProjectDetails;
 }
 
 export function UpcomingDeadlines({ project }: UpcomingDeadlinesProps) {
   return (
-    <Card className="gap-0 overflow-hidden rounded-md border-border bg-card py-0 shadow-none">
+    <Card className="gap-0 overflow-hidden rounded-md border-border bg-card py-0 px-3 shadow-none">
       {/* ================================================
           HEADER
       ================================================= */}
-
-      <div className="px-4 py-3">
-        <h2 className="font-heading text-base font-semibold text-foreground">
-          Upcoming deadlines
-        </h2>
-      </div>
+      <Title
+        title="Upcoming deadlines"
+        actionLabel="View all"
+        href="/workspace/activity"
+      />
 
       <Separator />
 

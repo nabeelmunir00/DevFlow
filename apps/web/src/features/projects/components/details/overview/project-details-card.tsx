@@ -15,12 +15,12 @@ export function ProjectDetailsCard({ project }: ProjectDetailsCardProps) {
   const sprintProgress = 69;
 
   return (
-    <Card className="gap-0 overflow-hidden rounded-md border-border bg-card py-0 shadow-none">
+    <Card className="gap-0 overflow-hidden rounded-md border-border bg-card py-0 px-3 shadow-none">
       {/* ================================================
           HEADING
       ================================================= */}
 
-      <div className="px-4 py-3">
+      <div className="p-2">
         <h2 className="font-heading text-base font-semibold text-foreground">
           Project details
         </h2>

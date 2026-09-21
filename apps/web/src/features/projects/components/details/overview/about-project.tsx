@@ -15,8 +15,8 @@ export function AboutProject({ description, goal }: AboutProjectProps) {
           ABOUT
       ================================================= */}
 
-      <div className="">
-        <h2 className="text-base font-semibold text-foreground">
+      <div>
+        <h2 className="text-lg font-semibold text-foreground">
           About this project
         </h2>
 
@@ -25,7 +25,7 @@ export function AboutProject({ description, goal }: AboutProjectProps) {
         </p>
       </div>
 
-      <Separator className={"w-full px-2 mt-4"} />
+      <Separator className="mt-4 w-full px-2" />
 
       {/* ================================================
           GOAL

@@ -1,8 +1,7 @@
-import { ArrowRight, MoreHorizontal } from "lucide-react";
-import Link from "next/link"; // Assuming Next.js based on your profile
+import { MoreHorizontal } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,6 +18,8 @@ import type {
   ProjectTaskStatus,
   ProjectTaskSummary,
 } from "../../../types/project";
+
+import { Title } from "@/components/header-and-link";
 
 interface RecentProjectTasksProps {
   tasks: ProjectTaskSummary[];
@@ -69,19 +70,12 @@ const priorityStyles: Record<
 
 export function RecentProjectTasks({ tasks }: RecentProjectTasksProps) {
   return (
-    <Card className="min-w-0 overflow-hidden rounded-xl border-border bg-card shadow-sm">
-      <CardHeader className="flex flex-row items-center justify-between border-b border-border px-6 py-4">
-        <CardTitle className="text-base font-semibold text-foreground">
-          Recent tasks
-        </CardTitle>
-        <Link
-          href="/tasks"
-          className="flex items-center gap-1 text-sm font-medium text-blue-600 hover:underline"
-        >
-          View all tasks
-          <ArrowRight className="size-4" />
-        </Link>
-      </CardHeader>
+    <Card className="min-w-0 overflow-hidden rounded-md border-border bg-card px-3 shadow-sm">
+      <Title
+        title="Recent tasks"
+        actionLabel="View all tasks"
+        href="/workspace/tasks"
+      />
 
       <CardContent className="min-w-0 p-0">
         {tasks.length === 0 ? (
@@ -130,7 +124,7 @@ export function RecentProjectTasks({ tasks }: RecentProjectTasksProps) {
                     {/* CHECKBOX */}
                     <TableCell className="px-6 py-3">
                       <Checkbox
-                        className="size-4 rounded-[4px]"
+                        className="size-4 rounded-md"
                         aria-label="Select task"
                       />
                     </TableCell>

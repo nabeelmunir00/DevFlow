@@ -1,11 +1,11 @@
-import { ExternalLink, GitBranch } from "lucide-react";
+import { GitBranch } from "lucide-react";
 import { Icon } from "@iconify/react";
 
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 
 import type { ProjectDetails } from "../../../types/project";
+import { Title } from "@/components/header-and-link";
 
 interface ProjectRepositoryProps {
   project: ProjectDetails;
@@ -13,25 +13,13 @@ interface ProjectRepositoryProps {
 
 export function ProjectRepository({ project }: ProjectRepositoryProps) {
   return (
-    <Card className="gap-0 overflow-hidden rounded-md border-border bg-card py-0 shadow-none">
-      <div className="flex items-center justify-between gap-3 px-4 py-3">
-        <h2 className="font-heading text-base font-semibold text-foreground">
-          Repository
-        </h2>
-
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="size-8 rounded-md text-muted-foreground hover:text-foreground"
-          aria-label="Open repository"
-        >
-          <ExternalLink className="size-4" aria-hidden="true" />
-        </Button>
-      </div>
-
+    <Card className="gap-0 overflow-hidden rounded-md border-border bg-card py-0 px-3  shadow-none">
+      <Title
+        title="Repository"
+        actionLabel="Open in Github"
+        href="/workspace/githubs"
+      />
       <Separator />
-
       <div className="p-4">
         <div className="flex min-w-0 items-center gap-3">
           <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-muted text-foreground">
