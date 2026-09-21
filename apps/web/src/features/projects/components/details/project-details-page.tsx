@@ -87,6 +87,15 @@ export function ProjectDetailsPage({ project }: ProjectDetailsPageProps) {
 
       <ProjectDetailsHeader project={project} />
 
+      {/* =====================================================
+          PROJECT TABS
+
+          URL stays:
+          /workspace/project/[projectId]
+
+          Only local tab content changes.
+      ====================================================== */}
+
       <Tabs
         value={activeTab}
         onValueChange={(value) => setActiveTab(value as ProjectTab)}
@@ -96,43 +105,64 @@ export function ProjectDetailsPage({ project }: ProjectDetailsPageProps) {
             TAB NAVIGATION
         ==================================================== */}
 
-        <div className="min-w-0 max-w-sm md:max-w-full border-b border-border overflow-hidden">
-          <div className="overflow-x-auto px-4 sm:px-6 2xl:px-7">
+        <div className="w-full min-w-0 border-b border-border">
+          <div className="min-w-0 overflow-x-auto px-4 sm:px-6 2xl:px-7">
             <TabsList className="h-12 w-max min-w-full justify-start gap-0 rounded-none bg-transparent p-0">
-              {projectTabs.map((tab) => (
-                <TabsTrigger
-                  key={tab.value}
-                  value={tab.value}
-                  className="
-                    relative
-                    h-12
-                    flex-none
-                    rounded-none
-                    border-0
-                    bg-transparent
-                    px-3
-                    text-sm
-                    font-normal
-                    text-muted-foreground
-                    shadow-none
-                    transition-colors
-                    hover:text-foreground
-                    data-[state=active]:bg-transparent
-                    data-[state=active]:text-foreground
-                    data-[state=active]:shadow-none
-                    after:absolute
-                    after:inset-x-3
-                    after:bottom-0
-                    after:h-0.5
-                    after:scale-x-0
-                    after:bg-primary
-                    after:transition-transform
-                    data-[state=active]:after:scale-x-100
-                  "
-                >
-                  {tab.label}
-                </TabsTrigger>
-              ))}
+              {projectTabs.map((tab) => {
+                const isActive = activeTab === tab.value;
+
+                return (
+                  <TabsTrigger
+                    key={tab.value}
+                    value={tab.value}
+                    className={`
+                      relative
+                      h-12
+                      flex-none
+                      rounded-none
+                      border-0
+                      bg-transparent
+                      px-3
+                      text-sm
+                      font-normal
+                      shadow-none
+                      transition-colors
+                      hover:text-foreground
+                      data-[state=active]:bg-transparent
+                      data-[state=active]:shadow-none
+                      ${
+                        isActive
+                          ? "font-medium text-foreground"
+                          : "text-muted-foreground"
+                      }
+                    `}
+                  >
+                    <span>{tab.label}</span>
+
+                    {/* Active tab underline */}
+
+                    <span
+                      aria-hidden="true"
+                      className={`
+                        absolute
+                        bottom-0
+                        left-3
+                        right-3
+                        h-0.5
+                        rounded-full
+                        bg-primary
+                        transition-all
+                        duration-200
+                        ${
+                          isActive
+                            ? "scale-x-120 opacity-100"
+                            : "scale-x-0 opacity-0"
+                        }
+                      `}
+                    />
+                  </TabsTrigger>
+                );
+              })}
             </TabsList>
           </div>
         </div>
@@ -141,7 +171,7 @@ export function ProjectDetailsPage({ project }: ProjectDetailsPageProps) {
             TAB CONTENT
         ==================================================== */}
 
-        <div className="min-w-0 px-4  py-5 sm:px-6 2xl:px-7">
+        <div className="min-w-0 px-4 py-5 sm:px-6 2xl:px-7">
           {/* Overview */}
 
           <TabsContent value="overview" className="m-0 min-w-0">

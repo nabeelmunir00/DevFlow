@@ -58,27 +58,23 @@ export function ProjectDetailsHeader({
   );
 
   return (
-    <div className="border-b border-border">
+    <div className="">
       <div className="flex min-w-0 flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between 2xl:px-7">
         {/* =====================================================
             LEFT — PROJECT IDENTITY
         ====================================================== */}
 
         <div className="flex min-w-0  items-center gap-3">
-          {/* Project icon */}
-
           <div
-            className={`flex size-11 shrink-0 items-center justify-center rounded-md text-sm font-semibold ${accentStyles[project.accent]}`}
+            className={`flex size-16 shrink-0 items-center font-heading justify-center rounded-md text-lg font-bold ${accentStyles[project.accent]}`}
           >
             {project.key}
           </div>
 
-          {/* Name + metadata */}
-
           <div className="min-w-0">
             <div className="flex min-w-0 items-center gap-1">
               <h1
-                className="truncate text-lg font-semibold tracking-tight text-foreground"
+                className="truncate text-2xl font-sans font-semibold tracking-tight text-foreground"
                 title={project.name}
               >
                 {project.name}
@@ -99,7 +95,7 @@ export function ProjectDetailsHeader({
               >
                 <Star
                   className={
-                    isFavorite ? "size-4 fill-warning text-warning" : "size-4"
+                    isFavorite ? "size-5 fill-warning text-warning" : "size-5"
                   }
                   aria-hidden="true"
                 />
@@ -119,12 +115,12 @@ export function ProjectDetailsHeader({
                     />
                   }
                 >
-                  <MoreHorizontal className="size-4" aria-hidden="true" />
+                  <MoreHorizontal className="size-5" aria-hidden="true" />
                 </DropdownMenuTrigger>
 
                 <DropdownMenuContent align="start" className="min-w-44">
                   <DropdownMenuItem onClick={onOpenSettings}>
-                    <Settings className="size-4" aria-hidden="true" />
+                    <Settings className="size-5" aria-hidden="true" />
                     Project settings
                   </DropdownMenuItem>
                 </DropdownMenuContent>
