@@ -1,4 +1,90 @@
-import type { ProjectGitHubData } from "../../../../types/github";
+import type {
+  DevFlowTaskOption,
+  GitHubIssueOption,
+  ProjectGitHubData,
+} from "../../../../types/github";
+
+export const demoGitHubIssueOptions: GitHubIssueOption[] = [
+  {
+    id: "issue-223",
+    number: 223,
+    title: "Keyboard focus missing in dialogs",
+    repository: "devflow/web",
+    authorName: "Maya Chen",
+    createdAt: "2 hours ago",
+    state: "OPEN",
+    labels: ["Accessibility"],
+    htmlUrl: "https://github.com/devflow/web/issues/223",
+    linkedTask: null,
+  },
+  {
+    id: "issue-227",
+    number: 227,
+    title: "Incorrect sidebar focus order",
+    repository: "devflow/web",
+    authorName: "Ahmed Hassan",
+    createdAt: "Yesterday",
+    state: "OPEN",
+    labels: [],
+    htmlUrl: "https://github.com/devflow/web/issues/227",
+    linkedTask: null,
+  },
+  {
+    id: "issue-211",
+    number: 211,
+    title: "Focus escapes task drawer",
+    repository: "devflow/web",
+    authorName: "Ahmed Hassan",
+    createdAt: "1 day ago",
+    state: "OPEN",
+    labels: [],
+    htmlUrl: "https://github.com/devflow/web/issues/211",
+    linkedTask: {
+      id: "task-118",
+      key: "DF-118",
+      title: "Task detail panel",
+    },
+  },
+];
+
+export const demoGitHubTaskOptions: DevFlowTaskOption[] = [
+  {
+    id: "task-145",
+    key: "DF-145",
+    title: "Keyboard navigation",
+    assignee: {
+      name: "Maya Chen",
+      initials: "MC",
+    },
+  },
+  {
+    id: "task-128",
+    key: "DF-128",
+    title: "Resolve invite token expiry",
+    assignee: {
+      name: "Sara Ali",
+      initials: "SA",
+    },
+  },
+  {
+    id: "task-118",
+    key: "DF-118",
+    title: "Task detail panel",
+    assignee: {
+      name: "Ahmed Hassan",
+      initials: "AH",
+    },
+  },
+  {
+    id: "task-134",
+    key: "DF-134",
+    title: "Add loading states",
+    assignee: {
+      name: "Maya Chen",
+      initials: "MC",
+    },
+  },
+];
 
 export const demoProjectGitHub: ProjectGitHubData = {
   connectionStatus: "CONNECTED",
