@@ -9,6 +9,7 @@ import { ProjectBoard } from "./board/project-board";
 import { ProjectOverview } from "./overview/project-overview";
 import { ProjectTasks } from "./tasks/project-tasks";
 import { ProjectDetailsHeader } from "./project-details-header";
+import { ProjectSprints } from "./sprints/project-sprints";
 
 type ProjectTab =
   | "overview"
@@ -89,9 +90,10 @@ export function ProjectDetailsPage({ project }: ProjectDetailsPageProps) {
 
       case "sprints":
         return (
-          <TabPlaceholder
-            title="Sprints"
-            description="Sprint planning and management will be available here."
+          <ProjectSprints
+            project={project}
+            tasks={tasks}
+            onTasksChange={setTasks}
           />
         );
 
