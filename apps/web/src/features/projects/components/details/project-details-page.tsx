@@ -11,6 +11,7 @@ import { ProjectTasks } from "./tasks/project-tasks";
 import { ProjectDetailsHeader } from "./project-details-header";
 import { ProjectSprints } from "./sprints/project-sprints";
 import { ProjectGitHub } from "./github/project-github";
+import { ProjectActivity } from "./activity/project-activity";
 
 type ProjectTab =
   | "overview"
@@ -102,12 +103,7 @@ export function ProjectDetailsPage({ project }: ProjectDetailsPageProps) {
         return <ProjectGitHub project={project} />;
 
       case "activity":
-        return (
-          <TabPlaceholder
-            title="Activity"
-            description="Project activity and history will be available here."
-          />
-        );
+        return <ProjectActivity project={project} />;
 
       case "analytics":
         return (
