@@ -13,7 +13,7 @@ import type {
 import { TaskViewTabs, type TaskView } from "./task-view-tabs";
 import { TasksBulkActions } from "./tasks-bulk-actions";
 import { TasksTable } from "./tasks-table";
-import { AddTaskDialog } from "./add-task-dialog";
+import { AddTaskDialog } from "../../add-task-dialog";
 import {
   TasksToolbar,
   type TaskColumn,

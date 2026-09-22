@@ -47,7 +47,7 @@ import type {
   ProjectTaskPriority,
   ProjectTaskStatus,
   ProjectTaskSummary,
-} from "../../../types/project";
+} from "../types/project";
 
 interface AddTaskDialogProps {
   open: boolean;
