@@ -13,23 +13,23 @@ import {
 
 import { AppChartTooltip } from "./app-chart-tooltip";
 
-export interface AppAreaChartSeries {
-  dataKey: string;
+interface AppAreaChartSeries<T extends object> {
+  dataKey: keyof T & string;
   label: string;
   color?: string;
 }
 
-interface AppAreaChartProps {
-  data: Record<string, string | number>[];
-  xKey: string;
-  series: AppAreaChartSeries[];
+interface AppAreaChartProps<T extends object> {
+  data: T[];
+  xKey: keyof T & string;
+  series: AppAreaChartSeries<T>[];
   height?: number;
   showYAxis?: boolean;
   showGrid?: boolean;
   valueFormatter?: (value: string | number, name?: string) => string;
 }
 
-export function AppAreaChart({
+export function AppAreaChart<T extends object>({
   data,
   xKey,
   series,
@@ -37,7 +37,7 @@ export function AppAreaChart({
   showYAxis = true,
   showGrid = true,
   valueFormatter,
-}: AppAreaChartProps) {
+}: AppAreaChartProps<T>) {
   const id = useId().replace(/:/g, "");
 
   return (

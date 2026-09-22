@@ -12,16 +12,16 @@ import {
 
 import { AppChartTooltip } from "./app-chart-tooltip";
 
-export interface AppBarChartSeries {
-  dataKey: string;
+interface AppBarChartSeries<T extends object> {
+  dataKey: keyof T & string;
   label: string;
   color?: string;
 }
 
-interface AppBarChartProps {
-  data: Record<string, string | number>[];
-  xKey: string;
-  series: AppBarChartSeries[];
+interface AppBarChartProps<T extends object> {
+  data: T[];
+  xKey: keyof T & string;
+  series: AppBarChartSeries<T>[];
   height?: number;
   showYAxis?: boolean;
   showGrid?: boolean;
@@ -29,7 +29,7 @@ interface AppBarChartProps {
   valueFormatter?: (value: string | number, name?: string) => string;
 }
 
-export function AppBarChart({
+export function AppBarChart<T extends object>({
   data,
   xKey,
   series,
@@ -38,7 +38,7 @@ export function AppBarChart({
   showGrid = true,
   barSize = 18,
   valueFormatter,
-}: AppBarChartProps) {
+}: AppBarChartProps<T>) {
   return (
     <div className="w-full" style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">

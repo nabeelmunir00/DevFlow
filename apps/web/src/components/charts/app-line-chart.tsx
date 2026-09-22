@@ -12,24 +12,24 @@ import {
 
 import { AppChartTooltip } from "./app-chart-tooltip";
 
-export interface AppLineChartSeries {
-  dataKey: string;
+interface AppLineChartSeries<T extends object> {
+  dataKey: keyof T & string;
   label: string;
   color?: string;
   strokeWidth?: number;
 }
 
-interface AppLineChartProps {
-  data: Record<string, string | number>[];
-  xKey: string;
-  series: AppLineChartSeries[];
+interface AppLineChartProps<T extends object> {
+  data: T[];
+  xKey: keyof T & string;
+  series: AppLineChartSeries<T>[];
   height?: number;
   showYAxis?: boolean;
   showGrid?: boolean;
   valueFormatter?: (value: string | number, name?: string) => string;
 }
 
-export function AppLineChart({
+export function AppLineChart<T extends object>({
   data,
   xKey,
   series,
@@ -37,7 +37,7 @@ export function AppLineChart({
   showYAxis = true,
   showGrid = true,
   valueFormatter,
-}: AppLineChartProps) {
+}: AppLineChartProps<T>) {
   return (
     <div className="w-full" style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
