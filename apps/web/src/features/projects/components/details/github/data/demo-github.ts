@@ -135,6 +135,193 @@ export const demoProjectGitHub: ProjectGitHubData = {
       htmlUrl: "https://github.com/devflow/web/pull/322",
       updatedAt: "2 hours ago",
     },
+    // MERGED PULL REQUESTS
+    {
+      id: "pr-309",
+      number: 309,
+      title: "Add workspace permissions",
+      state: "MERGED",
+      isDraft: false,
+
+      author: {
+        login: "sara",
+        name: "Sara Ali",
+        initials: "SA",
+      },
+
+      headRef: "feat/workspace-permissions",
+      baseRef: "main",
+
+      reviewStatus: "APPROVED",
+
+      additions: 214,
+      deletions: 48,
+      changedFiles: 9,
+      commitsCount: 6,
+
+      linkedTask: {
+        id: "task-112",
+        key: "DF-112",
+        title: "Workspace permissions",
+      },
+
+      htmlUrl: "https://github.com/devflow/web/pull/309",
+      updatedAt: "Yesterday",
+    },
+    {
+      id: "pr-305",
+      number: 305,
+      title: "Implement responsive navigation",
+      state: "MERGED",
+      isDraft: false,
+
+      author: {
+        login: "nabeel",
+        name: "Nabeel Munir",
+        initials: "NM",
+      },
+
+      headRef: "feat/responsive-navbar",
+      baseRef: "main",
+
+      reviewStatus: "APPROVED",
+
+      additions: 168,
+      deletions: 37,
+      changedFiles: 7,
+      commitsCount: 5,
+
+      linkedTask: {
+        id: "task-109",
+        key: "DF-109",
+        title: "Responsive navbar",
+      },
+
+      htmlUrl: "https://github.com/devflow/web/pull/305",
+      updatedAt: "2 days ago",
+    },
+    {
+      id: "pr-301",
+      number: 301,
+      title: "Add analytics event tracking",
+      state: "MERGED",
+      isDraft: false,
+
+      author: {
+        login: "ahmed",
+        name: "Ahmed Hassan",
+        initials: "AH",
+      },
+
+      headRef: "feat/analytics-events",
+      baseRef: "main",
+
+      reviewStatus: "APPROVED",
+
+      additions: 96,
+      deletions: 21,
+      changedFiles: 5,
+      commitsCount: 3,
+
+      linkedTask: {
+        id: "task-119",
+        key: "DF-119",
+        title: "Analytics events",
+      },
+
+      htmlUrl: "https://github.com/devflow/web/pull/301",
+      updatedAt: "4 days ago",
+    },
+
+    // CLOSED PULL REQUESTS
+    {
+      id: "pr-297",
+      number: 297,
+      title: "Experiment with legacy task sidebar",
+      state: "CLOSED",
+      isDraft: false,
+
+      author: {
+        login: "maya",
+        name: "Maya Chen",
+        initials: "MC",
+      },
+
+      headRef: "experiment/task-sidebar",
+      baseRef: "main",
+
+      reviewStatus: "CHANGES_REQUESTED",
+
+      additions: 143,
+      deletions: 62,
+      changedFiles: 8,
+      commitsCount: 4,
+
+      linkedTask: null,
+
+      htmlUrl: "https://github.com/devflow/web/pull/297",
+      updatedAt: "5 days ago",
+    },
+    {
+      id: "pr-294",
+      number: 294,
+      title: "Replace legacy organization selector",
+      state: "CLOSED",
+      isDraft: false,
+
+      author: {
+        login: "nabeel",
+        name: "Nabeel Munir",
+        initials: "NM",
+      },
+
+      headRef: "refactor/org-selector",
+      baseRef: "main",
+
+      reviewStatus: "CHANGES_REQUESTED",
+
+      additions: 81,
+      deletions: 104,
+      changedFiles: 6,
+      commitsCount: 3,
+
+      linkedTask: {
+        id: "task-121",
+        key: "DF-121",
+        title: "Organization switcher",
+      },
+
+      htmlUrl: "https://github.com/devflow/web/pull/294",
+      updatedAt: "1 week ago",
+    },
+    {
+      id: "pr-288",
+      number: 288,
+      title: "Initial notification panel prototype",
+      state: "CLOSED",
+      isDraft: false,
+
+      author: {
+        login: "sara",
+        name: "Sara Ali",
+        initials: "SA",
+      },
+
+      headRef: "prototype/notifications",
+      baseRef: "main",
+
+      reviewStatus: "NEEDS_REVIEW",
+
+      additions: 122,
+      deletions: 15,
+      changedFiles: 5,
+      commitsCount: 2,
+
+      linkedTask: null,
+
+      htmlUrl: "https://github.com/devflow/web/pull/288",
+      updatedAt: "2 weeks ago",
+    },
   ],
 
   linkedIssues: [
