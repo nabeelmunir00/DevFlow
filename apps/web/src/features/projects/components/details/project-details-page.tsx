@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
 import type { ProjectDetails, ProjectTaskSummary } from "../../types/project";
+import { AppTabs, type AppTab } from "@/components/shared/app-tabs";
 
 import { ProjectBoard } from "./board/project-board";
 import { ProjectOverview } from "./overview/project-overview";
@@ -25,10 +24,7 @@ interface ProjectDetailsPageProps {
   project: ProjectDetails;
 }
 
-const tabs: {
-  value: ProjectTab;
-  label: string;
-}[] = [
+const projectTabs = [
   {
     value: "overview",
     label: "Overview",
@@ -61,7 +57,7 @@ const tabs: {
     value: "settings",
     label: "Settings",
   },
-];
+] satisfies readonly AppTab<ProjectTab>[];
 
 export function ProjectDetailsPage({ project }: ProjectDetailsPageProps) {
   const [activeTab, setActiveTab] = useState<ProjectTab>("overview");
@@ -140,29 +136,12 @@ export function ProjectDetailsPage({ project }: ProjectDetailsPageProps) {
     <div className="min-w-0">
       <ProjectDetailsHeader project={project} />
 
-      <Tabs
+      <AppTabs
+        tabs={projectTabs}
         value={activeTab}
-        onValueChange={(value) => setActiveTab(value as ProjectTab)}
-        className="min-w-0"
-      >
-        <div className="border-b border-border px-4 md:px-6">
-          <TabsList className="h-auto w-full justify-start gap-6 rounded-none bg-transparent p-0">
-            {tabs.map((tab) => (
-              <TabsTrigger
-                key={tab.value}
-                value={tab.value}
-                className="relative h-11 rounded-none border-0 bg-transparent px-0 text-sm font-medium text-muted-foreground shadow-none data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none"
-              >
-                {tab.label}
-
-                {activeTab === tab.value && (
-                  <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-primary" />
-                )}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </div>
-      </Tabs>
+        onValueChange={setActiveTab}
+        ariaLabel="Project sections"
+      />
 
       <div className="min-w-0 p-4 md:p-6">{renderTabContent()}</div>
     </div>
