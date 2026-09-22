@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import {
+  type Dispatch,
+  type SetStateAction,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 import type {
   ProjectDetails,
@@ -10,10 +16,10 @@ import type {
   ProjectTaskSummary,
 } from "../../../types/project";
 
+import { AddTaskDialog } from "../../add-task-dialog";
 import { TaskViewTabs, type TaskView } from "./task-view-tabs";
 import { TasksBulkActions } from "./tasks-bulk-actions";
 import { TasksTable } from "./tasks-table";
-import { AddTaskDialog } from "../../add-task-dialog";
 import {
   TasksToolbar,
   type TaskColumn,
@@ -23,6 +29,8 @@ import {
 
 interface ProjectTasksProps {
   project: ProjectDetails;
+  tasks: ProjectTaskSummary[];
+  onTasksChange: Dispatch<SetStateAction<ProjectTaskSummary[]>>;
 }
 
 const PAGE_SIZE = 3;
@@ -44,9 +52,11 @@ const priorityOrder: Record<ProjectTaskPriority, number> = {
   LOW: 3,
 };
 
-export function ProjectTasks({ project }: ProjectTasksProps) {
-  const [tasks, setTasks] = useState<ProjectTaskSummary[]>(project.recentTasks);
-
+export function ProjectTasks({
+  project,
+  tasks,
+  onTasksChange,
+}: ProjectTasksProps) {
   const [view, setView] = useState<TaskView>("all");
   const [search, setSearch] = useState("");
   const [addTaskOpen, setAddTaskOpen] = useState(false);
@@ -63,11 +73,11 @@ export function ProjectTasks({ project }: ProjectTasksProps) {
   const [group, setGroup] = useState<TaskGroup>("status");
 
   const [visibleColumns, setVisibleColumns] = useState<Set<TaskColumn>>(
-    new Set(defaultColumns),
+    () => new Set(defaultColumns),
   );
 
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(
-    new Set(),
+    () => new Set(),
   );
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -127,6 +137,21 @@ export function ProjectTasks({ project }: ProjectTasksProps) {
     setCurrentPage((page) => Math.min(page, totalPages));
   }, [totalPages]);
 
+  useEffect(() => {
+    setSelectedTaskIds((current) => {
+      const taskIds = new Set(tasks.map((task) => task.id));
+      const next = new Set(
+        [...current].filter((taskId) => taskIds.has(taskId)),
+      );
+
+      if (next.size === current.size) {
+        return current;
+      }
+
+      return next;
+    });
+  }, [tasks]);
+
   const paginatedTasks = useMemo(() => {
     const startIndex = (currentPage - 1) * PAGE_SIZE;
 
@@ -171,7 +196,7 @@ export function ProjectTasks({ project }: ProjectTasksProps) {
   }
 
   function handleTaskStatusChange(taskId: string, status: ProjectTaskStatus) {
-    setTasks((current) =>
+    onTasksChange((current) =>
       current.map((task) =>
         task.id === taskId
           ? {
@@ -184,7 +209,7 @@ export function ProjectTasks({ project }: ProjectTasksProps) {
   }
 
   function handleBulkStatusChange(status: ProjectTaskStatus) {
-    setTasks((current) =>
+    onTasksChange((current) =>
       current.map((task) =>
         selectedTaskIds.has(task.id)
           ? {
@@ -197,7 +222,7 @@ export function ProjectTasks({ project }: ProjectTasksProps) {
   }
 
   function handleAssigneeChange(member: ProjectMember) {
-    setTasks((current) =>
+    onTasksChange((current) =>
       current.map((task) =>
         selectedTaskIds.has(task.id)
           ? {
@@ -210,7 +235,7 @@ export function ProjectTasks({ project }: ProjectTasksProps) {
   }
 
   function handleSprintChange(sprint: string) {
-    setTasks((current) =>
+    onTasksChange((current) =>
       current.map((task) =>
         selectedTaskIds.has(task.id)
           ? {
@@ -239,12 +264,15 @@ export function ProjectTasks({ project }: ProjectTasksProps) {
   function handleClearSelection() {
     setSelectedTaskIds(new Set());
   }
+
   function handleCreateTask(task: ProjectTaskSummary) {
-    setTasks((current) => [task, ...current]);
+    onTasksChange((current) => [task, ...current]);
 
     setView("all");
+    setSearch("");
     setStatusFilter("ALL");
     setPriorityFilter("ALL");
+    setSort("default");
     setCurrentPage(1);
   }
 

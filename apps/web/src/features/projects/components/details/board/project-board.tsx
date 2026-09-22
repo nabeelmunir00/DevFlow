@@ -1,6 +1,12 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import {
+  type Dispatch,
+  type SetStateAction,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   DndContext,
   DragOverlay,
@@ -42,6 +48,8 @@ import { BoardTaskCard } from "./board-task-card";
 
 interface ProjectBoardProps {
   project: ProjectDetails;
+  tasks: ProjectTaskSummary[];
+  onTasksChange: Dispatch<SetStateAction<ProjectTaskSummary[]>>;
 }
 
 interface BoardColumnConfig {
@@ -55,10 +63,22 @@ type LabelFilter = string | "ALL";
 type SprintFilter = string | "ALL";
 
 const columns: BoardColumnConfig[] = [
-  { status: "TODO", title: "Todo" },
-  { status: "IN_PROGRESS", title: "In Progress" },
-  { status: "IN_REVIEW", title: "In Review" },
-  { status: "DONE", title: "Done" },
+  {
+    status: "TODO",
+    title: "Todo",
+  },
+  {
+    status: "IN_PROGRESS",
+    title: "In Progress",
+  },
+  {
+    status: "IN_REVIEW",
+    title: "In Review",
+  },
+  {
+    status: "DONE",
+    title: "Done",
+  },
 ];
 
 const priorities: {
@@ -107,13 +127,19 @@ function getColumnStatus(
   return getTaskById(tasks, id)?.status ?? null;
 }
 
-export function ProjectBoard({ project }: ProjectBoardProps) {
-  const [tasks, setTasks] = useState<ProjectTaskSummary[]>(project.recentTasks);
-
+export function ProjectBoard({
+  project,
+  tasks,
+  onTasksChange,
+}: ProjectBoardProps) {
   const [search, setSearch] = useState("");
+
   const [assigneeFilter, setAssigneeFilter] = useState<AssigneeFilter>("ALL");
+
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>("ALL");
+
   const [labelFilter, setLabelFilter] = useState<LabelFilter>("ALL");
+
   const [sprintFilter, setSprintFilter] = useState<SprintFilter>("ALL");
 
   const [addTaskOpen, setAddTaskOpen] = useState(false);
@@ -256,7 +282,7 @@ export function ProjectBoard({ project }: ProjectBoardProps) {
       status: addTaskStatus,
     };
 
-    setTasks((current) => [...current, nextTask]);
+    onTasksChange((current) => [...current, nextTask]);
   }
 
   function handleDragStart(event: DragStartEvent) {
@@ -297,7 +323,7 @@ export function ProjectBoard({ project }: ProjectBoardProps) {
       return;
     }
 
-    setTasks((currentTasks) => {
+    onTasksChange((currentTasks) => {
       const currentActiveTask = getTaskById(currentTasks, activeId);
 
       if (!currentActiveTask) {
@@ -367,6 +393,7 @@ export function ProjectBoard({ project }: ProjectBoardProps) {
     const { active, over } = event;
 
     const activeId = String(active.id);
+
     const overId = over ? String(over.id) : null;
 
     const finalDestinationStatus =
@@ -375,14 +402,14 @@ export function ProjectBoard({ project }: ProjectBoardProps) {
 
     if (!finalDestinationStatus) {
       if (dragStartTasksRef.current) {
-        setTasks(dragStartTasksRef.current);
+        onTasksChange(dragStartTasksRef.current);
       }
 
       resetDragState();
       return;
     }
 
-    setTasks((currentTasks) => {
+    onTasksChange((currentTasks) => {
       const currentActiveTask = getTaskById(currentTasks, activeId);
 
       if (!currentActiveTask) {
@@ -445,7 +472,7 @@ export function ProjectBoard({ project }: ProjectBoardProps) {
 
   function handleDragCancel() {
     if (dragStartTasksRef.current) {
-      setTasks(dragStartTasksRef.current);
+      onTasksChange(dragStartTasksRef.current);
     }
 
     resetDragState();
@@ -543,6 +570,7 @@ export function ProjectBoard({ project }: ProjectBoardProps) {
                 <span
                   className={`size-2.5 rounded-full ${selectedPriority.dot}`}
                 />
+
                 {selectedPriority.label}
               </>
             ) : (

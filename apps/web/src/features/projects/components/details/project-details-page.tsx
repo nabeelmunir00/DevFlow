@@ -2,20 +2,16 @@
 
 import { useState } from "react";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import type { ProjectDetails } from "../../types/project";
+import type { ProjectDetails, ProjectTaskSummary } from "../../types/project";
 
-import { ProjectDetailsHeader } from "./project-details-header";
-import { ProjectOverview } from "./overview/project-overview";
 import { ProjectBoard } from "./board/project-board";
+import { ProjectOverview } from "./overview/project-overview";
 import { ProjectTasks } from "./tasks/project-tasks";
+import { ProjectDetailsHeader } from "./project-details-header";
 
-interface ProjectDetailsPageProps {
-  project: ProjectDetails;
-}
-
-export type ProjectTab =
+type ProjectTab =
   | "overview"
   | "board"
   | "tasks"
@@ -25,12 +21,14 @@ export type ProjectTab =
   | "analytics"
   | "settings";
 
-interface ProjectTabItem {
-  value: ProjectTab;
-  label: string;
+interface ProjectDetailsPageProps {
+  project: ProjectDetails;
 }
 
-const projectTabs: ProjectTabItem[] = [
+const tabs: {
+  value: ProjectTab;
+  label: string;
+}[] = [
   {
     value: "overview",
     label: "Overview",
@@ -65,165 +63,125 @@ const projectTabs: ProjectTabItem[] = [
   },
 ];
 
-function ProjectTabPlaceholder({ title }: { title: string }) {
-  return (
-    <div className="flex min-h-80 items-center justify-center rounded-md border border-dashed border-border">
-      <div className="text-center">
-        <p className="text-sm font-medium text-foreground">{title}</p>
-
-        <p className="mt-1 text-xs text-muted-foreground">
-          This section will be implemented next.
-        </p>
-      </div>
-    </div>
-  );
-}
-
 export function ProjectDetailsPage({ project }: ProjectDetailsPageProps) {
   const [activeTab, setActiveTab] = useState<ProjectTab>("overview");
 
+  const [tasks, setTasks] = useState<ProjectTaskSummary[]>(project.recentTasks);
+
+  function renderTabContent() {
+    switch (activeTab) {
+      case "overview":
+        return <ProjectOverview project={project} />;
+
+      case "board":
+        return (
+          <ProjectBoard
+            project={project}
+            tasks={tasks}
+            onTasksChange={setTasks}
+          />
+        );
+
+      case "tasks":
+        return (
+          <ProjectTasks
+            project={project}
+            tasks={tasks}
+            onTasksChange={setTasks}
+          />
+        );
+
+      case "sprints":
+        return (
+          <TabPlaceholder
+            title="Sprints"
+            description="Sprint planning and management will be available here."
+          />
+        );
+
+      case "github":
+        return (
+          <TabPlaceholder
+            title="GitHub"
+            description="Repository, pull requests, and commits will be available here."
+          />
+        );
+
+      case "activity":
+        return (
+          <TabPlaceholder
+            title="Activity"
+            description="Project activity and history will be available here."
+          />
+        );
+
+      case "analytics":
+        return (
+          <TabPlaceholder
+            title="Analytics"
+            description="Project analytics and insights will be available here."
+          />
+        );
+
+      case "settings":
+        return (
+          <TabPlaceholder
+            title="Settings"
+            description="Project configuration and settings will be available here."
+          />
+        );
+
+      default:
+        return null;
+    }
+  }
+
   return (
-    <div className="flex min-w-0 flex-1 flex-col">
-      {/* =====================================================
-          PROJECT HEADER
-      ====================================================== */}
-
+    <div className="min-w-0">
       <ProjectDetailsHeader project={project} />
-
-      {/* =====================================================
-          PROJECT TABS
-
-          URL stays:
-          /workspace/project/[projectId]
-
-          Only local tab content changes.
-      ====================================================== */}
 
       <Tabs
         value={activeTab}
         onValueChange={(value) => setActiveTab(value as ProjectTab)}
-        className="min-w-0 gap-0"
+        className="min-w-0"
       >
-        {/* ===================================================
-            TAB NAVIGATION
-        ==================================================== */}
+        <div className="border-b border-border px-4 md:px-6">
+          <TabsList className="h-auto w-full justify-start gap-6 rounded-none bg-transparent p-0">
+            {tabs.map((tab) => (
+              <TabsTrigger
+                key={tab.value}
+                value={tab.value}
+                className="relative h-11 rounded-none border-0 bg-transparent px-0 text-sm font-medium text-muted-foreground shadow-none data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none"
+              >
+                {tab.label}
 
-        <div className="w-full min-w-0 border-b border-border">
-          <div className="min-w-0 overflow-x-auto px-4 sm:px-6 2xl:px-7">
-            <TabsList className="h-12 w-max min-w-full justify-start gap-0 rounded-none bg-transparent p-0">
-              {projectTabs.map((tab) => {
-                const isActive = activeTab === tab.value;
-
-                return (
-                  <TabsTrigger
-                    key={tab.value}
-                    value={tab.value}
-                    className={`
-                      relative
-                      h-12
-                      flex-none
-                      rounded-none
-                      border-0
-                      bg-transparent
-                      px-3
-                      text-sm
-                      font-normal
-                      shadow-none
-                      transition-colors
-                      hover:text-foreground
-                      data-[state=active]:bg-transparent
-                      data-[state=active]:shadow-none
-                      ${
-                        isActive
-                          ? "font-medium text-foreground"
-                          : "text-muted-foreground"
-                      }
-                    `}
-                  >
-                    <span>{tab.label}</span>
-
-                    {/* Active tab underline */}
-
-                    <span
-                      aria-hidden="true"
-                      className={`
-                        absolute
-                        bottom-0
-                        left-3
-                        right-3
-                        h-0.5
-                        rounded-full
-                        bg-primary
-                        transition-all
-                        duration-200
-                        ${
-                          isActive
-                            ? "scale-x-120 opacity-100"
-                            : "scale-x-0 opacity-0"
-                        }
-                      `}
-                    />
-                  </TabsTrigger>
-                );
-              })}
-            </TabsList>
-          </div>
-        </div>
-
-        {/* ===================================================
-            TAB CONTENT
-        ==================================================== */}
-
-        <div className="min-w-0 px-4 py-5 sm:px-6 2xl:px-7">
-          {/* Overview */}
-
-          <TabsContent value="overview" className="m-0 min-w-0">
-            <ProjectOverview project={project} />
-          </TabsContent>
-
-          {/* Board */}
-
-          <TabsContent value="board" className="m-0 min-w-0">
-            <ProjectBoard project={project} />
-          </TabsContent>
-
-          {/* Tasks */}
-
-          <TabsContent value="tasks" className="m-0 min-w-0">
-            <ProjectTasks project={project} />
-          </TabsContent>
-
-          {/* Sprints */}
-
-          <TabsContent value="sprints" className="m-0 min-w-0">
-            <ProjectTabPlaceholder title="Project sprints" />
-          </TabsContent>
-
-          {/* GitHub */}
-
-          <TabsContent value="github" className="m-0 min-w-0">
-            <ProjectTabPlaceholder title="GitHub integration" />
-          </TabsContent>
-
-          {/* Activity */}
-
-          <TabsContent value="activity" className="m-0 min-w-0">
-            <ProjectTabPlaceholder title="Project activity" />
-          </TabsContent>
-
-          {/* Analytics */}
-
-          <TabsContent value="analytics" className="m-0 min-w-0">
-            <ProjectTabPlaceholder title="Project analytics" />
-          </TabsContent>
-
-          {/* Settings */}
-
-          <TabsContent value="settings" className="m-0 min-w-0">
-            <ProjectTabPlaceholder title="Project settings" />
-          </TabsContent>
+                {activeTab === tab.value && (
+                  <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-primary" />
+                )}
+              </TabsTrigger>
+            ))}
+          </TabsList>
         </div>
       </Tabs>
+
+      <div className="min-w-0 p-4 md:p-6">{renderTabContent()}</div>
+    </div>
+  );
+}
+
+interface TabPlaceholderProps {
+  title: string;
+  description: string;
+}
+
+function TabPlaceholder({ title, description }: TabPlaceholderProps) {
+  return (
+    <div className="flex min-h-64 items-center justify-center rounded-lg border border-dashed border-border">
+      <div className="max-w-md px-6 text-center">
+        <h2 className="text-base font-semibold text-foreground">{title}</h2>
+
+        <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+      </div>
     </div>
   );
 }
