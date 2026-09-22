@@ -41,7 +41,7 @@ function IssueRow({
       </div>
 
       <div className="min-w-0 flex-1 items-center">
-        <div className="flex min-w-0 items-start gap-2">
+        <div className="flex min-w-0 items-start  gap-2">
           <div className="min-w-0 flex-1">
             <a
               href={issue.htmlUrl}
@@ -64,51 +64,56 @@ function IssueRow({
               </Badge>
             </div>
           </div>
-
-          <Badge
-            variant="outline"
-            className={
-              issue.state === "OPEN"
-                ? "shrink-0 border-success/30 bg-success/10 text-success"
-                : "shrink-0"
-            }
-          >
-            {issue.state === "OPEN" ? "Open" : "Closed"}
-          </Badge>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label={`Actions for issue ${issue.number}`}
-                />
+          <div className="flex items-center gap-2">
+            <Badge
+              variant="outline"
+              className={
+                issue.state === "OPEN"
+                  ? "shrink-0 border-success/30 bg-success/10 text-success"
+                  : "shrink-0"
               }
             >
-              <MoreHorizontal className="size-4" />
-            </DropdownMenuTrigger>
+              {issue.state === "OPEN" ? "Open" : "Closed"}
+            </Badge>
 
-            <DropdownMenuContent align="end">
-              <DropdownMenuGroup>
-                <DropdownMenuItem
-                  render={
-                    <a href={issue.htmlUrl} target="_blank" rel="noreferrer" />
-                  }
-                >
-                  <ExternalLink className="size-4" />
-                  Open in GitHub
-                </DropdownMenuItem>
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label={`Actions for issue ${issue.number}`}
+                  />
+                }
+              >
+                <MoreHorizontal className="size-4" />
+              </DropdownMenuTrigger>
 
-                {onUnlinkIssue && (
-                  <DropdownMenuItem onClick={() => onUnlinkIssue(issue.id)}>
-                    <Link2 className="size-4" />
-                    Unlink issue
+              <DropdownMenuContent align="end">
+                <DropdownMenuGroup>
+                  <DropdownMenuItem
+                    render={
+                      <a
+                        href={issue.htmlUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                      />
+                    }
+                  >
+                    <ExternalLink className="size-4" />
+                    Open in GitHub
                   </DropdownMenuItem>
-                )}
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
+
+                  {onUnlinkIssue && (
+                    <DropdownMenuItem onClick={() => onUnlinkIssue(issue.id)}>
+                      <Link2 className="size-4" />
+                      Unlink issue
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
     </div>
