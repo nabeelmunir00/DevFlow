@@ -1,7 +1,12 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
+import { RefreshCw } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
 import { CreateWorkspaceDialog } from "./create-workspace-dialog";
@@ -13,17 +18,20 @@ import type { Organization } from "@/features/organizations/types/organization";
 interface WorkspaceSelectorProps {
   organizations: Organization[];
   email: string;
+  hasError?: boolean;
 }
 
 export function WorkspaceSelector({
   organizations,
   email,
+  hasError = false,
 }: WorkspaceSelectorProps) {
+  const router = useRouter();
+
   const hasOrganizations = organizations.length > 0;
 
   return (
     <div className="min-h-dvh bg-background">
-      {/* Header */}
       <header className="border-b border-border">
         <div className="mx-auto flex h-16 w-full items-center justify-between px-6 lg:px-8">
           <Link
@@ -55,9 +63,7 @@ export function WorkspaceSelector({
         </div>
       </header>
 
-      {/* Content */}
       <main className="mx-auto w-full max-w-3xl px-6 pb-16 pt-20 sm:pt-24">
-        {/* Heading */}
         <div className="text-center">
           <h1 className="font-heading text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
             Choose a workspace
@@ -68,9 +74,33 @@ export function WorkspaceSelector({
           </p>
         </div>
 
-        {/* Workspaces */}
         <div className="mt-8">
-          {hasOrganizations ? (
+          {hasError ? (
+            <div className="flex min-h-64 flex-col items-center justify-center rounded-lg border border-border bg-card px-6 text-center">
+              <div className="flex size-10 items-center justify-center rounded-full bg-muted">
+                <RefreshCw className="size-5 text-muted-foreground" />
+              </div>
+
+              <h2 className="mt-4 font-heading text-base font-semibold text-foreground">
+                Workspaces not found
+              </h2>
+
+              <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+                We couldn&apos;t load your workspaces. Please check your
+                connection and try again.
+              </p>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="mt-5"
+                onClick={() => router.refresh()}
+              >
+                <RefreshCw className="size-4" />
+                Try again
+              </Button>
+            </div>
+          ) : hasOrganizations ? (
             <div className="space-y-3">
               {organizations.map((organization) => (
                 <WorkspaceCard
@@ -79,7 +109,6 @@ export function WorkspaceSelector({
                 />
               ))}
 
-              {/* Create another workspace */}
               <div className="w-full">
                 <CreateWorkspaceDialog variant="card" />
               </div>
@@ -89,7 +118,6 @@ export function WorkspaceSelector({
           )}
         </div>
 
-        {/* Account */}
         <Separator className="mt-14" />
 
         <div className="mt-7 flex flex-col items-center gap-2 text-center">
