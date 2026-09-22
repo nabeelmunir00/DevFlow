@@ -121,3 +121,32 @@ export interface ProjectGitHubData {
 
   recentActivity: GitHubActivity[];
 }
+
+export interface GitHubIssueOption {
+  id: string;
+  number: number;
+  title: string;
+  repository: string;
+  authorName: string | null;
+  createdAt: string;
+  state: GitHubIssueState;
+  labels: string[];
+  htmlUrl: string;
+
+  linkedTask: {
+    id: string;
+    key: string;
+    title: string;
+  } | null;
+}
+
+export interface DevFlowTaskOption {
+  id: string;
+  key: string;
+  title: string;
+  assignee?: {
+    name: string;
+    initials: string;
+    avatarUrl?: string;
+  } | null;
+}
