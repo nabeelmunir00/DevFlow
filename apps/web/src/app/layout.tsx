@@ -1,29 +1,10 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
-import { Geist_Mono, Poppins, Inter } from "next/font/google";
+import { Outfit } from "next/font/google";
 
 import "./globals.css";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { Tooltip, TooltipProvider } from "@/components/ui/tooltip";
-
-const poppins = Poppins({
-  subsets: ["latin"],
-  variable: "--font-poppins",
-  display: "swap",
-  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
-});
-
-const geistMono = Geist_Mono({
-  subsets: ["latin"],
-  variable: "--font-geist-mono",
-  display: "swap",
-});
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
-});
 
 export const metadata: Metadata = {
   title: {
@@ -33,6 +14,12 @@ export const metadata: Metadata = {
   description:
     "AI-powered software development and project management workspace for modern engineering teams.",
 };
+const outfit = Outfit({
+  subsets: ["latin"],
+  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+  variable: "--font-outfit",
+  display: "swap",
+});
 
 type RootLayoutProps = Readonly<{
   children: React.ReactNode;
@@ -41,11 +28,7 @@ type RootLayoutProps = Readonly<{
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <ClerkProvider>
-      <html
-        lang="en"
-        suppressHydrationWarning
-        className={`${poppins.variable} ${geistMono.variable} ${inter.variable}`}
-      >
+      <html lang="en" suppressHydrationWarning className={`${outfit.variable}`}>
         <body className="min-h-dvh bg-background font-sans text-foreground antialiased">
           <ThemeProvider
             attribute="class"

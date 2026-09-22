@@ -90,7 +90,7 @@ export function SprintTaskList({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-10" />
+            <TableHead />
 
             <TableHead className="w-20">Key</TableHead>
 

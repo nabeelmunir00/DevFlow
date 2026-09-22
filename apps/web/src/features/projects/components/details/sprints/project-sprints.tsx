@@ -73,24 +73,18 @@ export function ProjectSprints({
   if (view !== "active") {
     return (
       <div className="w-full min-w-0">
-        <div className="rounded-lg border border-border bg-card">
-          <div className="p-4">
-            <SprintViewTabs value={view} onValueChange={setView} />
+        <div className="rounded-lg border border-border bg-card p-4">
+          <SprintViewTabs value={view} onValueChange={setView} />
 
-            <div className="flex min-h-64 items-center justify-center">
-              <div className="px-4 text-center">
-                <h3 className="text-sm font-medium text-foreground">
-                  {view === "upcoming"
-                    ? "Upcoming sprints"
-                    : "Completed sprints"}
-                </h3>
+          <div className="flex min-h-64 items-center justify-center">
+            <div className="text-center">
+              <h3 className="text-sm font-medium text-foreground">
+                {view === "upcoming" ? "Upcoming sprints" : "Completed sprints"}
+              </h3>
 
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {view === "upcoming"
-                    ? "Upcoming sprint data will appear here."
-                    : "Completed sprint data will appear here."}
-                </p>
-              </div>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Sprint data will appear here.
+              </p>
             </div>
           </div>
         </div>
@@ -100,9 +94,9 @@ export function ProjectSprints({
 
   return (
     <div className="w-full min-w-0">
-      <div className="grid w-full min-w-0 grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-12">
+      <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-12">
         {/* Sprint summary */}
-        <section className="order-1 min-w-0 md:col-span-2 xl:col-span-9">
+        <section className="order-1 min-w-0 md:col-span-2 lg:col-span-9">
           <div className="h-full min-w-0 rounded-lg border border-border bg-card p-4">
             <div className="mb-4">
               <SprintViewTabs value={view} onValueChange={setView} />
@@ -118,12 +112,12 @@ export function ProjectSprints({
         </section>
 
         {/* Team workload */}
-        <aside className="order-4 min-w-0 md:col-span-1 xl:order-2 xl:col-span-3">
+        <aside className="order-4 min-w-0 md:col-span-1 lg:order-2 lg:col-span-3">
           <TeamWorkload members={teamWorkload} />
         </aside>
 
         {/* Sprint tasks */}
-        <section className="order-2 min-w-0 md:col-span-1 xl:order-3 xl:col-span-5">
+        <section className="order-2 min-w-0 md:col-span-1 lg:order-3 lg:col-span-5">
           <SprintTaskList
             title={project.sprint}
             tasks={sprintTasks}
@@ -133,7 +127,7 @@ export function ProjectSprints({
         </section>
 
         {/* Backlog */}
-        <section className="order-3 min-w-0 md:col-span-1 xl:order-4 xl:col-span-4">
+        <section className="order-3 min-w-0 md:col-span-1 lg:order-4 lg:col-span-4">
           <SprintTaskList
             title="Backlog"
             tasks={backlogTasks}
@@ -143,7 +137,7 @@ export function ProjectSprints({
         </section>
 
         {/* Past sprints */}
-        <aside className="order-5 min-w-0 md:col-span-1 xl:col-span-3">
+        <aside className="order-5 min-w-0 md:col-span-1 lg:col-span-3">
           <PastSprints sprints={pastSprints} />
         </aside>
       </div>
