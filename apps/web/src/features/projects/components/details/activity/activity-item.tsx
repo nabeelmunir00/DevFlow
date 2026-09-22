@@ -8,7 +8,6 @@ import {
   CircleDot,
   Flag,
   GitCommitHorizontal,
-  MessageSquare,
   MoreHorizontal,
   Send,
 } from "lucide-react";
@@ -66,6 +65,13 @@ function StatusBadge({ status }: { status: ActivityStatus }) {
     warning: "border-warning/40 bg-warning/10 text-warning",
   };
 
+  const dotClasses = {
+    default: "bg-muted-foreground",
+    primary: "bg-primary",
+    success: "bg-success",
+    warning: "bg-warning",
+  };
+
   return (
     <Badge
       variant="outline"
@@ -75,15 +81,7 @@ function StatusBadge({ status }: { status: ActivityStatus }) {
       ].join(" ")}
     >
       <span
-        className={[
-          "size-2 rounded-full",
-          status.tone === "primary" && "bg-primary",
-          status.tone === "success" && "bg-success",
-          status.tone === "warning" && "bg-warning",
-          status.tone === "default" && "bg-muted-foreground",
-        ]
-          .filter(Boolean)
-          .join(" ")}
+        className={["size-2 rounded-full", dotClasses[status.tone]].join(" ")}
       />
 
       {status.label}
@@ -120,12 +118,14 @@ function ActivityActions() {
 function CommentCard({ activity }: { activity: ProjectActivityItemType }) {
   const [reply, setReply] = useState("");
 
-  if (!activity.comment) return null;
+  if (!activity.comment) {
+    return null;
+  }
 
   return (
-    <div className="mt-3 rounded-lg border bg-card p-4">
+    <div className="mt-3 w-full rounded-lg border bg-card p-4">
       <div className="flex items-center gap-3">
-        <Avatar className="size-8">
+        <Avatar className="size-8 shrink-0">
           {activity.comment.author.avatarUrl && (
             <AvatarImage
               src={activity.comment.author.avatarUrl}
@@ -138,22 +138,25 @@ function CommentCard({ activity }: { activity: ProjectActivityItemType }) {
           </AvatarFallback>
         </Avatar>
 
-        <span className="text-sm font-medium">
-          {activity.comment.author.name}
-        </span>
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="text-sm font-medium">
+            {activity.comment.author.name}
+          </span>
 
-        <span className="text-xs text-muted-foreground">
-          {activity.comment.createdAt}
-        </span>
+          <span className="text-xs text-muted-foreground">
+            {activity.comment.createdAt}
+          </span>
+        </div>
       </div>
 
       <p className="mt-2 text-sm text-foreground">{activity.comment.message}</p>
 
-      <div className="mt-4 flex gap-2">
+      <div className="mt-4 flex min-w-0 gap-2">
         <Input
           value={reply}
           onChange={(event) => setReply(event.target.value)}
           placeholder="Reply to this comment..."
+          className="min-w-0 flex-1"
         />
 
         <Button disabled={!reply.trim()}>
@@ -192,16 +195,18 @@ export function ActivityItem({ activity, isLast = false }: ActivityItemProps) {
 
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 items-start justify-between gap-4">
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm">
-              <span className="font-medium">{activity.actor.name}</span>
+              <span className="font-medium text-foreground">
+                {activity.actor.name}
+              </span>
 
               <span className="text-muted-foreground">{activity.message}</span>
 
               {activity.target && (
                 <button
                   type="button"
-                  className="font-medium text-primary underline-offset-4 hover:underline"
+                  className="font-medium text-primary underline-offset-4 transition-colors hover:underline"
                 >
                   {activity.target.label}
                 </button>
@@ -213,7 +218,7 @@ export function ActivityItem({ activity, isLast = false }: ActivityItemProps) {
 
                   <StatusBadge status={activity.fromStatus} />
 
-                  <ArrowRight className="size-4 text-muted-foreground" />
+                  <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
 
                   <StatusBadge status={activity.toStatus} />
                 </>
@@ -226,21 +231,20 @@ export function ActivityItem({ activity, isLast = false }: ActivityItemProps) {
               </p>
             )}
 
-            {activity.commits && (
-              <div className="mt-1 space-y-1">
+            {activity.commits && activity.commits.length > 0 && (
+              <div className="mt-2 grid gap-1">
                 {activity.commits.map((commit) => (
                   <div
                     key={commit}
                     className="flex items-center gap-2 text-xs text-muted-foreground"
                   >
-                    <GitCommitHorizontal className="size-3" />
-                    {commit}
+                    <GitCommitHorizontal className="size-3 shrink-0" />
+
+                    <span className="min-w-0 truncate">{commit}</span>
                   </div>
                 ))}
               </div>
             )}
-
-            <CommentCard activity={activity} />
           </div>
 
           <div className="flex shrink-0 items-center gap-3">
@@ -252,7 +256,9 @@ export function ActivityItem({ activity, isLast = false }: ActivityItemProps) {
           </div>
         </div>
 
-        <span className="mt-1 block text-xs text-muted-foreground sm:hidden">
+        {activity.comment && <CommentCard activity={activity} />}
+
+        <span className="mt-2 block text-xs text-muted-foreground sm:hidden">
           {activity.createdAt}
         </span>
       </div>
