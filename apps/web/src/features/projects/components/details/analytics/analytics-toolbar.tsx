@@ -1,6 +1,13 @@
 "use client";
 
-import { CalendarDays, Check, ChevronDown, Download } from "lucide-react";
+import {
+  CalendarDays,
+  Check,
+  ChevronDown,
+  Download,
+  FileSpreadsheet,
+  FileText,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -10,7 +17,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Switch } from "@/components/ui/switch";
 
 interface AnalyticsToolbarProps {
   period: string;
@@ -21,7 +27,7 @@ interface AnalyticsToolbarProps {
   onSprintChange: (sprint: string) => void;
   onMemberChange: (member: string) => void;
   onComparePreviousChange: (checked: boolean) => void;
-  onExport?: () => void;
+  onExport?: (format: "CSV" | "PDF") => void;
 }
 
 const periods = ["Last 7 days", "Last 30 days", "Last 90 days"] as const;
@@ -50,14 +56,17 @@ export function AnalyticsToolbar({
   onExport,
 }: AnalyticsToolbarProps) {
   return (
-    <div className="flex min-w-0 flex-col gap-3 border-b border-border pb-4 lg:flex-row lg:items-center lg:justify-between">
-      <div className="grid min-w-0 gap-2 sm:grid-cols-3">
+    <div className="flex min-w-0 flex-col gap-2 md:flex-row md:items-center md:justify-between">
+      {/* Left controls */}
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
+        {/* Period */}
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
               <Button
                 variant="outline"
-                className="justify-between font-normal"
+                size="sm"
+                className="min-w-36 justify-between gap-3 font-normal"
               />
             }
           >
@@ -67,7 +76,7 @@ export function AnalyticsToolbar({
               <span className="truncate">{period}</span>
             </span>
 
-            <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
+            <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
           </DropdownMenuTrigger>
 
           <DropdownMenuContent align="start">
@@ -86,18 +95,20 @@ export function AnalyticsToolbar({
           </DropdownMenuContent>
         </DropdownMenu>
 
+        {/* Sprint */}
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
               <Button
                 variant="outline"
-                className="justify-between font-normal"
+                size="sm"
+                className="min-w-28 justify-between gap-3 font-normal"
               />
             }
           >
             <span className="truncate">{sprint}</span>
 
-            <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
+            <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
           </DropdownMenuTrigger>
 
           <DropdownMenuContent align="start">
@@ -116,18 +127,20 @@ export function AnalyticsToolbar({
           </DropdownMenuContent>
         </DropdownMenu>
 
+        {/* Member */}
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
               <Button
                 variant="outline"
-                className="justify-between font-normal"
+                size="sm"
+                className="min-w-32 justify-between gap-3 font-normal"
               />
             }
           >
             <span className="truncate">{member}</span>
 
-            <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
+            <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
           </DropdownMenuTrigger>
 
           <DropdownMenuContent align="start">
@@ -145,24 +158,76 @@ export function AnalyticsToolbar({
             </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {/* Compare */}
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                variant="outline"
+                size="sm"
+                className="min-w-48 justify-between gap-3 font-normal"
+              />
+            }
+          >
+            <span className="truncate">
+              {comparePrevious ? "Compare previous period" : "No comparison"}
+            </span>
+
+            <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent align="start">
+            <DropdownMenuGroup>
+              <DropdownMenuItem onClick={() => onComparePreviousChange(true)}>
+                <span className="flex-1">Compare previous period</span>
+
+                {comparePrevious && <Check className="size-4" />}
+              </DropdownMenuItem>
+
+              <DropdownMenuItem onClick={() => onComparePreviousChange(false)}>
+                <span className="flex-1">No comparison</span>
+
+                {!comparePrevious && <Check className="size-4" />}
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <label className="flex cursor-pointer items-center gap-2">
-          <Switch
-            checked={comparePrevious}
-            onCheckedChange={onComparePreviousChange}
-          />
+      {/* Right export */}
+      <div className="flex shrink-0 md:justify-end">
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 font-normal"
+              />
+            }
+          >
+            <Download className="size-4" />
 
-          <span className="text-sm text-muted-foreground">
-            Compare previous period
-          </span>
-        </label>
+            <span>Export</span>
 
-        <Button variant="outline" onClick={onExport}>
-          <Download className="size-4" />
-          Export
-        </Button>
+            <ChevronDown className="size-3.5 text-muted-foreground" />
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent align="end">
+            <DropdownMenuGroup>
+              <DropdownMenuItem onClick={() => onExport?.("CSV")}>
+                <FileSpreadsheet className="size-4" />
+                Export as CSV
+              </DropdownMenuItem>
+
+              <DropdownMenuItem onClick={() => onExport?.("PDF")}>
+                <FileText className="size-4" />
+                Export as PDF
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );
