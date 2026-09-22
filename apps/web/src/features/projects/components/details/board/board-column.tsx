@@ -22,6 +22,7 @@ interface BoardColumnProps {
   status: ProjectTaskStatus;
   tasks: ProjectTaskSummary[];
   isDragOver?: boolean;
+  onAddTask: () => void;
 }
 
 const statusDot: Record<ProjectTaskStatus, string> = {
@@ -36,6 +37,7 @@ export function BoardColumn({
   status,
   tasks,
   isDragOver = false,
+  onAddTask,
 }: BoardColumnProps) {
   const { setNodeRef } = useDroppable({
     id: status,
@@ -104,6 +106,7 @@ export function BoardColumn({
             size="icon"
             className="size-8 text-muted-foreground"
             aria-label={`Add task to ${title}`}
+            onClick={onAddTask}
           >
             <Plus className="size-4" />
           </Button>

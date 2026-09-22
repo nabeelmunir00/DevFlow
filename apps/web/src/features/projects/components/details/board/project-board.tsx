@@ -15,18 +15,28 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
-import { ChevronDown, Plus, Search } from "lucide-react";
+import { Check, ChevronDown, Plus, Search, X } from "lucide-react";
 import { motion } from "motion/react";
 
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 
 import type {
   ProjectDetails,
+  ProjectTaskPriority,
   ProjectTaskStatus,
   ProjectTaskSummary,
 } from "../../../types/project";
 
+import { AddTaskDialog } from "../../add-task-dialog";
 import { BoardColumn } from "./board-column";
 import { BoardTaskCard } from "./board-task-card";
 
@@ -39,11 +49,43 @@ interface BoardColumnConfig {
   title: string;
 }
 
+type AssigneeFilter = string | "ALL";
+type PriorityFilter = ProjectTaskPriority | "ALL";
+type LabelFilter = string | "ALL";
+type SprintFilter = string | "ALL";
+
 const columns: BoardColumnConfig[] = [
   { status: "TODO", title: "Todo" },
   { status: "IN_PROGRESS", title: "In Progress" },
   { status: "IN_REVIEW", title: "In Review" },
   { status: "DONE", title: "Done" },
+];
+
+const priorities: {
+  value: ProjectTaskPriority;
+  label: string;
+  dot: string;
+}[] = [
+  {
+    value: "LOW",
+    label: "Low",
+    dot: "bg-success",
+  },
+  {
+    value: "MEDIUM",
+    label: "Medium",
+    dot: "bg-primary",
+  },
+  {
+    value: "HIGH",
+    label: "High",
+    dot: "bg-warning",
+  },
+  {
+    value: "URGENT",
+    label: "Urgent",
+    dot: "bg-destructive",
+  },
 ];
 
 function isTaskStatus(value: string): value is ProjectTaskStatus {
@@ -67,6 +109,16 @@ function getColumnStatus(
 
 export function ProjectBoard({ project }: ProjectBoardProps) {
   const [tasks, setTasks] = useState<ProjectTaskSummary[]>(project.recentTasks);
+
+  const [search, setSearch] = useState("");
+  const [assigneeFilter, setAssigneeFilter] = useState<AssigneeFilter>("ALL");
+  const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>("ALL");
+  const [labelFilter, setLabelFilter] = useState<LabelFilter>("ALL");
+  const [sprintFilter, setSprintFilter] = useState<SprintFilter>("ALL");
+
+  const [addTaskOpen, setAddTaskOpen] = useState(false);
+
+  const [addTaskStatus, setAddTaskStatus] = useState<ProjectTaskStatus>("TODO");
 
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
 
@@ -94,6 +146,76 @@ export function ProjectBoard({ project }: ProjectBoardProps) {
     }),
   );
 
+  const labels = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          tasks
+            .map((task) => task.label)
+            .filter((label): label is string => Boolean(label)),
+        ),
+      ).sort(),
+    [tasks],
+  );
+
+  const sprints = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          tasks
+            .map((task) => task.sprint)
+            .filter((sprint): sprint is string => Boolean(sprint)),
+        ),
+      ).sort(),
+    [tasks],
+  );
+
+  const filteredTasks = useMemo(() => {
+    const query = search.trim().toLowerCase();
+
+    return tasks.filter((task) => {
+      const matchesSearch =
+        !query ||
+        task.id.toLowerCase().includes(query) ||
+        task.title.toLowerCase().includes(query) ||
+        task.description?.toLowerCase().includes(query) ||
+        task.assignee.name.toLowerCase().includes(query) ||
+        task.label?.toLowerCase().includes(query);
+
+      const matchesAssignee =
+        assigneeFilter === "ALL" || task.assignee.id === assigneeFilter;
+
+      const matchesPriority =
+        priorityFilter === "ALL" || task.priority === priorityFilter;
+
+      const matchesLabel = labelFilter === "ALL" || task.label === labelFilter;
+
+      const matchesSprint =
+        sprintFilter === "ALL" || task.sprint === sprintFilter;
+
+      return (
+        matchesSearch &&
+        matchesAssignee &&
+        matchesPriority &&
+        matchesLabel &&
+        matchesSprint
+      );
+    });
+  }, [
+    tasks,
+    search,
+    assigneeFilter,
+    priorityFilter,
+    labelFilter,
+    sprintFilter,
+  ]);
+
+  const hasFilters =
+    assigneeFilter !== "ALL" ||
+    priorityFilter !== "ALL" ||
+    labelFilter !== "ALL" ||
+    sprintFilter !== "ALL";
+
   const activeTask = useMemo(
     () =>
       tasks.find((task) => task.id === activeTaskId) ??
@@ -102,12 +224,39 @@ export function ProjectBoard({ project }: ProjectBoardProps) {
     [tasks, activeTaskId],
   );
 
+  const selectedAssignee =
+    project.members.find((member) => member.id === assigneeFilter) ?? null;
+
+  const selectedPriority =
+    priorities.find((priority) => priority.value === priorityFilter) ?? null;
+
   function resetDragState() {
     setActiveTaskId(null);
     setOverColumnStatus(null);
 
     dragStartTasksRef.current = null;
     lastDestinationStatusRef.current = null;
+  }
+
+  function clearFilters() {
+    setAssigneeFilter("ALL");
+    setPriorityFilter("ALL");
+    setLabelFilter("ALL");
+    setSprintFilter("ALL");
+  }
+
+  function openAddTask(status: ProjectTaskStatus = "TODO") {
+    setAddTaskStatus(status);
+    setAddTaskOpen(true);
+  }
+
+  function handleCreateTask(task: ProjectTaskSummary) {
+    const nextTask: ProjectTaskSummary = {
+      ...task,
+      status: addTaskStatus,
+    };
+
+    setTasks((current) => [...current, nextTask]);
   }
 
   function handleDragStart(event: DragStartEvent) {
@@ -141,6 +290,7 @@ export function ProjectBoard({ project }: ProjectBoardProps) {
     }
 
     lastDestinationStatusRef.current = destinationStatus;
+
     setOverColumnStatus(destinationStatus);
 
     if (activeId === overId) {
@@ -310,55 +460,229 @@ export function ProjectBoard({ project }: ProjectBoardProps) {
             aria-hidden="true"
           />
 
-          <Input placeholder="Search tasks..." className="h-10 pl-9" />
+          <Input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search tasks..."
+            className="h-10 pl-9"
+          />
         </div>
 
-        <Button
-          type="button"
-          variant="outline"
-          className="h-10 gap-4 font-normal"
-        >
-          Assignee
-          <ChevronDown className="size-4 text-muted-foreground" />
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10 gap-2 font-normal"
+              />
+            }
+          >
+            {selectedAssignee ? (
+              <>
+                <Avatar className="size-5">
+                  <AvatarFallback className="text-xs">
+                    {selectedAssignee.initials}
+                  </AvatarFallback>
+                </Avatar>
+
+                <span className="max-w-28 truncate">
+                  {selectedAssignee.name}
+                </span>
+              </>
+            ) : (
+              "Assignee"
+            )}
+
+            <ChevronDown className="size-4 text-muted-foreground" />
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent align="start">
+            <DropdownMenuGroup>
+              <DropdownMenuItem onClick={() => setAssigneeFilter("ALL")}>
+                All assignees
+                {assigneeFilter === "ALL" && (
+                  <Check className="ml-auto size-4" />
+                )}
+              </DropdownMenuItem>
+
+              {project.members.map((member) => (
+                <DropdownMenuItem
+                  key={member.id}
+                  onClick={() => setAssigneeFilter(member.id)}
+                >
+                  <Avatar className="size-6">
+                    <AvatarFallback className="text-xs">
+                      {member.initials}
+                    </AvatarFallback>
+                  </Avatar>
+
+                  {member.name}
+
+                  {assigneeFilter === member.id && (
+                    <Check className="ml-auto size-4" />
+                  )}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10 gap-2 font-normal"
+              />
+            }
+          >
+            {selectedPriority ? (
+              <>
+                <span
+                  className={`size-2.5 rounded-full ${selectedPriority.dot}`}
+                />
+                {selectedPriority.label}
+              </>
+            ) : (
+              "Priority"
+            )}
+
+            <ChevronDown className="size-4 text-muted-foreground" />
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent align="start">
+            <DropdownMenuGroup>
+              <DropdownMenuItem onClick={() => setPriorityFilter("ALL")}>
+                All priorities
+                {priorityFilter === "ALL" && (
+                  <Check className="ml-auto size-4" />
+                )}
+              </DropdownMenuItem>
+
+              {priorities.map((priority) => (
+                <DropdownMenuItem
+                  key={priority.value}
+                  onClick={() => setPriorityFilter(priority.value)}
+                >
+                  <span className={`size-2.5 rounded-full ${priority.dot}`} />
+
+                  {priority.label}
+
+                  {priorityFilter === priority.value && (
+                    <Check className="ml-auto size-4" />
+                  )}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10 gap-2 font-normal"
+              />
+            }
+          >
+            {labelFilter === "ALL" ? "Label" : labelFilter}
+
+            <ChevronDown className="size-4 text-muted-foreground" />
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent align="start">
+            <DropdownMenuGroup>
+              <DropdownMenuItem onClick={() => setLabelFilter("ALL")}>
+                All labels
+                {labelFilter === "ALL" && <Check className="ml-auto size-4" />}
+              </DropdownMenuItem>
+
+              {labels.map((label) => (
+                <DropdownMenuItem
+                  key={label}
+                  onClick={() => setLabelFilter(label)}
+                >
+                  {label}
+
+                  {labelFilter === label && (
+                    <Check className="ml-auto size-4" />
+                  )}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10 gap-2 font-normal"
+              />
+            }
+          >
+            {sprintFilter === "ALL" ? project.sprint : sprintFilter}
+
+            <ChevronDown className="size-4 text-muted-foreground" />
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent align="start">
+            <DropdownMenuGroup>
+              <DropdownMenuItem onClick={() => setSprintFilter("ALL")}>
+                All sprints
+                {sprintFilter === "ALL" && <Check className="ml-auto size-4" />}
+              </DropdownMenuItem>
+
+              {sprints.map((sprint) => (
+                <DropdownMenuItem
+                  key={sprint}
+                  onClick={() => setSprintFilter(sprint)}
+                >
+                  {sprint}
+
+                  {sprintFilter === sprint && (
+                    <Check className="ml-auto size-4" />
+                  )}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         <Button
           type="button"
           variant="outline"
-          className="h-10 gap-4 font-normal"
-        >
-          Priority
-          <ChevronDown className="size-4 text-muted-foreground" />
-        </Button>
-
-        <Button
-          type="button"
-          variant="outline"
-          className="h-10 gap-4 font-normal"
-        >
-          Label
-          <ChevronDown className="size-4 text-muted-foreground" />
-        </Button>
-
-        <Button
-          type="button"
-          variant="outline"
-          className="h-10 gap-4 font-normal"
-        >
-          {project.sprint}
-          <ChevronDown className="size-4 text-muted-foreground" />
-        </Button>
-
-        <Button
-          type="button"
-          variant="outline"
-          className="h-10 gap-4 font-normal"
+          className="h-10 gap-2 font-normal"
+          disabled
         >
           Group by Status
           <ChevronDown className="size-4 text-muted-foreground" />
         </Button>
 
-        <Button type="button" className="ml-auto h-10 gap-2">
+        {hasFilters && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-10 gap-2 text-muted-foreground"
+            onClick={clearFilters}
+          >
+            <X className="size-4" />
+            Clear
+          </Button>
+        )}
+
+        <Button
+          type="button"
+          className="ml-auto h-10 gap-2"
+          onClick={() => openAddTask("TODO")}
+        >
           <Plus className="size-4" />
           Add task
         </Button>
@@ -374,7 +698,7 @@ export function ProjectBoard({ project }: ProjectBoardProps) {
       >
         <div className="grid min-w-0 gap-3 md:grid-cols-2 xl:grid-cols-4">
           {columns.map((column) => {
-            const columnTasks = tasks.filter(
+            const columnTasks = filteredTasks.filter(
               (task) => task.status === column.status,
             );
 
@@ -388,6 +712,7 @@ export function ProjectBoard({ project }: ProjectBoardProps) {
                 status={column.status}
                 tasks={columnTasks}
                 isDragOver={isDragOver}
+                onAddTask={() => openAddTask(column.status)}
               />
             );
           })}
@@ -423,6 +748,13 @@ export function ProjectBoard({ project }: ProjectBoardProps) {
           ) : null}
         </DragOverlay>
       </DndContext>
+
+      <AddTaskDialog
+        open={addTaskOpen}
+        onOpenChange={setAddTaskOpen}
+        project={project}
+        onCreateTask={handleCreateTask}
+      />
     </div>
   );
 }
