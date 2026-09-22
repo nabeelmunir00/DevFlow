@@ -13,6 +13,7 @@ import type {
 import { TaskViewTabs, type TaskView } from "./task-view-tabs";
 import { TasksBulkActions } from "./tasks-bulk-actions";
 import { TasksTable } from "./tasks-table";
+import { AddTaskDialog } from "./add-task-dialog";
 import {
   TasksToolbar,
   type TaskColumn,
@@ -48,6 +49,7 @@ export function ProjectTasks({ project }: ProjectTasksProps) {
 
   const [view, setView] = useState<TaskView>("all");
   const [search, setSearch] = useState("");
+  const [addTaskOpen, setAddTaskOpen] = useState(false);
 
   const [statusFilter, setStatusFilter] = useState<ProjectTaskStatus | "ALL">(
     "ALL",
@@ -237,6 +239,14 @@ export function ProjectTasks({ project }: ProjectTasksProps) {
   function handleClearSelection() {
     setSelectedTaskIds(new Set());
   }
+  function handleCreateTask(task: ProjectTaskSummary) {
+    setTasks((current) => [task, ...current]);
+
+    setView("all");
+    setStatusFilter("ALL");
+    setPriorityFilter("ALL");
+    setCurrentPage(1);
+  }
 
   return (
     <div className="min-w-0 space-y-4">
@@ -253,6 +263,7 @@ export function ProjectTasks({ project }: ProjectTasksProps) {
         onSortChange={setSort}
         onGroupChange={setGroup}
         onColumnToggle={handleColumnToggle}
+        onAddTask={() => setAddTaskOpen(true)}
       />
 
       <TaskViewTabs
@@ -287,6 +298,13 @@ export function ProjectTasks({ project }: ProjectTasksProps) {
         onTaskStatusChange={handleTaskStatusChange}
         onTaskSelectionChange={handleTaskSelection}
         onSelectAllChange={handleSelectAll}
+      />
+
+      <AddTaskDialog
+        open={addTaskOpen}
+        onOpenChange={setAddTaskOpen}
+        project={project}
+        onCreateTask={handleCreateTask}
       />
     </div>
   );

@@ -57,6 +57,7 @@ interface TasksToolbarProps {
   onSortChange: (value: TaskSort) => void;
   onGroupChange: (value: TaskGroup) => void;
   onColumnToggle: (column: TaskColumn) => void;
+  onAddTask: () => void;
 }
 
 const statuses = [
@@ -150,6 +151,7 @@ export function TasksToolbar({
   onSortChange,
   onGroupChange,
   onColumnToggle,
+  onAddTask,
 }: TasksToolbarProps) {
   const hasFilters = statusFilter !== "ALL" || priorityFilter !== "ALL";
 
@@ -346,7 +348,7 @@ export function TasksToolbar({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <Button type="button" className="h-10 gap-2">
+      <Button type="button" className="h-10 gap-2" onClick={onAddTask}>
         <Plus className="size-4" />
         Add task
       </Button>
