@@ -8,7 +8,6 @@ import { WorkspaceSelector } from "@/components/workspace-selector/workspace-sel
 
 export default async function SelectWorkspacePage() {
   const { userId, getToken } = await auth();
-  let hasError = false;
 
   if (!userId) {
     redirect("/");
@@ -27,11 +26,16 @@ export default async function SelectWorkspacePage() {
   }
 
   let organizations: Organization[] = [];
+  let hasError = false;
 
   try {
-    organizations = await getOrganizations(token);
+    const data = await getOrganizations(token);
+
+    console.log("Organizations:", data);
+
+    organizations = data;
   } catch (error) {
-    console.error("Failed to fetch organizations:", error);
+    console.error("Failed to load organizations:", error);
     hasError = true;
   }
 
@@ -41,6 +45,10 @@ export default async function SelectWorkspacePage() {
     "";
 
   return (
-    <WorkspaceSelector organizations={organizations} email={email} hasError />
+    <WorkspaceSelector
+      organizations={organizations}
+      email={email}
+      hasError={hasError}
+    />
   );
 }
