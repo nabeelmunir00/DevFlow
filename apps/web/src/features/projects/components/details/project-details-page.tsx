@@ -13,6 +13,7 @@ import { ProjectSprints } from "./sprints/project-sprints";
 import { ProjectGitHub } from "./github/project-github";
 import { ProjectActivity } from "./activity/project-activity";
 import { ProjectAnalytics } from "./analytics/project-analytics";
+import { ProjectSettings } from "./settings/project-settings";
 
 type ProjectTab =
   | "overview"
@@ -110,12 +111,7 @@ export function ProjectDetailsPage({ project }: ProjectDetailsPageProps) {
         return <ProjectAnalytics project={project} />;
 
       case "settings":
-        return (
-          <TabPlaceholder
-            title="Settings"
-            description="Project configuration and settings will be available here."
-          />
-        );
+        return <ProjectSettings />;
 
       default:
         return null;
