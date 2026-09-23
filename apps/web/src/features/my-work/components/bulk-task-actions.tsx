@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, Flag, FolderInput, X } from "lucide-react";
+import { Check, ChevronDown, FolderInput, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -15,55 +15,61 @@ interface BulkTaskActionsProps {
   selectedCount: number;
   onClearSelection: () => void;
   onMarkComplete?: () => void;
-  onChangePriority?: (priority: string) => void;
-  onMoveTasks?: () => void;
+  onChangePriority?: (priority: "URGENT" | "HIGH" | "MEDIUM" | "LOW") => void;
+  onMoveTasks?: (destination: string) => void;
+  onDelete?: () => void;
 }
 
 export function BulkTaskActions({
   selectedCount,
-  onClearSelection,
   onMarkComplete,
   onChangePriority,
   onMoveTasks,
+  onDelete,
 }: BulkTaskActionsProps) {
   if (selectedCount === 0) {
     return null;
   }
 
   return (
-    <div className="sticky bottom-4 z-20 mt-4 flex justify-center px-4">
-      <div className="flex max-w-full items-center gap-1 rounded-lg border border-border bg-card p-1 shadow-lg">
-        <div className="flex items-center gap-2 px-2">
-          <span className="flex size-5 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
-            {selectedCount}
-          </span>
-
-          <span className="hidden text-xs font-medium text-foreground sm:inline">
-            selected
+    <div className="sticky bottom-4 z-30 mt-4 flex justify-center px-3">
+      <div className="flex w-full items-center justify-between gap-1 overflow-x-auto rounded-md border border-border bg-card px-2 py-2 shadow-lg">
+        <div className="flex shrink-0 items-center px-2">
+          <span className="whitespace-nowrap text-sm font-medium text-foreground">
+            {selectedCount}{" "}
+            {selectedCount === 1 ? "task selected" : "tasks selected"}
           </span>
         </div>
 
-        <div className="mx-1 h-5 w-px bg-border" />
+        <div className="mx-1 h-5 w-px shrink-0 bg-border" />
 
         <Button
           type="button"
           variant="ghost"
           size="sm"
           onClick={onMarkComplete}
+          className="h-8 shrink-0 gap-2 px-3 font-normal"
         >
-          <CheckCircle2 className="size-4" />
-          <span className="hidden sm:inline">Complete</span>
+          <Check className="size-4" />
+          Mark complete
         </Button>
 
         <DropdownMenu>
           <DropdownMenuTrigger
-            render={<Button type="button" variant="ghost" size="sm" />}
+            render={
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 shrink-0 gap-2 px-3 font-normal"
+              />
+            }
           >
-            <Flag className="size-4" />
-            <span className="hidden sm:inline">Priority</span>
+            Change priority
+            <ChevronDown className="size-3.5 text-muted-foreground" />
           </DropdownMenuTrigger>
 
-          <DropdownMenuContent align="center">
+          <DropdownMenuContent align="start">
             <DropdownMenuGroup>
               <DropdownMenuItem onClick={() => onChangePriority?.("URGENT")}>
                 Urgent
@@ -84,22 +90,54 @@ export function BulkTaskActions({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Button type="button" variant="ghost" size="sm" onClick={onMoveTasks}>
-          <FolderInput className="size-4" />
-          <span className="hidden sm:inline">Move</span>
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 shrink-0 gap-2 px-3 font-normal"
+              />
+            }
+          >
+            <FolderInput className="size-4" />
+            Move
+            <ChevronDown className="size-3.5 text-muted-foreground" />
+          </DropdownMenuTrigger>
 
-        <div className="mx-1 h-5 w-px bg-border" />
+          <DropdownMenuContent align="start">
+            <DropdownMenuGroup>
+              <DropdownMenuItem onClick={() => onMoveTasks?.("TODO")}>
+                Move to Todo
+              </DropdownMenuItem>
+
+              <DropdownMenuItem onClick={() => onMoveTasks?.("IN_PROGRESS")}>
+                Move to In progress
+              </DropdownMenuItem>
+
+              <DropdownMenuItem onClick={() => onMoveTasks?.("IN_REVIEW")}>
+                Move to In review
+              </DropdownMenuItem>
+
+              <DropdownMenuItem onClick={() => onMoveTasks?.("DONE")}>
+                Move to Done
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <div className="mx-1 h-5 w-px shrink-0 bg-border" />
 
         <Button
           type="button"
           variant="ghost"
-          size="icon"
-          className="size-8"
-          onClick={onClearSelection}
-          aria-label="Clear selection"
+          size="sm"
+          onClick={onDelete}
+          className="h-8 shrink-0 gap-2 px-3 font-normal text-destructive hover:bg-destructive/10 hover:text-destructive"
         >
-          <X className="size-4" />
+          <Trash2 className="size-4" />
+          Delete
         </Button>
       </div>
     </div>
