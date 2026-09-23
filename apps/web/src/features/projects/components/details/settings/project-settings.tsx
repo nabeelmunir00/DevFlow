@@ -2,9 +2,13 @@
 
 import { useState } from "react";
 
+import { DangerZoneSettings } from "./danger/danger-zone-settings";
 import { GeneralSettings } from "./general/general-settings";
+import { MembersSettings } from "./members/members-settings";
+import { NotificationSettings } from "./notifications/notification-settings";
+import { RepositorySettings } from "./repository/repository-settings";
 import { SettingsSidebar } from "./settings-sidebar";
-import { MembersSettings } from "./member/members-settings";
+import { WorkflowSettings } from "./workflow/workflow-settings";
 
 export type ProjectSettingsSection =
   | "general"
@@ -30,13 +34,13 @@ export function ProjectSettings() {
 
         {activeSection === "members" && <MembersSettings />}
 
-        {/* {activeSection !== "general" && "members" && (
-          <div className="flex min-h-80 items-center justify-center p-6">
-            <p className="text-sm text-muted-foreground">
-              This settings section will be added next.
-            </p>
-          </div>
-        )} */}
+        {activeSection === "workflow" && <WorkflowSettings />}
+
+        {activeSection === "repository" && <RepositorySettings />}
+
+        {activeSection === "notifications" && <NotificationSettings />}
+
+        {activeSection === "danger" && <DangerZoneSettings />}
       </div>
     </div>
   );
