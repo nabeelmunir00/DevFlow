@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { GeneralSettings } from "./general/general-settings";
 import { SettingsSidebar } from "./settings-sidebar";
+import { MembersSettings } from "./member/members-settings";
 
 export type ProjectSettingsSection =
   | "general"
@@ -27,13 +28,15 @@ export function ProjectSettings() {
       <div className="min-w-0 flex-1">
         {activeSection === "general" && <GeneralSettings />}
 
-        {activeSection !== "general" && (
+        {activeSection === "members" && <MembersSettings />}
+
+        {/* {activeSection !== "general" && "members" && (
           <div className="flex min-h-80 items-center justify-center p-6">
             <p className="text-sm text-muted-foreground">
               This settings section will be added next.
             </p>
           </div>
-        )}
+        )} */}
       </div>
     </div>
   );
