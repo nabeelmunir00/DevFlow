@@ -1,4 +1,4 @@
-import { Check } from "lucide-react";
+import { Check, Circle, Clock3 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -19,7 +19,7 @@ function MilestoneStatusBadge({ status }: { status: MilestoneStatus }) {
       return (
         <Badge
           variant="outline"
-          className="gap-1.5 border-success/30 bg-success/10 text-success"
+          className="gap-1 border-success/30 bg-success/10 text-success"
         >
           <Check className="size-3" />
           Completed
@@ -30,15 +30,17 @@ function MilestoneStatusBadge({ status }: { status: MilestoneStatus }) {
       return (
         <Badge
           variant="outline"
-          className="border-primary/30 bg-primary/10 text-primary"
+          className="gap-1 border-primary/30 bg-primary/10 text-primary"
         >
+          <Circle className="size-2 fill-current" />
           In progress
         </Badge>
       );
 
     case "UPCOMING":
       return (
-        <Badge variant="outline" className="text-muted-foreground">
+        <Badge variant="outline" className="gap-1 text-muted-foreground">
+          <Clock3 className="size-3" />
           Upcoming
         </Badge>
       );
@@ -55,64 +57,45 @@ export function MilestoneProgress({ milestones }: MilestoneProgressProps) {
           </h3>
 
           <p className="mt-1 text-xs text-muted-foreground">
-            Completion across project milestones
+            Track progress across project milestones
           </p>
         </div>
       </CardHeader>
 
-      <CardContent className="p-0">
+      <CardContent>
         <div className="divide-y divide-border">
           {milestones.map((milestone) => (
-            <div
-              key={milestone.id}
-              className="grid min-w-0 gap-4 px-6 py-4 lg:grid-cols-12 lg:items-center"
-            >
-              <div className="flex min-w-0 items-center gap-3 lg:col-span-4">
-                <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border bg-muted text-xs font-semibold text-muted-foreground">
-                  {milestone.key}
-                </div>
-
-                <div className="min-w-0">
+            <div key={milestone.id} className="py-4 first:pt-0 last:pb-0">
+              {/* Top */}
+              <div className="flex min-w-0 items-center justify-between gap-4">
+                <div className="flex min-w-0 items-center gap-2">
                   <p className="truncate text-sm font-medium text-foreground">
                     {milestone.name}
                   </p>
 
-                  <div className="mt-1 lg:hidden">
-                    <MilestoneStatusBadge status={milestone.status} />
-                  </div>
-                </div>
-              </div>
-
-              <div className="hidden text-sm text-muted-foreground lg:block lg:col-span-2">
-                {milestone.dueDate}
-              </div>
-
-              <div className="hidden text-sm text-muted-foreground lg:block lg:col-span-2">
-                {milestone.tasks} tasks
-              </div>
-
-              <div className="min-w-0 lg:col-span-3">
-                <div className="mb-2 flex items-center justify-between gap-3">
-                  <span className="text-xs text-muted-foreground lg:hidden">
-                    Progress
-                  </span>
-
-                  <span className="text-xs font-medium tabular-nums text-foreground">
-                    {milestone.completion}%
-                  </span>
+                  <MilestoneStatusBadge status={milestone.status} />
                 </div>
 
-                <Progress value={milestone.completion} />
+                <span className="shrink-0 text-sm font-semibold tabular-nums text-foreground">
+                  {milestone.completion}%
+                </span>
               </div>
 
-              <div className="hidden justify-end lg:flex lg:col-span-1">
-                <MilestoneStatusBadge status={milestone.status} />
-              </div>
+              {/* Metadata */}
+              <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                <span>{milestone.key}</span>
 
-              <div className="flex items-center justify-between gap-4 text-xs text-muted-foreground lg:hidden">
-                <span>{milestone.dueDate}</span>
+                <span aria-hidden="true">·</span>
+
+                <span>Due {milestone.dueDate}</span>
+
+                <span aria-hidden="true">·</span>
+
                 <span>{milestone.tasks} tasks</span>
               </div>
+
+              {/* Progress */}
+              <Progress value={milestone.completion} className="mt-3" />
             </div>
           ))}
         </div>
