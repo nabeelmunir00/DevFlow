@@ -71,7 +71,7 @@ export function MyWorkPage() {
     null,
   );
 
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [now, setNow] = useState(() => Date.now());
 
   const filteredTasks = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -160,45 +160,36 @@ export function MyWorkPage() {
     return tasks.find((task) => task.id === focusSession.taskId);
   }, [tasks, focusSession]);
 
-  useEffect(() => {
+  const elapsedSeconds = useMemo(() => {
     if (!focusSession) {
-      setElapsedSeconds(0);
-      return;
+      return 0;
     }
-
-    function calculateElapsed() {
-      if (focusSession.status === "PAUSED") {
-        return focusSession.accumulatedSeconds;
-      }
-
-      const currentSessionSeconds = Math.floor(
-        (Date.now() - focusSession.startedAt) / 1000,
-      );
-
-      return focusSession.accumulatedSeconds + currentSessionSeconds;
-    }
-
-    setElapsedSeconds(calculateElapsed());
 
     if (focusSession.status === "PAUSED") {
+      return Math.max(0, focusSession.accumulatedSeconds);
+    }
+
+    const currentSessionSeconds = Math.max(
+      0,
+      Math.floor((now - focusSession.startedAt) / 1000),
+    );
+
+    return focusSession.accumulatedSeconds + currentSessionSeconds;
+  }, [focusSession, now]);
+
+  useEffect(() => {
+    if (!focusSession || focusSession.status === "PAUSED") {
       return;
     }
 
-    const interval = window.setInterval(() => {
-      setElapsedSeconds(calculateElapsed());
+    const intervalId = window.setInterval(() => {
+      setNow(Date.now());
     }, 1000);
 
     return () => {
-      window.clearInterval(interval);
+      window.clearInterval(intervalId);
     };
   }, [focusSession]);
-
-  useEffect(() => {
-    if (focusSession && !focusedTask) {
-      setFocusSession(null);
-      setStopFocusDialogOpen(false);
-    }
-  }, [focusSession, focusedTask]);
 
   function handleViewChange(nextView: MyWorkView) {
     setView(nextView);
@@ -218,6 +209,10 @@ export function MyWorkPage() {
       return;
     }
 
+    const focusedTaskSelected = focusSession
+      ? selectedTaskIds.has(focusSession.taskId)
+      : false;
+
     setTasks((currentTasks) =>
       currentTasks.map((task) =>
         selectedTaskIds.has(task.id)
@@ -230,6 +225,11 @@ export function MyWorkPage() {
     );
 
     setSelectedTaskIds(new Set());
+
+    if (focusedTaskSelected) {
+      setFocusSession(null);
+      setStopFocusDialogOpen(false);
+    }
   }
 
   function handleChangePriority(nextPriority: MyWorkTaskPriority) {
@@ -256,6 +256,10 @@ export function MyWorkPage() {
       return;
     }
 
+    const focusedTaskSelected = focusSession
+      ? selectedTaskIds.has(focusSession.taskId)
+      : false;
+
     setTasks((currentTasks) =>
       currentTasks.map((task) =>
         selectedTaskIds.has(task.id)
@@ -268,6 +272,11 @@ export function MyWorkPage() {
     );
 
     setSelectedTaskIds(new Set());
+
+    if (nextStatus === "DONE" && focusedTaskSelected) {
+      setFocusSession(null);
+      setStopFocusDialogOpen(false);
+    }
   }
 
   function handleTaskMarkComplete(taskId: string) {
@@ -414,37 +423,48 @@ export function MyWorkPage() {
       return;
     }
 
+    const startedAt = Date.now();
+
+    setNow(startedAt);
+
     setSelectedTaskIds(new Set());
 
     setFocusSession({
       taskId,
       status: "ACTIVE",
-      startedAt: Date.now(),
+      startedAt,
       accumulatedSeconds: 0,
       pausedAt: null,
     });
   }
 
   function handlePauseFocus() {
+    const pausedAt = Date.now();
+
     setFocusSession((current) => {
       if (!current || current.status === "PAUSED") {
         return current;
       }
 
-      const sessionSeconds = Math.floor(
-        (Date.now() - current.startedAt) / 1000,
+      const sessionSeconds = Math.max(
+        0,
+        Math.floor((pausedAt - current.startedAt) / 1000),
       );
 
       return {
         ...current,
         status: "PAUSED",
         accumulatedSeconds: current.accumulatedSeconds + sessionSeconds,
-        pausedAt: Date.now(),
+        pausedAt,
       };
     });
   }
 
   function handleResumeFocus() {
+    const resumedAt = Date.now();
+
+    setNow(resumedAt);
+
     setFocusSession((current) => {
       if (!current || current.status !== "PAUSED") {
         return current;
@@ -453,7 +473,7 @@ export function MyWorkPage() {
       return {
         ...current,
         status: "ACTIVE",
-        startedAt: Date.now(),
+        startedAt: resumedAt,
         pausedAt: null,
       };
     });
@@ -486,6 +506,7 @@ export function MyWorkPage() {
     });
 
     setFocusSession(null);
+
     setStopFocusDialogOpen(false);
   }
 
@@ -503,11 +524,11 @@ export function MyWorkPage() {
     }
 
     // Later:
-    // Persist the completed focus session
-    // through the backend API before
-    // clearing the active session.
+    // Persist the focus session
+    // through the backend API.
 
     setFocusSession(null);
+
     setStopFocusDialogOpen(false);
   }
 
