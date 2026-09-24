@@ -31,6 +31,8 @@ import {
 import { TodayCard } from "./today-card";
 import { DeleteTaskDialog } from "./delete-task-dialog";
 import { MyWorkBoard } from "./board/my-work-board";
+import { FocusSession } from "./focus/focus-session";
+import { StartFocusDialog } from "./focus/start-focus-dialog";
 
 export function MyWorkPage() {
   const [view, setView] = useState<MyWorkView>("assigned");
@@ -49,6 +51,9 @@ export function MyWorkPage() {
   const [taskToDeleteId, setTaskToDeleteId] = useState<string | null>(null);
 
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [focusDialogOpen, setFocusDialogOpen] = useState(false);
+
+  const [focusedTaskId, setFocusedTaskId] = useState<string | null>(null);
 
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(() => {
     const initiallySelected = demoMyWorkTasks
