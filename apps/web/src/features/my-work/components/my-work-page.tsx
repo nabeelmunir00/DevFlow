@@ -15,7 +15,6 @@ import {
   demoMyWorkProjects,
   demoMyWorkTasks,
   demoTodayEvents,
-  myWorkTabCounts,
 } from "./data/demo-my-work";
 import { BulkTaskActions } from "./bulk-task-actions";
 import { MyProgressCard } from "./my-progress-card";
@@ -63,6 +62,7 @@ export function MyWorkPage() {
     const query = search.trim().toLowerCase();
 
     return tasks.filter((task) => {
+      const matchesView = task.views.includes(view);
       const matchesStatus = status === "ALL" || task.status === status;
 
       const matchesPriority = priority === "ALL" || task.priority === priority;
@@ -82,22 +82,34 @@ export function MyWorkPage() {
         project?.shortName.toLowerCase().includes(query);
 
       return (
-        matchesStatus && matchesPriority && matchesProject && matchesSearch
+        matchesView &&
+        matchesStatus &&
+        matchesPriority &&
+        matchesProject &&
+        matchesSearch
       );
     });
-  }, [tasks, search, status, priority, projectId]);
+  }, [tasks, search, status, priority, projectId, view]);
 
   const taskToDelete = useMemo(
     () => tasks.find((task) => task.id === taskToDeleteId),
     [tasks, taskToDeleteId],
   );
 
+  const tabCounts = useMemo(
+    () => ({
+      assigned: tasks.filter((task) => task.views.includes("assigned")).length,
+
+      created: tasks.filter((task) => task.views.includes("created")).length,
+
+      following: tasks.filter((task) => task.views.includes("following"))
+        .length,
+    }),
+    [tasks],
+  );
+
   function handleViewChange(nextView: MyWorkView) {
     setView(nextView);
-
-    // Demo data currently represents
-    // "Assigned to me".
-    // Later fetch/filter data for each view.
     setSelectedTaskIds(new Set());
   }
 
@@ -255,7 +267,7 @@ export function MyWorkPage() {
         <MyWorkTabs
           value={view}
           layout={layout}
-          counts={myWorkTabCounts}
+          counts={tabCounts}
           onValueChange={handleViewChange}
           onLayoutChange={handleLayoutChange}
         />
