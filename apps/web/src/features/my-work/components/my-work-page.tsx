@@ -4,7 +4,9 @@ import { useMemo, useState } from "react";
 
 import type {
   MyWorkLayout,
+  MyWorkTask,
   MyWorkTaskPriority,
+  MyWorkTaskStatus,
   MyWorkView,
 } from "../types/my-work";
 
@@ -41,6 +43,7 @@ export function MyWorkPage() {
   const [projectId, setProjectId] = useState("ALL");
 
   const [search, setSearch] = useState("");
+  const [tasks, setTasks] = useState<MyWorkTask[]>(demoMyWorkTasks);
 
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(() => {
     const initiallySelected = demoMyWorkTasks
@@ -49,46 +52,33 @@ export function MyWorkPage() {
 
     return new Set(initiallySelected);
   });
-
   const filteredTasks = useMemo(() => {
     const query = search.trim().toLowerCase();
 
-    return demoMyWorkTasks.filter((task) => {
-      if (status !== "ALL" && task.status !== status) {
-        return false;
-      }
+    return tasks.filter((task) => {
+      const matchesStatus = status === "ALL" || task.status === status;
 
-      if (priority !== "ALL" && task.priority !== priority) {
-        return false;
-      }
+      const matchesPriority = priority === "ALL" || task.priority === priority;
 
-      if (projectId !== "ALL" && task.projectId !== projectId) {
-        return false;
-      }
+      const matchesProject =
+        projectId === "ALL" || task.projectId === projectId;
 
-      if (query) {
-        const project = demoMyWorkProjects.find(
-          (item) => item.id === task.projectId,
-        );
+      const project = demoMyWorkProjects.find(
+        (project) => project.id === task.projectId,
+      );
 
-        const searchableText = [
-          task.key,
-          task.title,
-          project?.name,
-          project?.shortName,
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
+      const matchesSearch =
+        !query ||
+        task.key.toLowerCase().includes(query) ||
+        task.title.toLowerCase().includes(query) ||
+        project?.name.toLowerCase().includes(query) ||
+        project?.shortName.toLowerCase().includes(query);
 
-        if (!searchableText.includes(query)) {
-          return false;
-        }
-      }
-
-      return true;
+      return (
+        matchesStatus && matchesPriority && matchesProject && matchesSearch
+      );
     });
-  }, [status, priority, projectId, search]);
+  }, [tasks, search, status, priority, projectId]);
 
   function handleViewChange(nextView: MyWorkView) {
     setView(nextView);
@@ -108,43 +98,54 @@ export function MyWorkPage() {
   }
 
   function handleMarkComplete() {
-    if (selectedTaskIds.size === 0) {
-      return;
-    }
+    if (selectedTaskIds.size === 0) return;
 
-    // API integration later:
-    //
-    // await bulkUpdateTasks({
-    //   taskIds: [...selectedTaskIds],
-    //   status: "DONE",
-    // });
+    setTasks((currentTasks) =>
+      currentTasks.map((task) =>
+        selectedTaskIds.has(task.id)
+          ? {
+              ...task,
+              status: "DONE",
+            }
+          : task,
+      ),
+    );
 
     setSelectedTaskIds(new Set());
   }
 
-  function handleChangePriority(nextPriority: string) {
-    if (selectedTaskIds.size === 0) {
-      return;
-    }
+  function handleChangePriority(priority: MyWorkTaskPriority) {
+    if (selectedTaskIds.size === 0) return;
 
-    const priorityValue = nextPriority as MyWorkTaskPriority;
+    setTasks((currentTasks) =>
+      currentTasks.map((task) =>
+        selectedTaskIds.has(task.id)
+          ? {
+              ...task,
+              priority,
+            }
+          : task,
+      ),
+    );
 
-    // API integration later:
-    //
-    // await bulkUpdateTasks({
-    //   taskIds: [...selectedTaskIds],
-    //   priority: priorityValue,
-    // });
-
-    console.log("Change priority:", priorityValue);
+    setSelectedTaskIds(new Set());
   }
 
-  function handleMoveTasks() {
-    if (selectedTaskIds.size === 0) {
-      return;
-    }
+  function handleMoveTasks(status: MyWorkTaskStatus) {
+    if (selectedTaskIds.size === 0) return;
 
-    // Later open the move-task dialog.
+    setTasks((currentTasks) =>
+      currentTasks.map((task) =>
+        selectedTaskIds.has(task.id)
+          ? {
+              ...task,
+              status,
+            }
+          : task,
+      ),
+    );
+
+    setSelectedTaskIds(new Set());
   }
 
   function handleStartFocus() {
