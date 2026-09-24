@@ -4,6 +4,8 @@ import type {
   MyWorkProject,
   MyWorkTask,
   MyWorkTaskGroup,
+  MyWorkTaskPriority,
+  MyWorkTaskStatus,
 } from "../types/my-work";
 
 import { Checkbox } from "@/components/ui/checkbox";
@@ -14,7 +16,16 @@ interface MyWorkTaskListProps {
   tasks: MyWorkTask[];
   projects: MyWorkProject[];
   selectedTaskIds: Set<string>;
+
   onSelectedTaskIdsChange: (ids: Set<string>) => void;
+
+  onMarkComplete: (taskId: string) => void;
+
+  onChangePriority: (taskId: string, priority: MyWorkTaskPriority) => void;
+
+  onMoveTask: (taskId: string, status: MyWorkTaskStatus) => void;
+
+  onDeleteTask: (taskId: string) => void;
 }
 
 const groupOrder: MyWorkTaskGroup[] = ["OVERDUE", "TODAY", "UPCOMING"];
@@ -24,6 +35,10 @@ export function MyWorkTaskList({
   projects,
   selectedTaskIds,
   onSelectedTaskIdsChange,
+  onMarkComplete,
+  onChangePriority,
+  onMoveTask,
+  onDeleteTask,
 }: MyWorkTaskListProps) {
   const allSelected =
     tasks.length > 0 && tasks.every((task) => selectedTaskIds.has(task.id));
@@ -97,6 +112,10 @@ export function MyWorkTaskList({
             projects={projects}
             selectedTaskIds={selectedTaskIds}
             onTaskSelectedChange={handleTaskSelectedChange}
+            onMarkComplete={onMarkComplete}
+            onChangePriority={onChangePriority}
+            onMoveTask={onMoveTask}
+            onDeleteTask={onDeleteTask}
           />
         ))
       ) : (

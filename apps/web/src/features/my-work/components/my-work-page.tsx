@@ -252,6 +252,10 @@ export function MyWorkPage() {
                 projects={demoMyWorkProjects}
                 selectedTaskIds={selectedTaskIds}
                 onSelectedTaskIdsChange={setSelectedTaskIds}
+                onMarkComplete={handleTaskMarkComplete}
+                onChangePriority={handleTaskPriorityChange}
+                onMoveTask={handleTaskMove}
+                onDeleteTask={handleTaskDelete}
               />
             ) : (
               <BoardPlaceholder />
