@@ -30,6 +30,7 @@ import {
   type StatusFilter,
 } from "./my-work-toolbar";
 import { TodayCard } from "./today-card";
+import { DeleteTaskDialog } from "./delete-task-dialog";
 
 export function MyWorkPage() {
   const [view, setView] = useState<MyWorkView>("assigned");
@@ -45,6 +46,10 @@ export function MyWorkPage() {
   const [search, setSearch] = useState("");
   const [tasks, setTasks] = useState<MyWorkTask[]>(demoMyWorkTasks);
 
+  const [taskToDeleteId, setTaskToDeleteId] = useState<string | null>(null);
+
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(() => {
     const initiallySelected = demoMyWorkTasks
       .filter((task) => task.selected)
@@ -52,6 +57,7 @@ export function MyWorkPage() {
 
     return new Set(initiallySelected);
   });
+
   const filteredTasks = useMemo(() => {
     const query = search.trim().toLowerCase();
 
@@ -79,6 +85,11 @@ export function MyWorkPage() {
       );
     });
   }, [tasks, search, status, priority, projectId]);
+
+  const taskToDelete = useMemo(
+    () => tasks.find((task) => task.id === taskToDeleteId),
+    [tasks, taskToDeleteId],
+  );
 
   function handleViewChange(nextView: MyWorkView) {
     setView(nextView);
@@ -201,15 +212,38 @@ export function MyWorkPage() {
   }
 
   function handleTaskDelete(taskId: string) {
+    setTaskToDeleteId(taskId);
+  }
+
+  function confirmTaskDelete() {
+    if (!taskToDeleteId) return;
+
     setTasks((currentTasks) =>
-      currentTasks.filter((task) => task.id !== taskId),
+      currentTasks.filter((task) => task.id !== taskToDeleteId),
     );
 
     setSelectedTaskIds((current) => {
       const next = new Set(current);
-      next.delete(taskId);
+
+      next.delete(taskToDeleteId);
+
       return next;
     });
+
+    setTaskToDeleteId(null);
+  }
+
+  function confirmBulkDelete() {
+    if (selectedTaskIds.size === 0) {
+      return;
+    }
+
+    setTasks((currentTasks) =>
+      currentTasks.filter((task) => !selectedTaskIds.has(task.id)),
+    );
+
+    setSelectedTaskIds(new Set());
+    setBulkDeleteOpen(false);
   }
 
   return (
@@ -267,6 +301,7 @@ export function MyWorkPage() {
               onMarkComplete={handleMarkComplete}
               onChangePriority={handleChangePriority}
               onMoveTasks={handleMoveTasks}
+              onDelete={() => setBulkDeleteOpen(true)}
             />
           </main>
 
@@ -283,6 +318,24 @@ export function MyWorkPage() {
           </aside>
         </div>
       </div>
+      <DeleteTaskDialog
+        open={taskToDeleteId !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setTaskToDeleteId(null);
+          }
+        }}
+        taskKey={taskToDelete?.key}
+        taskTitle={taskToDelete?.title}
+        onConfirm={confirmTaskDelete}
+      />
+
+      <DeleteTaskDialog
+        open={bulkDeleteOpen}
+        onOpenChange={setBulkDeleteOpen}
+        taskCount={selectedTaskIds.size}
+        onConfirm={confirmBulkDelete}
+      />
     </div>
   );
 }
