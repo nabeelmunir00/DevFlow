@@ -15,9 +15,15 @@ import {
 interface MyWorkBoardProps {
   tasks: MyWorkTask[];
   projects: MyWorkProject[];
+
   onMarkComplete: (taskId: string) => void;
+
   onChangePriority: (taskId: string, priority: MyWorkTaskPriority) => void;
+
   onMoveTask: (taskId: string, status: MyWorkTaskStatus) => void;
+
+  onTogglePlan: (taskId: string) => void;
+
   onDeleteTask: (taskId: string) => void;
 }
 
@@ -49,6 +55,7 @@ export function MyWorkBoard({
   onMarkComplete,
   onChangePriority,
   onMoveTask,
+  onTogglePlan,
   onDeleteTask,
 }: MyWorkBoardProps) {
   function getColumnTasks(status: MyWorkBoardColumnStatus) {
@@ -73,6 +80,7 @@ export function MyWorkBoard({
           onMarkComplete={onMarkComplete}
           onChangePriority={onChangePriority}
           onMoveTask={onMoveTask}
+          onTogglePlan={onTogglePlan}
           onDeleteTask={onDeleteTask}
         />
       ))}

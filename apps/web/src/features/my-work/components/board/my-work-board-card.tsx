@@ -3,6 +3,7 @@
 import {
   CalendarMinus,
   CalendarPlus,
+  Check,
   ChevronsDown,
   ChevronsUp,
   Clock3,
@@ -10,6 +11,7 @@ import {
   GripVertical,
   Minus,
   MoreHorizontal,
+  Trash2,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -33,9 +35,13 @@ interface MyWorkBoardCardProps {
   task: MyWorkTask;
   project?: MyWorkProject;
   dragging?: boolean;
+
   onMarkComplete?: (taskId: string) => void;
+
   onChangePriority?: (taskId: string, priority: MyWorkTaskPriority) => void;
+
   onTogglePlan?: (taskId: string) => void;
+
   onDeleteTask?: (taskId: string) => void;
 }
 
@@ -121,33 +127,48 @@ export function MyWorkBoardCard({
             <MoreHorizontal className="size-4" />
           </DropdownMenuTrigger>
 
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuGroup>
               {task.status !== "DONE" && (
                 <DropdownMenuItem onClick={() => onMarkComplete?.(task.id)}>
+                  <Check className="size-4" />
                   Mark complete
                 </DropdownMenuItem>
               )}
 
+              <DropdownMenuItem onClick={() => onTogglePlan?.(task.id)}>
+                {task.planned ? (
+                  <CalendarMinus className="size-4" />
+                ) : (
+                  <CalendarPlus className="size-4" />
+                )}
+
+                {task.planned ? "Remove from plan" : "Add to plan"}
+              </DropdownMenuItem>
+
               <DropdownMenuItem
+                disabled={task.priority === "URGENT"}
                 onClick={() => onChangePriority?.(task.id, "URGENT")}
               >
                 Urgent priority
               </DropdownMenuItem>
 
               <DropdownMenuItem
+                disabled={task.priority === "HIGH"}
                 onClick={() => onChangePriority?.(task.id, "HIGH")}
               >
                 High priority
               </DropdownMenuItem>
 
               <DropdownMenuItem
+                disabled={task.priority === "MEDIUM"}
                 onClick={() => onChangePriority?.(task.id, "MEDIUM")}
               >
                 Medium priority
               </DropdownMenuItem>
 
               <DropdownMenuItem
+                disabled={task.priority === "LOW"}
                 onClick={() => onChangePriority?.(task.id, "LOW")}
               >
                 Low priority
@@ -155,20 +176,12 @@ export function MyWorkBoardCard({
             </DropdownMenuGroup>
 
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => onTogglePlan?.(task.id)}>
-              {task.planned ? (
-                <CalendarMinus className="size-4" />
-              ) : (
-                <CalendarPlus className="size-4" />
-              )}
-
-              {task.planned ? "Remove from plan" : "Add to plan"}
-            </DropdownMenuItem>
 
             <DropdownMenuItem
               variant="destructive"
               onClick={() => onDeleteTask?.(task.id)}
             >
+              <Trash2 className="size-4" />
               Delete
             </DropdownMenuItem>
           </DropdownMenuContent>

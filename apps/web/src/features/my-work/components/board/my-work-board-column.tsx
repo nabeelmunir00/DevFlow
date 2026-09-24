@@ -1,5 +1,7 @@
 "use client";
 
+import type { DragEvent } from "react";
+
 import { Circle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -24,9 +26,15 @@ interface MyWorkBoardColumnProps {
   title: string;
   tasks: MyWorkTask[];
   projects: MyWorkProject[];
+
   onMarkComplete: (taskId: string) => void;
+
   onChangePriority: (taskId: string, priority: MyWorkTaskPriority) => void;
+
   onMoveTask: (taskId: string, status: MyWorkTaskStatus) => void;
+
+  onTogglePlan: (taskId: string) => void;
+
   onDeleteTask: (taskId: string) => void;
 }
 
@@ -45,9 +53,10 @@ export function MyWorkBoardColumn({
   onMarkComplete,
   onChangePriority,
   onMoveTask,
+  onTogglePlan,
   onDeleteTask,
 }: MyWorkBoardColumnProps) {
-  function handleDrop(event: React.DragEvent<HTMLDivElement>) {
+  function handleDrop(event: DragEvent<HTMLDivElement>) {
     event.preventDefault();
 
     const taskId = event.dataTransfer.getData("application/x-devflow-task");
@@ -60,7 +69,10 @@ export function MyWorkBoardColumn({
   return (
     <section
       className="min-w-0 rounded-lg border border-border bg-secondary/20"
-      onDragOver={(event) => event.preventDefault()}
+      onDragOver={(event) => {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "move";
+      }}
       onDrop={handleDrop}
     >
       <div className="flex h-11 items-center gap-2 border-b border-border px-3">
@@ -95,6 +107,7 @@ export function MyWorkBoardColumn({
                 )}
                 onMarkComplete={onMarkComplete}
                 onChangePriority={onChangePriority}
+                onTogglePlan={onTogglePlan}
                 onDeleteTask={onDeleteTask}
               />
             </div>

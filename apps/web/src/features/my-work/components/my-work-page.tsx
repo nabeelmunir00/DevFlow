@@ -347,6 +347,7 @@ export function MyWorkPage() {
                 onMarkComplete={handleTaskMarkComplete}
                 onChangePriority={handleTaskPriorityChange}
                 onMoveTask={handleTaskMove}
+                onTogglePlan={handleToggleTaskPlan}
                 onDeleteTask={handleTaskDelete}
               />
             )}
