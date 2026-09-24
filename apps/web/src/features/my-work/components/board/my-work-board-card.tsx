@@ -1,6 +1,8 @@
 "use client";
 
 import {
+  CalendarMinus,
+  CalendarPlus,
   ChevronsDown,
   ChevronsUp,
   Clock3,
@@ -33,6 +35,7 @@ interface MyWorkBoardCardProps {
   dragging?: boolean;
   onMarkComplete?: (taskId: string) => void;
   onChangePriority?: (taskId: string, priority: MyWorkTaskPriority) => void;
+  onTogglePlan?: (taskId: string) => void;
   onDeleteTask?: (taskId: string) => void;
 }
 
@@ -65,6 +68,7 @@ export function MyWorkBoardCard({
   dragging = false,
   onMarkComplete,
   onChangePriority,
+  onTogglePlan,
   onDeleteTask,
 }: MyWorkBoardCardProps) {
   return (
@@ -151,6 +155,15 @@ export function MyWorkBoardCard({
             </DropdownMenuGroup>
 
             <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => onTogglePlan?.(task.id)}>
+              {task.planned ? (
+                <CalendarMinus className="size-4" />
+              ) : (
+                <CalendarPlus className="size-4" />
+              )}
+
+              {task.planned ? "Remove from plan" : "Add to plan"}
+            </DropdownMenuItem>
 
             <DropdownMenuItem
               variant="destructive"

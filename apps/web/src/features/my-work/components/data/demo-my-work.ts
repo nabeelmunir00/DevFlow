@@ -43,6 +43,7 @@ export const demoMyWorkTasks: MyWorkTask[] = [
     dueLabel: "Sep 12",
     estimate: "4h",
     views: ["assigned"],
+    planned: true,
   },
   {
     id: "task-2",
@@ -56,6 +57,7 @@ export const demoMyWorkTasks: MyWorkTask[] = [
     dueLabel: "Sep 13",
     estimate: "6h",
     views: ["assigned", "following"],
+    planned: true,
   },
 
   // Today
@@ -72,6 +74,7 @@ export const demoMyWorkTasks: MyWorkTask[] = [
     estimate: "6h",
     selected: true,
     views: ["assigned", "created"],
+    planned: true,
   },
   {
     id: "task-4",
@@ -85,6 +88,7 @@ export const demoMyWorkTasks: MyWorkTask[] = [
     dueLabel: "Today",
     estimate: "4h",
     views: ["assigned", "following"],
+    planned: true,
   },
   {
     id: "task-5",
@@ -98,6 +102,7 @@ export const demoMyWorkTasks: MyWorkTask[] = [
     dueLabel: "Today",
     estimate: "3h",
     views: ["assigned"],
+    planned: true,
   },
   {
     id: "task-6",
@@ -111,6 +116,7 @@ export const demoMyWorkTasks: MyWorkTask[] = [
     dueLabel: "Today",
     estimate: "2h",
     views: ["assigned", "created"],
+    planned: true,
   },
 
   // Upcoming
@@ -126,6 +132,7 @@ export const demoMyWorkTasks: MyWorkTask[] = [
     dueLabel: "Sep 16",
     estimate: "4h",
     views: ["assigned"],
+    planned: true,
   },
   {
     id: "task-8",
@@ -139,6 +146,7 @@ export const demoMyWorkTasks: MyWorkTask[] = [
     dueLabel: "Sep 17",
     estimate: "3h",
     views: ["assigned", "following"],
+    planned: false,
   },
   {
     id: "task-9",
@@ -152,6 +160,7 @@ export const demoMyWorkTasks: MyWorkTask[] = [
     dueLabel: "Sep 18",
     estimate: "4h",
     views: ["assigned", "created"],
+    planned: false,
   },
   {
     id: "task-10",
@@ -165,6 +174,7 @@ export const demoMyWorkTasks: MyWorkTask[] = [
     dueLabel: "Sep 19",
     estimate: "2h",
     views: ["assigned"],
+    planned: false,
   },
   {
     id: "task-11",
@@ -178,6 +188,7 @@ export const demoMyWorkTasks: MyWorkTask[] = [
     dueLabel: "Sep 22",
     estimate: "3h",
     views: ["assigned", "following"],
+    planned: false,
   },
 ];
 

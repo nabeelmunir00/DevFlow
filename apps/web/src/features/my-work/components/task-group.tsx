@@ -26,6 +26,7 @@ interface TaskGroupProps {
   onChangePriority: (taskId: string, priority: MyWorkTaskPriority) => void;
 
   onMoveTask: (taskId: string, status: MyWorkTaskStatus) => void;
+  onTogglePlan: (taskId: string) => void;
 
   onDeleteTask: (taskId: string) => void;
 }
@@ -64,6 +65,7 @@ export function TaskGroup({
   onMarkComplete,
   onChangePriority,
   onMoveTask,
+  onTogglePlan,
   onDeleteTask,
 }: TaskGroupProps) {
   const [expanded, setExpanded] = useState(true);
@@ -106,6 +108,7 @@ export function TaskGroup({
             onMarkComplete={onMarkComplete}
             onChangePriority={onChangePriority}
             onMoveTask={onMoveTask}
+            onTogglePlan={onTogglePlan}
             onDeleteTask={onDeleteTask}
           />
         ))}

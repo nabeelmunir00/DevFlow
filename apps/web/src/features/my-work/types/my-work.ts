@@ -36,7 +36,7 @@ export interface MyWorkTask {
   dueDate: string;
   dueLabel: string;
   estimate: string;
-
+  planned: boolean;
   selected?: boolean;
 }
 

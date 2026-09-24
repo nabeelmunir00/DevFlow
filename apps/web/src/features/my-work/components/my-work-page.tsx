@@ -108,6 +108,29 @@ export function MyWorkPage() {
     [tasks],
   );
 
+  const plannedProgress = useMemo(() => {
+    const assignedTasks = tasks.filter((task) =>
+      task.views.includes("assigned"),
+    );
+
+    const plannedTasks = assignedTasks.filter((task) => task.planned);
+
+    const completedTasks = plannedTasks.filter(
+      (task) => task.status === "DONE",
+    );
+
+    const percentage =
+      plannedTasks.length === 0
+        ? 0
+        : Math.round((completedTasks.length / plannedTasks.length) * 100);
+
+    return {
+      completed: completedTasks.length,
+      total: plannedTasks.length,
+      percentage,
+    };
+  }, [tasks]);
+
   function handleViewChange(nextView: MyWorkView) {
     setView(nextView);
     setSelectedTaskIds(new Set());
@@ -258,6 +281,18 @@ export function MyWorkPage() {
     setSelectedTaskIds(new Set());
     setBulkDeleteOpen(false);
   }
+  function handleToggleTaskPlan(taskId: string) {
+    setTasks((currentTasks) =>
+      currentTasks.map((task) =>
+        task.id === taskId
+          ? {
+              ...task,
+              planned: !task.planned,
+            }
+          : task,
+      ),
+    );
+  }
 
   return (
     <div className="min-w-0 flex-1">
@@ -276,9 +311,9 @@ export function MyWorkPage() {
           {/* Main work area */}
           <main className="min-w-0">
             <MyWorkProgress
-              completed={demoMyWorkProgress.completed}
-              total={demoMyWorkProgress.totalPlanned}
-              percentage={demoMyWorkProgress.percentage}
+              completed={plannedProgress.completed}
+              total={plannedProgress.total}
+              percentage={plannedProgress.percentage}
             />
 
             <MyWorkToolbar
@@ -302,6 +337,7 @@ export function MyWorkPage() {
                 onMarkComplete={handleTaskMarkComplete}
                 onChangePriority={handleTaskPriorityChange}
                 onMoveTask={handleTaskMove}
+                onTogglePlan={handleToggleTaskPlan}
                 onDeleteTask={handleTaskDelete}
               />
             ) : (

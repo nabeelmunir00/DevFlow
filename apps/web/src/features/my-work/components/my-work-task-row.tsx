@@ -1,6 +1,8 @@
 "use client";
 
 import {
+  CalendarMinus,
+  CalendarPlus,
   Check,
   ChevronsDown,
   ChevronsUp,
@@ -44,6 +46,7 @@ interface MyWorkTaskRowProps {
   onChangePriority?: (taskId: string, priority: MyWorkTaskPriority) => void;
 
   onMoveTask?: (taskId: string, status: MyWorkTaskStatus) => void;
+  onTogglePlan?: (taskId: string) => void;
 
   onDeleteTask?: (taskId: string) => void;
 }
@@ -123,6 +126,7 @@ export function MyWorkTaskRow({
   onMarkComplete,
   onChangePriority,
   onMoveTask,
+  onTogglePlan,
   onDeleteTask,
 }: MyWorkTaskRowProps) {
   const status = statusConfig[task.status];
@@ -231,6 +235,15 @@ export function MyWorkTaskRow({
                   Mark complete
                 </DropdownMenuItem>
               )}
+              <DropdownMenuItem onClick={() => onTogglePlan?.(task.id)}>
+                {task.planned ? (
+                  <CalendarMinus className="size-4" />
+                ) : (
+                  <CalendarPlus className="size-4" />
+                )}
+
+                {task.planned ? "Remove from plan" : "Add to plan"}
+              </DropdownMenuItem>
 
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger>Change priority</DropdownMenuSubTrigger>

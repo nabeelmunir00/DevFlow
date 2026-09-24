@@ -24,6 +24,7 @@ interface MyWorkTaskListProps {
   onChangePriority: (taskId: string, priority: MyWorkTaskPriority) => void;
 
   onMoveTask: (taskId: string, status: MyWorkTaskStatus) => void;
+  onTogglePlan: (taskId: string) => void;
 
   onDeleteTask: (taskId: string) => void;
 }
@@ -38,6 +39,7 @@ export function MyWorkTaskList({
   onMarkComplete,
   onChangePriority,
   onMoveTask,
+  onTogglePlan,
   onDeleteTask,
 }: MyWorkTaskListProps) {
   const allSelected =
@@ -115,6 +117,7 @@ export function MyWorkTaskList({
             onMarkComplete={onMarkComplete}
             onChangePriority={onChangePriority}
             onMoveTask={onMoveTask}
+            onTogglePlan={onTogglePlan}
             onDeleteTask={onDeleteTask}
           />
         ))
