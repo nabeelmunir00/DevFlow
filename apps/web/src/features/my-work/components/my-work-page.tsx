@@ -219,6 +219,27 @@ export function MyWorkPage() {
     setFocusedTaskId(taskId);
   }
 
+  function handleFocusTaskComplete() {
+    if (!focusedTaskId) return;
+
+    setTasks((currentTasks) =>
+      currentTasks.map((task) =>
+        task.id === focusedTaskId
+          ? {
+              ...task,
+              status: "DONE",
+            }
+          : task,
+      ),
+    );
+
+    setFocusedTaskId(null);
+  }
+
+  function handleStopFocus() {
+    setFocusedTaskId(null);
+  }
+
   function handleTaskMarkComplete(taskId: string) {
     setTasks((currentTasks) =>
       currentTasks.map((task) =>
@@ -371,14 +392,26 @@ export function MyWorkPage() {
                 onDeleteTask={handleTaskDelete}
               />
             )}
-            <BulkTaskActions
-              selectedCount={selectedTaskIds.size}
-              onClearSelection={() => setSelectedTaskIds(new Set())}
-              onMarkComplete={handleMarkComplete}
-              onChangePriority={handleChangePriority}
-              onMoveTasks={handleMoveTasks}
-              onDelete={() => setBulkDeleteOpen(true)}
-            />
+
+            {focusedTask && (
+              <FocusSession
+                task={focusedTask}
+                project={demoMyWorkProjects.find(
+                  (project) => project.id === focusedTask.projectId,
+                )}
+                onComplete={handleFocusTaskComplete}
+                onStop={handleStopFocus}
+              />
+            )}
+            {!focusedTask && (
+              <BulkTaskActions
+                selectedCount={selectedTaskIds.size}
+                onMarkComplete={handleMarkComplete}
+                onChangePriority={handleChangePriority}
+                onMoveTasks={handleMoveTasks}
+                onDelete={() => setBulkDeleteOpen(true)}
+              />
+            )}
           </main>
 
           {/* Right sidebar */}
@@ -394,6 +427,15 @@ export function MyWorkPage() {
           </aside>
         </div>
       </div>
+
+      <StartFocusDialog
+        open={focusDialogOpen}
+        onOpenChange={setFocusDialogOpen}
+        tasks={tasks}
+        projects={demoMyWorkProjects}
+        onStart={handleFocusTaskStart}
+      />
+
       <DeleteTaskDialog
         open={taskToDeleteId !== null}
         onOpenChange={(open) => {
