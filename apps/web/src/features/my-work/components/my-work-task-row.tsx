@@ -1,11 +1,13 @@
 "use client";
 
 import {
+  Check,
   ChevronsDown,
   ChevronsUp,
   Diamond,
   Minus,
   MoreHorizontal,
+  Trash2,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -15,6 +17,10 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
@@ -30,7 +36,16 @@ interface MyWorkTaskRowProps {
   task: MyWorkTask;
   project?: MyWorkProject;
   selected: boolean;
+
   onSelectedChange: (taskId: string, selected: boolean) => void;
+
+  onMarkComplete?: (taskId: string) => void;
+
+  onChangePriority?: (taskId: string, priority: MyWorkTaskPriority) => void;
+
+  onMoveTask?: (taskId: string, status: MyWorkTaskStatus) => void;
+
+  onDeleteTask?: (taskId: string) => void;
 }
 
 const projectAccentClasses: Record<MyWorkProject["accent"], string> = {
@@ -105,6 +120,10 @@ export function MyWorkTaskRow({
   project,
   selected,
   onSelectedChange,
+  onMarkComplete,
+  onChangePriority,
+  onMoveTask,
+  onDeleteTask,
 }: MyWorkTaskRowProps) {
   const status = statusConfig[task.status];
 
@@ -116,7 +135,6 @@ export function MyWorkTaskRow({
         selected ? "bg-primary/10" : "hover:bg-secondary/40",
       )}
     >
-      {/* Selection */}
       <div className="flex h-11 items-center justify-center">
         <Checkbox
           checked={selected}
@@ -127,7 +145,6 @@ export function MyWorkTaskRow({
         />
       </div>
 
-      {/* Task */}
       <div className="flex min-w-0 items-center gap-2 px-2">
         <div className="flex size-5 shrink-0 items-center justify-center">
           <PriorityIcon priority={task.priority} />
@@ -143,7 +160,6 @@ export function MyWorkTaskRow({
         <span className="truncate text-sm text-foreground">{task.title}</span>
       </div>
 
-      {/* Project */}
       <div className="hidden min-w-0 px-2 md:block">
         {project && (
           <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-border bg-secondary/60 px-2 py-1">
@@ -161,7 +177,6 @@ export function MyWorkTaskRow({
         )}
       </div>
 
-      {/* Status */}
       <div className="hidden px-2 md:block">
         <div
           className={cn(
@@ -175,7 +190,6 @@ export function MyWorkTaskRow({
         </div>
       </div>
 
-      {/* Due date */}
       <div className="hidden px-2 md:block">
         <span
           className={cn(
@@ -189,12 +203,10 @@ export function MyWorkTaskRow({
         </span>
       </div>
 
-      {/* Estimate */}
       <div className="hidden px-2 text-xs text-muted-foreground md:block">
         {task.estimate}
       </div>
 
-      {/* Actions */}
       <div className="flex h-11 items-center justify-center">
         <DropdownMenu>
           <DropdownMenuTrigger
@@ -211,16 +223,93 @@ export function MyWorkTaskRow({
             <MoreHorizontal className="size-4" />
           </DropdownMenuTrigger>
 
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuGroup>
-              <DropdownMenuItem>Open task</DropdownMenuItem>
+              {task.status !== "DONE" && (
+                <DropdownMenuItem onClick={() => onMarkComplete?.(task.id)}>
+                  <Check className="size-4" />
+                  Mark complete
+                </DropdownMenuItem>
+              )}
 
-              <DropdownMenuItem>Mark complete</DropdownMenuItem>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>Change priority</DropdownMenuSubTrigger>
 
-              <DropdownMenuItem>Change priority</DropdownMenuItem>
+                <DropdownMenuSubContent>
+                  <DropdownMenuItem
+                    disabled={task.priority === "URGENT"}
+                    onClick={() => onChangePriority?.(task.id, "URGENT")}
+                  >
+                    Urgent
+                  </DropdownMenuItem>
 
-              <DropdownMenuItem>Move task</DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={task.priority === "HIGH"}
+                    onClick={() => onChangePriority?.(task.id, "HIGH")}
+                  >
+                    High
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem
+                    disabled={task.priority === "MEDIUM"}
+                    onClick={() => onChangePriority?.(task.id, "MEDIUM")}
+                  >
+                    Medium
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem
+                    disabled={task.priority === "LOW"}
+                    onClick={() => onChangePriority?.(task.id, "LOW")}
+                  >
+                    Low
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>Move to</DropdownMenuSubTrigger>
+
+                <DropdownMenuSubContent>
+                  <DropdownMenuItem
+                    disabled={task.status === "TODO"}
+                    onClick={() => onMoveTask?.(task.id, "TODO")}
+                  >
+                    Todo
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem
+                    disabled={task.status === "IN_PROGRESS"}
+                    onClick={() => onMoveTask?.(task.id, "IN_PROGRESS")}
+                  >
+                    In progress
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem
+                    disabled={task.status === "IN_REVIEW"}
+                    onClick={() => onMoveTask?.(task.id, "IN_REVIEW")}
+                  >
+                    In review
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem
+                    disabled={task.status === "DONE"}
+                    onClick={() => onMoveTask?.(task.id, "DONE")}
+                  >
+                    Done
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
             </DropdownMenuGroup>
+
+            <DropdownMenuSeparator />
+
+            <DropdownMenuItem
+              variant="destructive"
+              onClick={() => onDeleteTask?.(task.id)}
+            >
+              <Trash2 className="size-4" />
+              Delete
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

@@ -152,6 +152,66 @@ export function MyWorkPage() {
     // Focus mode integration later.
   }
 
+  function handleTaskMarkComplete(taskId: string) {
+    setTasks((currentTasks) =>
+      currentTasks.map((task) =>
+        task.id === taskId
+          ? {
+              ...task,
+              status: "DONE",
+            }
+          : task,
+      ),
+    );
+
+    setSelectedTaskIds((current) => {
+      const next = new Set(current);
+      next.delete(taskId);
+      return next;
+    });
+  }
+
+  function handleTaskPriorityChange(
+    taskId: string,
+    priority: MyWorkTaskPriority,
+  ) {
+    setTasks((currentTasks) =>
+      currentTasks.map((task) =>
+        task.id === taskId
+          ? {
+              ...task,
+              priority,
+            }
+          : task,
+      ),
+    );
+  }
+
+  function handleTaskMove(taskId: string, status: MyWorkTaskStatus) {
+    setTasks((currentTasks) =>
+      currentTasks.map((task) =>
+        task.id === taskId
+          ? {
+              ...task,
+              status,
+            }
+          : task,
+      ),
+    );
+  }
+
+  function handleTaskDelete(taskId: string) {
+    setTasks((currentTasks) =>
+      currentTasks.filter((task) => task.id !== taskId),
+    );
+
+    setSelectedTaskIds((current) => {
+      const next = new Set(current);
+      next.delete(taskId);
+      return next;
+    });
+  }
+
   return (
     <div className="min-w-0 flex-1">
       <div className="mx-auto w-full max-w-screen-2xl px-4 py-5 sm:px-6 lg:px-8">

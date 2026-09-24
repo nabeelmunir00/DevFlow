@@ -2,23 +2,32 @@
 
 import { useState } from "react";
 import { ChevronDown, ChevronRight, Circle } from "lucide-react";
-
 import { cn } from "@/lib/utils";
+import { MyWorkTaskRow } from "./my-work-task-row";
 
 import type {
   MyWorkProject,
   MyWorkTask,
   MyWorkTaskGroup,
+  MyWorkTaskPriority,
+  MyWorkTaskStatus,
 } from "../types/my-work";
-
-import { MyWorkTaskRow } from "./my-work-task-row";
 
 interface TaskGroupProps {
   group: MyWorkTaskGroup;
   tasks: MyWorkTask[];
   projects: MyWorkProject[];
   selectedTaskIds: Set<string>;
+
   onTaskSelectedChange: (taskId: string, selected: boolean) => void;
+
+  onMarkComplete: (taskId: string) => void;
+
+  onChangePriority: (taskId: string, priority: MyWorkTaskPriority) => void;
+
+  onMoveTask: (taskId: string, status: MyWorkTaskStatus) => void;
+
+  onDeleteTask: (taskId: string) => void;
 }
 
 const groupConfig: Record<
@@ -52,6 +61,10 @@ export function TaskGroup({
   projects,
   selectedTaskIds,
   onTaskSelectedChange,
+  onMarkComplete,
+  onChangePriority,
+  onMoveTask,
+  onDeleteTask,
 }: TaskGroupProps) {
   const [expanded, setExpanded] = useState(true);
 
@@ -90,6 +103,10 @@ export function TaskGroup({
             project={projects.find((project) => project.id === task.projectId)}
             selected={selectedTaskIds.has(task.id)}
             onSelectedChange={onTaskSelectedChange}
+            onMarkComplete={onMarkComplete}
+            onChangePriority={onChangePriority}
+            onMoveTask={onMoveTask}
+            onDeleteTask={onDeleteTask}
           />
         ))}
     </div>
