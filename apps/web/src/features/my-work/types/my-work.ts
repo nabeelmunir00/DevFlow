@@ -26,12 +26,17 @@ export interface MyWorkTask {
   key: string;
   title: string;
   projectId: string;
+
+  views: MyWorkView[];
+
   status: MyWorkTaskStatus;
   priority: MyWorkTaskPriority;
   group: MyWorkTaskGroup;
+
   dueDate: string;
   dueLabel: string;
   estimate: string;
+
   selected?: boolean;
 }
 

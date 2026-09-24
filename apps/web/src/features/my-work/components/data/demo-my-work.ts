@@ -42,6 +42,7 @@ export const demoMyWorkTasks: MyWorkTask[] = [
     dueDate: "2026-09-12",
     dueLabel: "Sep 12",
     estimate: "4h",
+    views: ["assigned"],
   },
   {
     id: "task-2",
@@ -54,6 +55,7 @@ export const demoMyWorkTasks: MyWorkTask[] = [
     dueDate: "2026-09-13",
     dueLabel: "Sep 13",
     estimate: "6h",
+    views: ["assigned", "following"],
   },
 
   // Today
@@ -69,6 +71,7 @@ export const demoMyWorkTasks: MyWorkTask[] = [
     dueLabel: "Today",
     estimate: "6h",
     selected: true,
+    views: ["assigned", "created"],
   },
   {
     id: "task-4",
@@ -81,6 +84,7 @@ export const demoMyWorkTasks: MyWorkTask[] = [
     dueDate: "2026-09-16",
     dueLabel: "Today",
     estimate: "4h",
+    views: ["assigned", "following"],
   },
   {
     id: "task-5",
@@ -93,6 +97,7 @@ export const demoMyWorkTasks: MyWorkTask[] = [
     dueDate: "2026-09-16",
     dueLabel: "Today",
     estimate: "3h",
+    views: ["assigned"],
   },
   {
     id: "task-6",
@@ -105,6 +110,7 @@ export const demoMyWorkTasks: MyWorkTask[] = [
     dueDate: "2026-09-16",
     dueLabel: "Today",
     estimate: "2h",
+    views: ["assigned", "created"],
   },
 
   // Upcoming
@@ -119,6 +125,7 @@ export const demoMyWorkTasks: MyWorkTask[] = [
     dueDate: "2026-09-16",
     dueLabel: "Sep 16",
     estimate: "4h",
+    views: ["assigned"],
   },
   {
     id: "task-8",
@@ -131,6 +138,7 @@ export const demoMyWorkTasks: MyWorkTask[] = [
     dueDate: "2026-09-17",
     dueLabel: "Sep 17",
     estimate: "3h",
+    views: ["assigned", "following"],
   },
   {
     id: "task-9",
@@ -143,6 +151,7 @@ export const demoMyWorkTasks: MyWorkTask[] = [
     dueDate: "2026-09-18",
     dueLabel: "Sep 18",
     estimate: "4h",
+    views: ["assigned", "created"],
   },
   {
     id: "task-10",
@@ -155,6 +164,7 @@ export const demoMyWorkTasks: MyWorkTask[] = [
     dueDate: "2026-09-19",
     dueLabel: "Sep 19",
     estimate: "2h",
+    views: ["assigned"],
   },
   {
     id: "task-11",
@@ -167,6 +177,7 @@ export const demoMyWorkTasks: MyWorkTask[] = [
     dueDate: "2026-09-22",
     dueLabel: "Sep 22",
     estimate: "3h",
+    views: ["assigned", "following"],
   },
 ];
 
@@ -207,9 +218,3 @@ export const demoMyWorkProgress: MyWorkProgress = {
   totalPlanned: 7,
   percentage: 43,
 };
-
-export const myWorkTabCounts = {
-  assigned: 11,
-  created: 3,
-  following: 4,
-} as const;
