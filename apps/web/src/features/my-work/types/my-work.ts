@@ -71,3 +71,11 @@ export interface FocusSessionState {
 
   pausedAt: number | null;
 }
+
+export interface FocusSessionState {
+  taskId: string;
+  status: FocusSessionStatus;
+  startedAt: number;
+  accumulatedSeconds: number;
+  pausedAt: number | null;
+}
