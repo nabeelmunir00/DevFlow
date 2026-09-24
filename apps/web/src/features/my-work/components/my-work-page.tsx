@@ -113,6 +113,11 @@ export function MyWorkPage() {
     [tasks],
   );
 
+  const focusedTask = useMemo(
+    () => tasks.find((task) => task.id === focusedTaskId),
+    [tasks, focusedTaskId],
+  );
+
   const plannedProgress = useMemo(() => {
     const assignedTasks = tasks.filter((task) =>
       task.views.includes("assigned"),
@@ -201,7 +206,17 @@ export function MyWorkPage() {
   }
 
   function handleStartFocus() {
-    // Focus mode integration later.
+    setFocusDialogOpen(true);
+  }
+
+  function handleFocusTaskStart(taskId: string) {
+    const task = tasks.find((task) => task.id === taskId);
+
+    if (!task || !task.planned || task.status === "DONE") {
+      return;
+    }
+
+    setFocusedTaskId(taskId);
   }
 
   function handleTaskMarkComplete(taskId: string) {
