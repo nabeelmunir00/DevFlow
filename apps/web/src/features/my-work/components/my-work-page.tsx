@@ -31,6 +31,7 @@ import {
 } from "./my-work-toolbar";
 import { TodayCard } from "./today-card";
 import { DeleteTaskDialog } from "./delete-task-dialog";
+import { MyWorkBoard } from "./board/my-work-board";
 
 export function MyWorkPage() {
   const [view, setView] = useState<MyWorkView>("assigned");
@@ -292,9 +293,15 @@ export function MyWorkPage() {
                 onDeleteTask={handleTaskDelete}
               />
             ) : (
-              <BoardPlaceholder />
+              <MyWorkBoard
+                tasks={filteredTasks}
+                projects={demoMyWorkProjects}
+                onMarkComplete={handleTaskMarkComplete}
+                onChangePriority={handleTaskPriorityChange}
+                onMoveTask={handleTaskMove}
+                onDeleteTask={handleTaskDelete}
+              />
             )}
-
             <BulkTaskActions
               selectedCount={selectedTaskIds.size}
               onClearSelection={() => setSelectedTaskIds(new Set())}
