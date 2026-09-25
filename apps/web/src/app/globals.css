@@ -4,148 +4,213 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* =========================================================
+   DevFlow AI — Design System V2
+   Light Theme
+   ========================================================= */
+
 :root {
-  --background: #f6f6f7;
-  --foreground: #151a1f;
+  /* Core surfaces */
+  --background: #f7f8f5;
+  --foreground: #202924;
 
-  --card: #fdfdfc;
-  --card-foreground: #151a1f;
+  --card: #ffffff;
+  --card-foreground: #202924;
 
-  --popover: #fdfdfc;
-  --popover-foreground: #151a1f;
+  --popover: #ffffff;
+  --popover-foreground: #202924;
 
-  --primary: #564be0;
+  /* Brand / primary */
+  --primary: #176b55;
   --primary-foreground: #ffffff;
 
-  --secondary: #eef0f2;
-  --secondary-foreground: #20262d;
+  /* Secondary surfaces */
+  --secondary: #ecefe9;
+  --secondary-foreground: #202924;
 
-  --muted: #eef1f3;
-  --muted-foreground: #636d78;
+  /* Muted surfaces / metadata */
+  --muted: #ecefe9;
+  --muted-foreground: #65716a;
 
-  --accent: #e9edf1;
-  --accent-foreground: #20262d;
+  /* Selected / active / hover */
+  --accent: #e1eee6;
+  --accent-foreground: #202924;
 
-  --destructive: #c83f4b;
+  /* Semantic feedback */
+  --destructive: #b93832;
   --destructive-foreground: #ffffff;
 
-  --success: #187947;
-  --success-foreground: #07140e;
+  --success: #176b55;
+  --success-foreground: #ffffff;
 
-  --warning: #946600;
-  --warning-foreground: #1c1504;
+  --warning: #a85b12;
+  --warning-foreground: #ffffff;
 
-  --info: #285fb8;
+  /*
+   * The V2 reference does not define a separate blue info token.
+   * Keep informational UI within the brand system.
+   */
+  --info: #176b55;
   --info-foreground: #ffffff;
 
-  --border: #e0e4e8;
-  --input: #d7dce1;
-  --ring: #635bff;
+  /* Controls */
+  --border: #dce2da;
+  --input: #dce2da;
+  --ring: #176b55;
 
-  --chart-1: #8f8aff;
-  --chart-2: #635bff;
-  --chart-3: #564be0;
-  --chart-4: #473bb8;
-  --chart-5: #342b91;
+  /* Explicit interaction token from V2 */
+  --hover: #d5ebdc;
 
-  --sidebar: #f1f3f5;
-  --sidebar-foreground: #151a1f;
+  /* Charts
+     Derived from the V2 brand/semantic palette so charts remain
+     visually consistent with the rest of DevFlow. */
+  --chart-1: #176b55;
+  --chart-2: #3d8b72;
+  --chart-3: #6eaa94;
+  --chart-4: #a85b12;
+  --chart-5: #b93832;
 
-  --sidebar-primary: #564be0;
+  /* Sidebar */
+  --sidebar: #ecefe9;
+  --sidebar-foreground: #202924;
+
+  --sidebar-primary: #176b55;
   --sidebar-primary-foreground: #ffffff;
 
-  --sidebar-accent: #e9edf1;
-  --sidebar-accent-foreground: #20262d;
+  --sidebar-accent: #e1eee6;
+  --sidebar-accent-foreground: #202924;
 
-  --sidebar-border: #e0e4e8;
-  --sidebar-ring: #635bff;
+  --sidebar-border: #dce2da;
+  --sidebar-ring: #176b55;
 
+  /*
+   * Base panel radius.
+   *
+   * V2:
+   * control = 6px
+   * panel   = 8px
+   * sheet   = 12px
+   */
   --radius: 0.5rem;
 }
 
+/* =========================================================
+   DevFlow AI — Design System V2
+   Dark Theme
+   ========================================================= */
+
 .dark {
-  --background: #151a1f;
-  --foreground: #f3f5f8;
+  /* Core surfaces */
+  --background: #111714;
+  --foreground: #edf3ed;
 
-  --card: #1b2127;
-  --card-foreground: #f3f5f8;
+  --card: #19211c;
+  --card-foreground: #edf3ed;
 
-  --popover: #1b2127;
-  --popover-foreground: #f3f5f8;
+  --popover: #19211c;
+  --popover-foreground: #edf3ed;
 
-  --primary: #635bff;
-  --primary-foreground: #ffffff;
+  /* Brand / primary */
+  --primary: #6dd4b1;
+  --primary-foreground: #11271e;
 
-  --secondary: #151c24;
-  --secondary-foreground: #e8ebf0;
+  /* Secondary surfaces */
+  --secondary: #151d18;
+  --secondary-foreground: #edf3ed;
 
-  --muted: #151c24;
-  --muted-foreground: #9da9ba;
+  /* Muted surfaces / metadata */
+  --muted: #151d18;
+  --muted-foreground: #a7b4aa;
 
-  --accent: #18212b;
-  --accent-foreground: #f3f5f8;
+  /* Selected / active */
+  --accent: #203b31;
+  --accent-foreground: #edf3ed;
 
-  --destructive: #e75858;
-  --destructive-foreground: #ffffff;
+  /* Semantic feedback */
+  --destructive: #ff8f86;
+  --destructive-foreground: #27100e;
 
-  --success: #35c985;
-  --success-foreground: #07140e;
+  --success: #6dd4b1;
+  --success-foreground: #11271e;
 
-  --warning: #e7b43a;
-  --warning-foreground: #1c1504;
+  --warning: #eac47a;
+  --warning-foreground: #211a0d;
 
-  --info: #4d8df7;
-  --info-foreground: #ffffff;
+  --info: #6dd4b1;
+  --info-foreground: #11271e;
 
-  --border: #303842;
-  --input: #35404d;
-  --ring: #6873ff;
+  /* Controls */
+  --border: #303e34;
+  --input: #303e34;
+  --ring: #6dd4b1;
 
-  --chart-1: #5965ff;
-  --chart-2: #35c985;
-  --chart-3: #e7b43a;
-  --chart-4: #9365ea;
-  --chart-5: #4d8df7;
+  /* Explicit interaction token from V2 */
+  --hover: #2a493d;
 
-  --sidebar: #171d23;
-  --sidebar-foreground: #cdd4de;
+  /* Charts */
+  --chart-1: #6dd4b1;
+  --chart-2: #8de0c4;
+  --chart-3: #b0ead6;
+  --chart-4: #eac47a;
+  --chart-5: #ff8f86;
 
-  --sidebar-primary: #5965ff;
-  --sidebar-primary-foreground: #ffffff;
+  /* Sidebar */
+  --sidebar: #151d18;
+  --sidebar-foreground: #edf3ed;
 
-  --sidebar-accent: #151e2b;
-  --sidebar-accent-foreground: #f3f5f8;
+  --sidebar-primary: #6dd4b1;
+  --sidebar-primary-foreground: #11271e;
 
-  --sidebar-border: #303842;
-  --sidebar-ring: #6873ff;
+  --sidebar-accent: #203b31;
+  --sidebar-accent-foreground: #edf3ed;
+
+  --sidebar-border: #303e34;
+  --sidebar-ring: #6dd4b1;
 }
 
-@theme inline {
-  --font-sans: var(--font-outfit);
-  --font-mono: var(--font-outfit);
-  --font-heading: var(--font-outfit);
+/* =========================================================
+   Tailwind Theme Mapping
+   ========================================================= */
 
+@theme inline {
+  /* Typography */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+
+  --font-heading: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+
+  --font-mono:
+    var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco,
+    Consolas, monospace;
+
+  /* Core */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
 
+  /* Cards */
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
 
+  /* Popovers */
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
 
+  /* Primary */
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
 
+  /* Secondary */
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
 
+  /* Muted */
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
 
+  /* Accent */
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
 
+  /* Semantic */
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
 
@@ -158,16 +223,22 @@
   --color-info: var(--info);
   --color-info-foreground: var(--info-foreground);
 
+  /* Interaction */
+  --color-hover: var(--hover);
+
+  /* Controls */
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
 
+  /* Charts */
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
 
+  /* Sidebar */
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
 
@@ -180,18 +251,28 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
+  /* Radius
+     V2:
+     control = 6px
+     panel   = 8px
+     sheet   = 12px
+  */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 0.75rem;
+  --radius-3xl: 0.75rem;
+  --radius-4xl: 0.75rem;
 }
+
+/* =========================================================
+   Base
+   ========================================================= */
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
 
   html {
@@ -202,9 +283,15 @@
   body {
     margin: 0;
     min-width: 320px;
+
     background: var(--background);
     color: var(--foreground);
+
     font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+
+    font-size: 14px;
+    line-height: 20px;
+
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -222,14 +309,25 @@
     cursor: pointer;
   }
 
+  button:disabled,
+  input:disabled,
+  textarea:disabled,
+  select:disabled {
+    cursor: not-allowed;
+  }
+
   ::selection {
-    background: color-mix(in srgb, var(--primary) 30%, transparent);
+    background: color-mix(in srgb, var(--primary) 22%, transparent);
     color: var(--foreground);
   }
 
+  /*
+   * Design System V2:
+   * 2px focus ring + 2px offset.
+   */
   :focus-visible {
     outline: 2px solid var(--ring);
-    outline-offset: 3px;
+    outline-offset: 2px;
   }
 
   select option {
@@ -237,6 +335,129 @@
     color: var(--foreground);
   }
 }
+
+/* =========================================================
+   Typography
+   ========================================================= */
+
+@layer utilities {
+  /*
+   * Page title
+   * 32 / 40 / 600
+   */
+  .text-page-title {
+    font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+
+    font-size: 2rem;
+    line-height: 2.5rem;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+  }
+
+  /*
+   * Section title
+   * 20 / 28 / 600
+   */
+  .text-section-title {
+    font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+
+  /*
+   * Body / control
+   * 14 / 20 / 400
+   */
+  .text-body {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 400;
+  }
+
+  /*
+   * Medium body/control
+   * 14 / 20 / 500
+   */
+  .text-control {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+  }
+
+  /*
+   * Label / metadata
+   * 12 / 16 / 500
+   */
+  .text-meta {
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 500;
+  }
+
+  /*
+   * Code / task keys / IDs
+   * 12 / 18 / 400
+   */
+  .text-code {
+    font-family:
+      var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco,
+      Consolas, monospace;
+
+    font-size: 0.75rem;
+    line-height: 1.125rem;
+    font-weight: 400;
+  }
+}
+
+/* =========================================================
+   Interaction Helpers
+   ========================================================= */
+
+@layer utilities {
+  /*
+   * Standard V2 interactive transition:
+   * 120–180ms
+   */
+  .transition-ui {
+    transition-property:
+      color, background-color, border-color, opacity, box-shadow, transform;
+
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  /*
+   * Use for custom interactive elements where
+   * shadcn's accent hover isn't appropriate.
+   */
+  .hover-surface:hover {
+    background: var(--hover);
+  }
+}
+
+/* =========================================================
+   Responsive Typography
+   ========================================================= */
+
+@media (max-width: 767px) {
+  /*
+   * V2 requires 16 / 24 for mobile inputs.
+   * This also prevents unwanted iOS input zoom.
+   */
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+    line-height: 24px;
+  }
+}
+
+/* =========================================================
+   Reduced Motion
+   ========================================================= */
 
 @media (prefers-reduced-motion: reduce) {
   html {
@@ -246,7 +467,9 @@
   *,
   *::before,
   *::after {
+    scroll-behavior: auto !important;
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }

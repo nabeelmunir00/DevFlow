@@ -10,14 +10,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MyWorkTaskStatus } from "../types/my-work";
+import { MyWorkTaskPriority, MyWorkTaskStatus } from "../types/my-work";
 
 interface BulkTaskActionsProps {
   selectedCount: number;
-  onClearSelection: () => void;
+
   onMarkComplete?: () => void;
-  onChangePriority?: (priority: "URGENT" | "HIGH" | "MEDIUM" | "LOW") => void;
+
+  onChangePriority?: (priority: MyWorkTaskPriority) => void;
+
   onMoveTasks?: (status: MyWorkTaskStatus) => void;
+
   onDelete?: () => void;
 }
 

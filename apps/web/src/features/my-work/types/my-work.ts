@@ -59,3 +59,23 @@ export interface MyWorkProgress {
   totalPlanned: number;
   percentage: number;
 }
+
+export type FocusSessionStatus = "ACTIVE" | "PAUSED";
+
+export interface FocusSessionState {
+  taskId: string;
+  status: FocusSessionStatus;
+
+  startedAt: number;
+  accumulatedSeconds: number;
+
+  pausedAt: number | null;
+}
+
+export interface FocusSessionState {
+  taskId: string;
+  status: FocusSessionStatus;
+  startedAt: number;
+  accumulatedSeconds: number;
+  pausedAt: number | null;
+}
