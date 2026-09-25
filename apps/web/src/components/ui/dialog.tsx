@@ -31,9 +31,10 @@ function DialogOverlay({
       data-slot="dialog-overlay"
       className={cn(
         [
-          "fixed inset-0 isolate z-50 bg-black/60",
+          "fixed inset-0 isolate z-50",
+          "bg-black/45",
           "supports-backdrop-filter:backdrop-blur-[2px]",
-          "duration-150",
+          "duration-150 ease-out",
           "data-open:animate-in data-open:fade-in-0",
           "data-closed:animate-out data-closed:fade-out-0",
         ].join(" "),
@@ -61,15 +62,22 @@ function DialogContent({
         className={cn(
           [
             "fixed top-1/2 left-1/2 z-50",
-            "grid w-full max-w-[calc(100%-2rem)]",
+            "grid w-[calc(100%-2rem)]",
+            "max-h-[calc(100dvh-2rem)]",
+            "max-w-lg",
             "-translate-x-1/2 -translate-y-1/2",
-            "gap-5 rounded-lg border border-border",
-            "bg-popover p-5 text-sm text-popover-foreground",
+            "gap-5 overflow-y-auto",
+            "rounded-xl border border-border",
+            "bg-popover p-5",
+            "text-sm text-popover-foreground",
             "shadow-lg outline-none",
-            "sm:max-w-md",
-            "duration-150",
-            "data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95",
-            "data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+            "duration-150 ease-out",
+            "data-open:animate-in",
+            "data-open:fade-in-0",
+            "data-open:zoom-in-95",
+            "data-closed:animate-out",
+            "data-closed:fade-out-0",
+            "data-closed:zoom-out-95",
           ].join(" "),
           className,
         )}
@@ -84,7 +92,12 @@ function DialogContent({
               <Button
                 variant="ghost"
                 size="icon-sm"
-                className="absolute top-3 right-3"
+                className={[
+                  "absolute top-3 right-3",
+                  "text-muted-foreground",
+                  "hover:text-foreground",
+                ].join(" ")}
+                aria-label="Close dialog"
               />
             }
           >
@@ -101,7 +114,7 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="dialog-header"
-      className={cn("flex flex-col gap-1.5", className)}
+      className={cn(["flex flex-col gap-1", "pr-8"].join(" "), className)}
       {...props}
     />
   );
@@ -119,7 +132,11 @@ function DialogFooter({
     <div
       data-slot="dialog-footer"
       className={cn(
-        "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
+        [
+          "flex flex-col-reverse gap-2",
+          "pt-1",
+          "sm:flex-row sm:items-center sm:justify-end",
+        ].join(" "),
         className,
       )}
       {...props}
@@ -127,7 +144,7 @@ function DialogFooter({
       {children}
 
       {showCloseButton && (
-        <DialogPrimitive.Close render={<Button variant="outline" />}>
+        <DialogPrimitive.Close render={<Button variant="secondary" />}>
           Close
         </DialogPrimitive.Close>
       )}
@@ -140,7 +157,12 @@ function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
     <DialogPrimitive.Title
       data-slot="dialog-title"
       className={cn(
-        "font-heading text-base font-semibold leading-none",
+        [
+          "font-heading",
+          "text-base font-semibold leading-6",
+          "tracking-tight",
+          "text-popover-foreground",
+        ].join(" "),
         className,
       )}
       {...props}
