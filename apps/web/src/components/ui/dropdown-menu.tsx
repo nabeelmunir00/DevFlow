@@ -42,17 +42,29 @@ function DropdownMenuContent({
           data-slot="dropdown-menu-content"
           className={cn(
             [
-              "z-50 max-h-(--available-height)",
+              "z-50",
+              "max-h-(--available-height)",
               "w-(--anchor-width) min-w-44",
               "origin-(--transform-origin)",
               "overflow-x-hidden overflow-y-auto",
+
               "rounded-md border border-border",
-              "bg-popover p-1 text-popover-foreground",
+              "bg-popover p-1",
+              "text-popover-foreground",
+
               "shadow-lg outline-none",
-              "duration-100",
-              "data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95",
-              "data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+
+              "duration-150 ease-out",
+
+              "data-open:animate-in",
+              "data-open:fade-in-0",
+              "data-open:zoom-in-95",
+
+              "data-closed:animate-out",
+              "data-closed:fade-out-0",
+              "data-closed:zoom-out-95",
               "data-closed:overflow-hidden",
+
               "data-[side=bottom]:slide-in-from-top-1",
               "data-[side=top]:slide-in-from-bottom-1",
               "data-[side=left]:slide-in-from-right-1",
@@ -85,7 +97,12 @@ function DropdownMenuLabel({
       data-slot="dropdown-menu-label"
       data-inset={inset}
       className={cn(
-        "px-2 py-1.5 text-xs font-medium text-muted-foreground data-inset:pl-8",
+        [
+          "px-2 py-1.5",
+          "text-xs font-medium leading-4",
+          "text-muted-foreground",
+          "data-inset:pl-8",
+        ].join(" "),
         className,
       )}
       {...props}
@@ -109,16 +126,36 @@ function DropdownMenuItem({
       data-variant={variant}
       className={cn(
         [
-          "group/dropdown-menu-item relative flex cursor-default items-center gap-2",
-          "rounded-sm px-2 py-1.5",
-          "text-sm outline-none select-none",
-          "focus:bg-accent focus:text-accent-foreground",
+          "group/dropdown-menu-item",
+          "relative flex min-h-8 w-full",
+          "cursor-default items-center gap-2",
+
+          "rounded-md px-2 py-1.5",
+
+          "text-sm leading-5",
+          "text-popover-foreground",
+
+          "outline-none select-none",
+
+          "transition-colors",
+          "duration-150 ease-out",
+
+          "focus:bg-hover",
+          "focus:text-foreground",
+
           "data-inset:pl-8",
-          "data-disabled:pointer-events-none data-disabled:opacity-50",
+
+          "data-disabled:pointer-events-none",
+          "data-disabled:text-muted-foreground",
+          "data-disabled:opacity-50",
+
           "data-[variant=destructive]:text-destructive",
           "data-[variant=destructive]:focus:bg-destructive/10",
           "data-[variant=destructive]:focus:text-destructive",
-          "[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+
+          "[&_svg]:pointer-events-none",
+          "[&_svg]:size-4",
+          "[&_svg]:shrink-0",
         ].join(" "),
         className,
       )}
@@ -145,20 +182,44 @@ function DropdownMenuSubTrigger({
       data-inset={inset}
       className={cn(
         [
-          "flex cursor-default items-center gap-2",
-          "rounded-sm px-2 py-1.5 text-sm",
+          "flex min-h-8 w-full",
+          "cursor-default items-center gap-2",
+
+          "rounded-md px-2 py-1.5",
+
+          "text-sm leading-5",
+          "text-popover-foreground",
+
           "outline-none select-none",
-          "focus:bg-accent focus:text-accent-foreground",
-          "data-popup-open:bg-accent data-popup-open:text-accent-foreground",
+
+          "transition-colors",
+          "duration-150 ease-out",
+
+          "focus:bg-hover",
+          "focus:text-foreground",
+
+          "data-popup-open:bg-accent",
+          "data-popup-open:text-accent-foreground",
+
           "data-inset:pl-8",
-          "[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+
+          "data-disabled:pointer-events-none",
+          "data-disabled:opacity-50",
+
+          "[&_svg]:pointer-events-none",
+          "[&_svg]:size-4",
+          "[&_svg]:shrink-0",
         ].join(" "),
         className,
       )}
       {...props}
     >
       {children}
-      <ChevronRightIcon className="ml-auto" />
+
+      <ChevronRightIcon
+        className="ml-auto text-muted-foreground"
+        strokeWidth={1.75}
+      />
     </MenuPrimitive.SubmenuTrigger>
   );
 }
@@ -200,12 +261,27 @@ function DropdownMenuCheckboxItem({
       checked={checked}
       className={cn(
         [
-          "relative flex cursor-default items-center gap-2",
-          "rounded-sm py-1.5 pr-8 pl-2",
-          "text-sm outline-none select-none",
-          "focus:bg-accent focus:text-accent-foreground",
+          "relative flex min-h-8 w-full",
+          "cursor-default items-center gap-2",
+
+          "rounded-md py-1.5 pr-8 pl-2",
+
+          "text-sm leading-5",
+          "text-popover-foreground",
+
+          "outline-none select-none",
+
+          "transition-colors",
+          "duration-150 ease-out",
+
+          "focus:bg-hover",
+          "focus:text-foreground",
+
           "data-inset:pl-8",
-          "data-disabled:pointer-events-none data-disabled:opacity-50",
+
+          "data-disabled:pointer-events-none",
+          "data-disabled:text-muted-foreground",
+          "data-disabled:opacity-50",
         ].join(" "),
         className,
       )}
@@ -215,10 +291,15 @@ function DropdownMenuCheckboxItem({
 
       <span
         data-slot="dropdown-menu-checkbox-item-indicator"
-        className="pointer-events-none absolute right-2 flex size-4 items-center justify-center"
+        className={[
+          "pointer-events-none",
+          "absolute right-2",
+          "flex size-4 items-center justify-center",
+          "text-primary",
+        ].join(" ")}
       >
         <MenuPrimitive.CheckboxItemIndicator>
-          <CheckIcon className="size-4" />
+          <CheckIcon className="size-4" strokeWidth={1.75} />
         </MenuPrimitive.CheckboxItemIndicator>
       </span>
     </MenuPrimitive.CheckboxItem>
@@ -248,12 +329,27 @@ function DropdownMenuRadioItem({
       data-inset={inset}
       className={cn(
         [
-          "relative flex cursor-default items-center gap-2",
-          "rounded-sm py-1.5 pr-8 pl-2",
-          "text-sm outline-none select-none",
-          "focus:bg-accent focus:text-accent-foreground",
+          "relative flex min-h-8 w-full",
+          "cursor-default items-center gap-2",
+
+          "rounded-md py-1.5 pr-8 pl-2",
+
+          "text-sm leading-5",
+          "text-popover-foreground",
+
+          "outline-none select-none",
+
+          "transition-colors",
+          "duration-150 ease-out",
+
+          "focus:bg-hover",
+          "focus:text-foreground",
+
           "data-inset:pl-8",
-          "data-disabled:pointer-events-none data-disabled:opacity-50",
+
+          "data-disabled:pointer-events-none",
+          "data-disabled:text-muted-foreground",
+          "data-disabled:opacity-50",
         ].join(" "),
         className,
       )}
@@ -263,10 +359,15 @@ function DropdownMenuRadioItem({
 
       <span
         data-slot="dropdown-menu-radio-item-indicator"
-        className="pointer-events-none absolute right-2 flex size-4 items-center justify-center"
+        className={[
+          "pointer-events-none",
+          "absolute right-2",
+          "flex size-4 items-center justify-center",
+          "text-primary",
+        ].join(" ")}
       >
         <MenuPrimitive.RadioItemIndicator>
-          <CheckIcon className="size-4" />
+          <CheckIcon className="size-4" strokeWidth={1.75} />
         </MenuPrimitive.RadioItemIndicator>
       </span>
     </MenuPrimitive.RadioItem>
@@ -294,7 +395,12 @@ function DropdownMenuShortcut({
     <span
       data-slot="dropdown-menu-shortcut"
       className={cn(
-        "ml-auto font-mono text-[11px] text-muted-foreground",
+        [
+          "ml-auto",
+          "font-mono text-[11px] leading-4",
+          "text-muted-foreground",
+          "group-focus/dropdown-menu-item:text-foreground",
+        ].join(" "),
         className,
       )}
       {...props}
