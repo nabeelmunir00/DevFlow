@@ -12,7 +12,6 @@ import {
   BriefcaseBusiness,
   ChartNoAxesColumn,
   ChevronDown,
-  ChevronLeft,
   Folder,
   House,
   Settings,
@@ -44,6 +43,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarSeparator,
+  SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
 
 import { assets } from "@/assets/assets";
@@ -175,7 +176,7 @@ export function isWorkspaceRouteActive(pathname: string, href: string) {
 
 function NavigationIcon({ icon }: { icon: NavigationIcon }) {
   const iconProps = {
-    className: "size-4.5 shrink-0",
+    className: "size-4 shrink-0",
     strokeWidth: 1.75,
     "aria-hidden": true as const,
   };
@@ -203,7 +204,7 @@ function NavigationIcon({ icon }: { icon: NavigationIcon }) {
       return (
         <Icon
           icon="mdi:github"
-          className="size-4.5 shrink-0"
+          className="size-4 shrink-0"
           aria-hidden="true"
         />
       );
@@ -231,70 +232,74 @@ function NavigationIcon({ icon }: { icon: NavigationIcon }) {
 interface NavigationMenuProps {
   items: NavigationItem[];
   pathname: string;
+  collapsed: boolean;
   onNavigate?: () => void;
 }
 
-function NavigationMenu({ items, pathname, onNavigate }: NavigationMenuProps) {
+function NavigationMenu({
+  items,
+  pathname,
+  collapsed,
+  onNavigate,
+}: NavigationMenuProps) {
   return (
     <SidebarMenu className="gap-0.5">
       {items.map((item) => {
         const href = getWorkspaceHref(item.href);
-
         const active = isWorkspaceRouteActive(pathname, item.href);
 
         return (
           <SidebarMenuItem key={item.label} className="relative">
-            {/* Active left indicator */}
+            {/* Active indicator */}
             {active ? (
               <span
                 aria-hidden="true"
-                className="absolute top-1/2 -left-0 z-10 h-8 w-0.5 -translate-y-1/2 rounded-r-full bg-primary"
+                className={cn(
+                  "absolute top-1/2 z-10 w-0.5 -translate-y-1/2 rounded-r-full bg-primary",
+                  collapsed ? "-left-0 h-7" : "-left-0 h-8",
+                )}
               />
             ) : null}
 
             <SidebarMenuButton
               tooltip={item.label}
               isActive={active}
-              render={<Link href={href} onClick={onNavigate} />}
+              render={
+                <Link
+                  href={href}
+                  onClick={onNavigate}
+                  aria-label={collapsed ? item.label : undefined}
+                />
+              }
               className={cn(
-                [
-                  "h-9 gap-3",
-                  "rounded-md px-2.5",
+                "relative h-9 rounded-md text-sm font-normal",
+                "text-sidebar-foreground/75",
+                "transition-colors duration-150 ease-out",
+                "hover:bg-hover hover:text-sidebar-foreground",
+                "data-[active=true]:bg-accent",
+                "data-[active=true]:font-medium",
+                "data-[active=true]:text-primary",
 
-                  "text-sm font-normal",
-                  "text-sidebar-foreground/75",
-
-                  "transition-colors",
-                  "duration-150 ease-out",
-
-                  "hover:bg-hover",
-                  "hover:text-sidebar-foreground",
-
-                  "data-[active=true]:bg-accent",
-                  "data-[active=true]:font-medium",
-                  "data-[active=true]:text-primary",
-                ].join(" "),
+                collapsed ? "justify-center gap-0 px-0" : "gap-3 px-2.5",
               )}
             >
               <NavigationIcon icon={item.icon} />
 
-              <span className="min-w-0 flex-1 truncate">{item.label}</span>
+              {!collapsed ? (
+                <>
+                  <span className="min-w-0 flex-1 truncate">{item.label}</span>
 
-              {item.badge ? (
+                  {item.badge ? (
+                    <span className="ml-auto flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground">
+                      {item.badge}
+                    </span>
+                  ) : null}
+                </>
+              ) : item.badge ? (
                 <span
-                  className={cn(
-                    [
-                      "ml-auto flex size-5 shrink-0",
-                      "items-center justify-center",
-                      "rounded-full",
-                      "bg-primary",
-                      "text-[11px] font-semibold",
-                      "text-primary-foreground",
-                    ].join(" "),
-                  )}
-                >
-                  {item.badge}
-                </span>
+                  aria-label={`${item.badge} notifications`}
+                  className="absolute top-1.5 right-1.5 size-1.5 rounded-full bg-primary"
+                />
               ) : null}
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -311,7 +316,12 @@ export function WorkspaceSidebarContent({
 }: WorkspaceSidebarContentProps) {
   const pathname = usePathname();
 
+  const { state } = useSidebar();
+
   const isSheet = mode === "sheet";
+
+  // Sheet always shows the full sidebar.
+  const collapsed = !isSheet && state === "collapsed";
 
   const userInitials = getInitials(user.name || user.email) || "U";
 
@@ -325,117 +335,183 @@ export function WorkspaceSidebarContent({
           BRAND
       ================================================= */}
 
-      <SidebarHeader className="shrink-0 gap-0 border-b border-sidebar-border px-3 py-0">
-        <div className="flex h-16 items-center">
-          <Link
-            href="/workspace"
-            onClick={onNavigate}
-            aria-label="DevFlow home"
-            className="flex min-w-0 flex-1 items-center gap-2.5"
-          >
-            <Image
-              src={assets.newLogo}
-              alt="DevFlow"
-              width={32}
-              height={32}
-              priority
-              className="size-8 shrink-0 object-contain"
+      <SidebarHeader
+        className={cn(
+          "shrink-0 gap-0 border-b border-sidebar-border py-0",
+          collapsed ? "px-2" : "px-3",
+        )}
+      >
+        <div
+          className={cn(
+            "flex h-16 items-center",
+            collapsed ? "justify-center" : "justify-between",
+          )}
+        >
+          {!collapsed ? (
+            <>
+              <Link
+                href="/workspace"
+                onClick={onNavigate}
+                aria-label="DevFlow home"
+                className="flex min-w-0 flex-1 items-center gap-2.5"
+              >
+                <Image
+                  src={assets.newLogo}
+                  alt="DevFlow"
+                  width={32}
+                  height={32}
+                  priority
+                  className="size-8 shrink-0 object-contain"
+                />
+
+                <div className="flex min-w-0 items-start">
+                  <span className="truncate font-heading text-lg font-semibold tracking-tight text-sidebar-foreground">
+                    DevFlow
+                  </span>
+
+                  <span className="mt-0.5 ml-1 text-[10px] font-medium text-muted-foreground">
+                    AI
+                  </span>
+                </div>
+              </Link>
+
+              {!isSheet ? (
+                <SidebarTrigger className="ml-2 size-8 shrink-0 text-muted-foreground hover:bg-hover hover:text-foreground" />
+              ) : null}
+            </>
+          ) : (
+            <SidebarTrigger
+              aria-label="Expand sidebar"
+              className="size-8 shrink-0 text-muted-foreground hover:bg-hover hover:text-foreground"
             />
-
-            <div className="flex min-w-0 items-start">
-              <span className="truncate font-heading text-lg font-semibold tracking-tight text-sidebar-foreground">
-                DevFlow
-              </span>
-
-              <span className="mt-0.5 ml-1 text-[10px] font-medium text-muted-foreground">
-                AI
-              </span>
-            </div>
-          </Link>
-
-          {!isSheet ? (
-            <button
-              type="button"
-              aria-label="Collapse sidebar"
-              className="flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors duration-150 hover:bg-hover hover:text-foreground"
-            >
-              <ChevronLeft
-                className="size-4"
-                strokeWidth={1.75}
-                aria-hidden="true"
-              />
-            </button>
-          ) : null}
+          )}
         </div>
 
         {/* ==============================================
             WORKSPACE SWITCHER
         =============================================== */}
 
-        <DropdownMenu>
-          <SidebarMenu className="pb-3">
-            <SidebarMenuItem>
-              <DropdownMenuTrigger
-                render={
-                  <SidebarMenuButton
-                    size="lg"
-                    tooltip={workspaceName}
-                    className={[
-                      "h-10 rounded-md px-2",
-                      "data-[state=open]:bg-hover",
-                      "data-[state=open]:text-sidebar-foreground",
-                    ].join(" ")}
+        {!collapsed ? (
+          <DropdownMenu>
+            <SidebarMenu className="pb-3">
+              <SidebarMenuItem>
+                <DropdownMenuTrigger
+                  render={
+                    <SidebarMenuButton
+                      size="lg"
+                      tooltip={workspaceName}
+                      className={[
+                        "h-10 rounded-md px-2",
+                        "data-[state=open]:bg-hover",
+                        "data-[state=open]:text-sidebar-foreground",
+                      ].join(" ")}
+                    />
+                  }
+                >
+                  <BriefcaseBusiness
+                    className="size-4 shrink-0 text-muted-foreground"
+                    strokeWidth={1.75}
+                    aria-hidden="true"
                   />
-                }
-              >
-                <BriefcaseBusiness
-                  className="size-4.5 shrink-0 text-muted-foreground"
-                  strokeWidth={1.75}
-                  aria-hidden="true"
-                />
 
-                <span className="min-w-0 flex-1 truncate text-sm font-medium">
-                  {workspaceName}
-                </span>
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium">
+                    {workspaceName}
+                  </span>
 
-                <ChevronDown
-                  className="size-4 shrink-0 text-muted-foreground"
-                  strokeWidth={1.75}
-                  aria-hidden="true"
-                />
-              </DropdownMenuTrigger>
-            </SidebarMenuItem>
-          </SidebarMenu>
+                  <ChevronDown
+                    className="size-4 shrink-0 text-muted-foreground"
+                    strokeWidth={1.75}
+                    aria-hidden="true"
+                  />
+                </DropdownMenuTrigger>
+              </SidebarMenuItem>
+            </SidebarMenu>
 
-          <DropdownMenuContent
-            align="start"
-            side={dropdownSide}
-            sideOffset={8}
-            className="min-w-56"
-          >
-            <DropdownMenuGroup>
-              <DropdownMenuLabel>Workspace</DropdownMenuLabel>
+            <DropdownMenuContent
+              align="start"
+              side={dropdownSide}
+              sideOffset={8}
+              className="min-w-56"
+            >
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>Workspace</DropdownMenuLabel>
 
-              <DropdownMenuItem
-                render={<Link href="/select-workspace" onClick={onNavigate} />}
-              >
-                <BriefcaseBusiness className="size-4" strokeWidth={1.75} />
+                <DropdownMenuItem
+                  render={
+                    <Link href="/select-workspace" onClick={onNavigate} />
+                  }
+                >
+                  <BriefcaseBusiness className="size-4" strokeWidth={1.75} />
 
-                <span>Switch workspace</span>
-              </DropdownMenuItem>
+                  <span>Switch workspace</span>
+                </DropdownMenuItem>
 
-              <DropdownMenuItem
-                render={
-                  <Link href="/workspace/settings" onClick={onNavigate} />
-                }
-              >
-                <Settings className="size-4" strokeWidth={1.75} />
+                <DropdownMenuItem
+                  render={
+                    <Link href="/workspace/settings" onClick={onNavigate} />
+                  }
+                >
+                  <Settings className="size-4" strokeWidth={1.75} />
 
-                <span>Workspace settings</span>
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
+                  <span>Workspace settings</span>
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <DropdownMenu>
+            <SidebarMenu className="pb-3">
+              <SidebarMenuItem>
+                <DropdownMenuTrigger
+                  render={
+                    <SidebarMenuButton
+                      tooltip={workspaceName}
+                      aria-label={workspaceName}
+                      className="h-9 justify-center gap-0 rounded-md px-0 data-[state=open]:bg-hover"
+                    />
+                  }
+                >
+                  <BriefcaseBusiness
+                    className="size-4 shrink-0"
+                    strokeWidth={1.75}
+                    aria-hidden="true"
+                  />
+                </DropdownMenuTrigger>
+              </SidebarMenuItem>
+            </SidebarMenu>
+
+            <DropdownMenuContent
+              align="start"
+              side="right"
+              sideOffset={8}
+              className="min-w-56"
+            >
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>{workspaceName}</DropdownMenuLabel>
+
+                <DropdownMenuItem
+                  render={
+                    <Link href="/select-workspace" onClick={onNavigate} />
+                  }
+                >
+                  <BriefcaseBusiness className="size-4" strokeWidth={1.75} />
+
+                  <span>Switch workspace</span>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  render={
+                    <Link href="/workspace/settings" onClick={onNavigate} />
+                  }
+                >
+                  <Settings className="size-4" strokeWidth={1.75} />
+
+                  <span>Workspace settings</span>
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </SidebarHeader>
 
       {/* ================================================
@@ -443,11 +519,12 @@ export function WorkspaceSidebarContent({
       ================================================= */}
 
       <SidebarContent className="min-h-0">
-        <SidebarGroup className="px-3 py-3">
+        <SidebarGroup className={cn("py-3", collapsed ? "px-2" : "px-3")}>
           <SidebarGroupContent>
             <NavigationMenu
               items={mainNavigation}
               pathname={pathname}
+              collapsed={collapsed}
               onNavigate={onNavigate}
             />
           </SidebarGroupContent>
@@ -458,12 +535,15 @@ export function WorkspaceSidebarContent({
           FOOTER NAVIGATION
       ================================================= */}
 
-      <SidebarFooter className="shrink-0 gap-0 px-3 pb-3">
-        <SidebarSeparator className="mx-0 mb-3" />
+      <SidebarFooter
+        className={cn("shrink-0 gap-0 pb-3", collapsed ? "px-2" : "px-3")}
+      >
+        <SidebarSeparator className={cn("mb-3", collapsed ? "mx-0" : "mx-0")} />
 
         <NavigationMenu
           items={secondaryNavigation}
           pathname={pathname}
+          collapsed={collapsed}
           onNavigate={onNavigate}
         />
 
@@ -481,43 +561,53 @@ export function WorkspaceSidebarContent({
                   <SidebarMenuButton
                     size="lg"
                     tooltip={user.name}
-                    className={[
-                      "h-12 rounded-md px-2",
-                      "data-[state=open]:bg-hover",
-                      "data-[state=open]:text-sidebar-foreground",
-                    ].join(" ")}
+                    aria-label={
+                      collapsed ? `Open ${user.name} menu` : undefined
+                    }
+                    className={cn(
+                      "rounded-md data-[state=open]:bg-hover data-[state=open]:text-sidebar-foreground",
+                      collapsed
+                        ? "h-10 justify-center gap-0 px-0"
+                        : "h-12 px-2",
+                    )}
                   />
                 }
               >
-                <Avatar className="size-9 shrink-0">
+                <Avatar
+                  className={cn("shrink-0", collapsed ? "size-7" : "size-9")}
+                >
                   <AvatarImage src={user.imageUrl} alt={user.name} />
 
-                  <AvatarFallback className="text-xs font-medium">
+                  <AvatarFallback className="bg-muted text-xs font-medium text-foreground">
                     {userInitials}
                   </AvatarFallback>
                 </Avatar>
 
-                <div className="grid min-w-0 flex-1 text-left leading-tight">
-                  <span className="truncate text-sm font-medium text-sidebar-foreground">
-                    {user.name}
-                  </span>
+                {!collapsed ? (
+                  <>
+                    <div className="grid min-w-0 flex-1 text-left leading-tight">
+                      <span className="truncate text-sm font-medium text-sidebar-foreground">
+                        {user.name}
+                      </span>
 
-                  <span className="truncate text-xs text-muted-foreground">
-                    {user.email}
-                  </span>
-                </div>
+                      <span className="truncate text-xs text-muted-foreground">
+                        {user.email}
+                      </span>
+                    </div>
 
-                <ChevronDown
-                  className="size-4 shrink-0 text-muted-foreground"
-                  strokeWidth={1.75}
-                  aria-hidden="true"
-                />
+                    <ChevronDown
+                      className="size-4 shrink-0 text-muted-foreground"
+                      strokeWidth={1.75}
+                      aria-hidden="true"
+                    />
+                  </>
+                ) : null}
               </DropdownMenuTrigger>
             </SidebarMenuItem>
           </SidebarMenu>
 
           <DropdownMenuContent
-            align="end"
+            align={collapsed ? "start" : "end"}
             side={dropdownSide}
             sideOffset={8}
             className="min-w-60"
@@ -528,7 +618,9 @@ export function WorkspaceSidebarContent({
                   <Avatar className="size-9">
                     <AvatarImage src={user.imageUrl} alt={user.name} />
 
-                    <AvatarFallback>{userInitials}</AvatarFallback>
+                    <AvatarFallback className="bg-muted text-foreground">
+                      {userInitials}
+                    </AvatarFallback>
                   </Avatar>
 
                   <div className="min-w-0 flex-1">

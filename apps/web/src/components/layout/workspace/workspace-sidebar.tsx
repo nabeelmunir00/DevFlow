@@ -12,9 +12,9 @@ interface WorkspaceSidebarProps {
 export function WorkspaceSidebar({ user }: WorkspaceSidebarProps) {
   return (
     <Sidebar
-      collapsible="none"
+      collapsible="icon"
       variant="sidebar"
-      className="hidden h-dvh shrink-0 border-r border-sidebar-border xl:flex"
+      className="hidden h-dvh xl:flex"
     >
       <WorkspaceSidebarContent user={user} mode="desktop" />
     </Sidebar>
