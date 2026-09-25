@@ -244,15 +244,23 @@ function NavigationMenu({ items, pathname, onNavigate }: NavigationMenuProps) {
 
         return (
           <SidebarMenuItem key={item.label} className="relative">
+            {/* Active left indicator */}
+            {active ? (
+              <span
+                aria-hidden="true"
+                className="absolute top-1/2 -left-0 z-10 h-8 w-0.5 -translate-y-1/2 rounded-r-full bg-primary"
+              />
+            ) : null}
+
             <SidebarMenuButton
               tooltip={item.label}
               isActive={active}
               render={<Link href={href} onClick={onNavigate} />}
               className={cn(
                 [
-                  "group/nav-item relative",
                   "h-9 gap-3",
                   "rounded-md px-2.5",
+
                   "text-sm font-normal",
                   "text-sidebar-foreground/75",
 
@@ -262,26 +270,9 @@ function NavigationMenu({ items, pathname, onNavigate }: NavigationMenuProps) {
                   "hover:bg-hover",
                   "hover:text-sidebar-foreground",
 
-                  // Active state
                   "data-[active=true]:bg-accent",
                   "data-[active=true]:font-medium",
                   "data-[active=true]:text-primary",
-
-                  // Active left indicator
-                  "before:pointer-events-none",
-                  "before:absolute",
-                  "before:top-1/2",
-                  "before:-left-3",
-                  "before:h-8",
-                  "before:w-0.5",
-                  "before:-translate-y-1/2",
-                  "before:rounded-r-full",
-                  "before:bg-primary",
-                  "before:opacity-0",
-                  "before:transition-opacity",
-                  "before:duration-150",
-
-                  "data-[active=true]:before:opacity-100",
                 ].join(" "),
               )}
             >
