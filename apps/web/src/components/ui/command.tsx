@@ -23,8 +23,10 @@ function Command({
       data-slot="command"
       className={cn(
         [
-          "flex size-full flex-col overflow-hidden",
-          "rounded-md bg-popover text-popover-foreground",
+          "flex size-full flex-col",
+          "overflow-hidden",
+          "rounded-md",
+          "bg-popover text-popover-foreground",
         ].join(" "),
         className,
       )}
@@ -57,7 +59,8 @@ function CommandDialog({
       <DialogContent
         className={cn(
           [
-            "top-[35%] translate-y-0",
+            "top-[35%]",
+            "translate-y-0",
             "gap-0 overflow-hidden p-0",
             "sm:max-w-xl",
           ].join(" "),
@@ -82,17 +85,22 @@ function CommandInput({
     >
       <InputGroup className="border-0 bg-transparent shadow-none">
         <InputGroupAddon>
-          <SearchIcon className="size-4 shrink-0" />
+          <SearchIcon
+            className="size-4 shrink-0 text-muted-foreground"
+            strokeWidth={1.75}
+          />
         </InputGroupAddon>
 
         <CommandPrimitive.Input
           data-slot="command-input"
           className={cn(
             [
-              "h-8 w-full bg-transparent",
-              "text-sm text-foreground outline-none",
+              "h-9 w-full bg-transparent",
+              "text-sm text-foreground",
+              "outline-none",
               "placeholder:text-muted-foreground",
-              "disabled:cursor-not-allowed disabled:opacity-50",
+              "disabled:cursor-not-allowed",
+              "disabled:opacity-50",
             ].join(" "),
             className,
           )}
@@ -114,6 +122,7 @@ function CommandList({
         [
           "max-h-80 scroll-py-1",
           "overflow-x-hidden overflow-y-auto",
+          "p-1",
           "outline-none",
         ].join(" "),
         className,
@@ -131,7 +140,7 @@ function CommandEmpty({
     <CommandPrimitive.Empty
       data-slot="command-empty"
       className={cn(
-        "py-8 text-center text-sm text-muted-foreground",
+        ["py-8 text-center", "text-sm text-muted-foreground"].join(" "),
         className,
       )}
       {...props}
@@ -148,11 +157,14 @@ function CommandGroup({
       data-slot="command-group"
       className={cn(
         [
-          "overflow-hidden p-1 text-foreground",
+          "overflow-hidden",
+          "text-foreground",
+
           "**:[[cmdk-group-heading]]:px-2",
           "**:[[cmdk-group-heading]]:py-1.5",
           "**:[[cmdk-group-heading]]:text-xs",
           "**:[[cmdk-group-heading]]:font-medium",
+          "**:[[cmdk-group-heading]]:leading-4",
           "**:[[cmdk-group-heading]]:text-muted-foreground",
         ].join(" "),
         className,
@@ -185,13 +197,22 @@ function CommandItem({
       data-slot="command-item"
       className={cn(
         [
-          "group/command-item relative flex cursor-default items-center gap-2",
-          "rounded-sm px-2 py-1.5",
-          "text-sm outline-none select-none",
+          "group/command-item",
+          "relative flex min-h-8",
+          "cursor-default items-center gap-2",
+          "rounded-md px-2 py-1.5",
+
+          "text-sm leading-5",
+          "outline-none select-none",
+
+          "transition-colors duration-150 ease-out",
+
           "data-[disabled=true]:pointer-events-none",
           "data-[disabled=true]:opacity-50",
+
           "data-selected:bg-accent",
           "data-selected:text-accent-foreground",
+
           "[&_svg]:pointer-events-none",
           "[&_svg]:shrink-0",
           "[&_svg:not([class*='size-'])]:size-4",
@@ -205,11 +226,13 @@ function CommandItem({
       <CheckIcon
         className={cn(
           [
-            "ml-auto size-4 opacity-0",
+            "ml-auto size-4",
+            "text-primary opacity-0",
             "group-has-data-[slot=command-shortcut]/command-item:hidden",
             "group-data-[checked=true]/command-item:opacity-100",
           ].join(" "),
         )}
+        strokeWidth={1.75}
       />
     </CommandPrimitive.Item>
   );
@@ -224,7 +247,8 @@ function CommandShortcut({
       data-slot="command-shortcut"
       className={cn(
         [
-          "ml-auto font-mono text-[11px]",
+          "ml-auto",
+          "font-mono text-[11px]",
           "text-muted-foreground",
           "group-data-selected/command-item:text-accent-foreground",
         ].join(" "),
