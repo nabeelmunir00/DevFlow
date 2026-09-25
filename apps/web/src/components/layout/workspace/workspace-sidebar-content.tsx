@@ -12,6 +12,7 @@ import {
   BriefcaseBusiness,
   ChartNoAxesColumn,
   ChevronDown,
+  ChevronLeft,
   Folder,
   House,
   Settings,
@@ -45,10 +46,10 @@ import {
   SidebarSeparator,
 } from "@/components/ui/sidebar";
 
-import type { WorkspaceUser } from "./workspace-shell";
-
 import { assets } from "@/assets/assets";
 import { cn } from "@/lib/utils";
+
+import type { WorkspaceUser } from "./workspace-shell";
 
 interface WorkspaceSidebarContentProps {
   user: WorkspaceUser;
@@ -235,14 +236,14 @@ interface NavigationMenuProps {
 
 function NavigationMenu({ items, pathname, onNavigate }: NavigationMenuProps) {
   return (
-    <SidebarMenu className="gap-1">
+    <SidebarMenu className="gap-0.5">
       {items.map((item) => {
         const href = getWorkspaceHref(item.href);
 
         const active = isWorkspaceRouteActive(pathname, item.href);
 
         return (
-          <SidebarMenuItem key={item.label}>
+          <SidebarMenuItem key={item.label} className="relative">
             <SidebarMenuButton
               tooltip={item.label}
               isActive={active}
@@ -251,7 +252,7 @@ function NavigationMenu({ items, pathname, onNavigate }: NavigationMenuProps) {
                 [
                   "group/nav-item relative",
                   "h-9 gap-3",
-                  "rounded-md px-3",
+                  "rounded-md px-2.5",
                   "text-sm font-normal",
                   "text-sidebar-foreground/75",
 
@@ -261,19 +262,24 @@ function NavigationMenu({ items, pathname, onNavigate }: NavigationMenuProps) {
                   "hover:bg-hover",
                   "hover:text-sidebar-foreground",
 
+                  // Active state
                   "data-[active=true]:bg-accent",
                   "data-[active=true]:font-medium",
                   "data-[active=true]:text-primary",
 
+                  // Active left indicator
+                  "before:pointer-events-none",
                   "before:absolute",
                   "before:top-1/2",
-                  "before:left-0",
-                  "before:h-5",
+                  "before:-left-3",
+                  "before:h-8",
                   "before:w-0.5",
                   "before:-translate-y-1/2",
-                  "before:rounded-full",
+                  "before:rounded-r-full",
                   "before:bg-primary",
                   "before:opacity-0",
+                  "before:transition-opacity",
+                  "before:duration-150",
 
                   "data-[active=true]:before:opacity-100",
                 ].join(" "),
@@ -323,7 +329,7 @@ export function WorkspaceSidebarContent({
   const dropdownSide = isSheet ? "bottom" : "right";
 
   return (
-    <div className="flex h-dvh min-h-0 w-full flex-col overflow-hidden bg-sidebar text-sidebar-foreground">
+    <div className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-sidebar text-sidebar-foreground">
       {/* ================================================
           BRAND
       ================================================= */}
@@ -334,7 +340,7 @@ export function WorkspaceSidebarContent({
             href="/workspace"
             onClick={onNavigate}
             aria-label="DevFlow home"
-            className="flex min-w-0 items-center gap-2.5"
+            className="flex min-w-0 flex-1 items-center gap-2.5"
           >
             <Image
               src={assets.newLogo}
@@ -350,11 +356,25 @@ export function WorkspaceSidebarContent({
                 DevFlow
               </span>
 
-              <span className="ml-1 mt-0.5 text-[10px] font-medium text-muted-foreground">
+              <span className="mt-0.5 ml-1 text-[10px] font-medium text-muted-foreground">
                 AI
               </span>
             </div>
           </Link>
+
+          {!isSheet ? (
+            <button
+              type="button"
+              aria-label="Collapse sidebar"
+              className="flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors duration-150 hover:bg-hover hover:text-foreground"
+            >
+              <ChevronLeft
+                className="size-4"
+                strokeWidth={1.75}
+                aria-hidden="true"
+              />
+            </button>
+          ) : null}
         </div>
 
         {/* ==============================================
@@ -432,7 +452,7 @@ export function WorkspaceSidebarContent({
       ================================================= */}
 
       <SidebarContent className="min-h-0">
-        <SidebarGroup className="px-3 py-4">
+        <SidebarGroup className="px-3 py-3">
           <SidebarGroupContent>
             <NavigationMenu
               items={mainNavigation}
