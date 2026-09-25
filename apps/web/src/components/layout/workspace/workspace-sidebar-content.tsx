@@ -5,6 +5,22 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icon } from "@iconify/react";
 
+import {
+  Activity,
+  Bell,
+  Bot,
+  BriefcaseBusiness,
+  ChartNoAxesColumn,
+  ChevronDown,
+  Folder,
+  House,
+  Settings,
+  SquareCheck,
+  TimerReset,
+  UserRound,
+  UsersRound,
+} from "lucide-react";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 import {
@@ -27,22 +43,106 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarSeparator,
-  SidebarTrigger,
-  useSidebar,
 } from "@/components/ui/sidebar";
 
-import {
-  workspaceNavigation,
-  workspaceSecondaryNavigation,
-} from "@/config/workspace-navigation";
-
 import type { WorkspaceUser } from "./workspace-shell";
+
+import { assets } from "@/assets/assets";
+import { cn } from "@/lib/utils";
 
 interface WorkspaceSidebarContentProps {
   user: WorkspaceUser;
   mode?: "desktop" | "sheet";
   onNavigate?: () => void;
 }
+
+type NavigationIcon =
+  | "home"
+  | "my-work"
+  | "projects"
+  | "tasks"
+  | "sprints"
+  | "teams"
+  | "github"
+  | "ai"
+  | "analytics"
+  | "activity"
+  | "notifications"
+  | "settings";
+
+interface NavigationItem {
+  label: string;
+  href: string;
+  icon: NavigationIcon;
+  badge?: number;
+}
+
+const mainNavigation: NavigationItem[] = [
+  {
+    label: "Home",
+    href: "",
+    icon: "home",
+  },
+  {
+    label: "My Work",
+    href: "my-work",
+    icon: "my-work",
+  },
+  {
+    label: "Projects",
+    href: "project",
+    icon: "projects",
+  },
+  {
+    label: "Tasks",
+    href: "tasks",
+    icon: "tasks",
+  },
+  {
+    label: "Sprints",
+    href: "sprints",
+    icon: "sprints",
+  },
+  {
+    label: "Teams",
+    href: "teams",
+    icon: "teams",
+  },
+  {
+    label: "GitHub",
+    href: "github",
+    icon: "github",
+  },
+  {
+    label: "AI Assistant",
+    href: "ai",
+    icon: "ai",
+  },
+  {
+    label: "Analytics",
+    href: "analytics",
+    icon: "analytics",
+  },
+];
+
+const secondaryNavigation: NavigationItem[] = [
+  {
+    label: "Activity",
+    href: "activity",
+    icon: "activity",
+  },
+  {
+    label: "Notifications",
+    href: "notifications",
+    icon: "notifications",
+    badge: 3,
+  },
+  {
+    label: "Settings",
+    href: "settings",
+    icon: "settings",
+  },
+];
 
 function getInitials(value: string) {
   return value
@@ -72,6 +172,141 @@ export function isWorkspaceRouteActive(pathname: string, href: string) {
   return pathname === target || pathname.startsWith(`${target}/`);
 }
 
+function NavigationIcon({ icon }: { icon: NavigationIcon }) {
+  const iconProps = {
+    className: "size-4.5 shrink-0",
+    strokeWidth: 1.75,
+    "aria-hidden": true as const,
+  };
+
+  switch (icon) {
+    case "home":
+      return <House {...iconProps} />;
+
+    case "my-work":
+      return <UserRound {...iconProps} />;
+
+    case "projects":
+      return <Folder {...iconProps} />;
+
+    case "tasks":
+      return <SquareCheck {...iconProps} />;
+
+    case "sprints":
+      return <TimerReset {...iconProps} />;
+
+    case "teams":
+      return <UsersRound {...iconProps} />;
+
+    case "github":
+      return (
+        <Icon
+          icon="mdi:github"
+          className="size-4.5 shrink-0"
+          aria-hidden="true"
+        />
+      );
+
+    case "ai":
+      return <Bot {...iconProps} />;
+
+    case "analytics":
+      return <ChartNoAxesColumn {...iconProps} />;
+
+    case "activity":
+      return <Activity {...iconProps} />;
+
+    case "notifications":
+      return <Bell {...iconProps} />;
+
+    case "settings":
+      return <Settings {...iconProps} />;
+
+    default:
+      return null;
+  }
+}
+
+interface NavigationMenuProps {
+  items: NavigationItem[];
+  pathname: string;
+  onNavigate?: () => void;
+}
+
+function NavigationMenu({ items, pathname, onNavigate }: NavigationMenuProps) {
+  return (
+    <SidebarMenu className="gap-1">
+      {items.map((item) => {
+        const href = getWorkspaceHref(item.href);
+
+        const active = isWorkspaceRouteActive(pathname, item.href);
+
+        return (
+          <SidebarMenuItem key={item.label}>
+            <SidebarMenuButton
+              tooltip={item.label}
+              isActive={active}
+              render={<Link href={href} onClick={onNavigate} />}
+              className={cn(
+                [
+                  "group/nav-item relative",
+                  "h-9 gap-3",
+                  "rounded-md px-3",
+                  "text-sm font-normal",
+                  "text-sidebar-foreground/75",
+
+                  "transition-colors",
+                  "duration-150 ease-out",
+
+                  "hover:bg-hover",
+                  "hover:text-sidebar-foreground",
+
+                  "data-[active=true]:bg-accent",
+                  "data-[active=true]:font-medium",
+                  "data-[active=true]:text-primary",
+
+                  "before:absolute",
+                  "before:top-1/2",
+                  "before:left-0",
+                  "before:h-5",
+                  "before:w-0.5",
+                  "before:-translate-y-1/2",
+                  "before:rounded-full",
+                  "before:bg-primary",
+                  "before:opacity-0",
+
+                  "data-[active=true]:before:opacity-100",
+                ].join(" "),
+              )}
+            >
+              <NavigationIcon icon={item.icon} />
+
+              <span className="min-w-0 flex-1 truncate">{item.label}</span>
+
+              {item.badge ? (
+                <span
+                  className={cn(
+                    [
+                      "ml-auto flex size-5 shrink-0",
+                      "items-center justify-center",
+                      "rounded-full",
+                      "bg-primary",
+                      "text-[11px] font-semibold",
+                      "text-primary-foreground",
+                    ].join(" "),
+                  )}
+                >
+                  {item.badge}
+                </span>
+              ) : null}
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        );
+      })}
+    </SidebarMenu>
+  );
+}
+
 export function WorkspaceSidebarContent({
   user,
   mode = "desktop",
@@ -79,103 +314,82 @@ export function WorkspaceSidebarContent({
 }: WorkspaceSidebarContentProps) {
   const pathname = usePathname();
 
-  const { isMobile, state } = useSidebar();
-
   const isSheet = mode === "sheet";
-
-  const isCollapsed = mode === "desktop" && state === "collapsed";
-
-  const workspaceName = "Workspace";
-  const workspaceInitials = "W";
 
   const userInitials = getInitials(user.name || user.email) || "U";
 
-  const dropdownSide = isSheet ? "bottom" : isMobile ? "bottom" : "right";
+  const workspaceName = "DevFlow Studio";
+
+  const dropdownSide = isSheet ? "bottom" : "right";
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-sidebar text-sidebar-foreground">
-      {/* =====================================================
-          HEADER
-      ====================================================== */}
+    <div className="flex h-dvh min-h-0 w-full flex-col overflow-hidden bg-sidebar text-sidebar-foreground">
+      {/* ================================================
+          BRAND
+      ================================================= */}
 
-      <SidebarHeader className="gap-2 border-b border-sidebar-border p-2">
-        {/* =================================================
-            BRAND + TOGGLE
-        ================================================== */}
+      <SidebarHeader className="shrink-0 gap-0 border-b border-sidebar-border px-3 py-0">
+        <div className="flex h-16 items-center">
+          <Link
+            href="/workspace"
+            onClick={onNavigate}
+            aria-label="DevFlow home"
+            className="flex min-w-0 items-center gap-2.5"
+          >
+            <Image
+              src={assets.newLogo}
+              alt="DevFlow"
+              width={32}
+              height={32}
+              priority
+              className="size-8 shrink-0 object-contain"
+            />
 
-        <div className="flex h-10 items-center">
-          {isCollapsed ? (
-            <div className="flex w-full items-center justify-center">
-              <SidebarTrigger
-                className="size-8 rounded-md text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                aria-label="Expand sidebar"
-              />
+            <div className="flex min-w-0 items-start">
+              <span className="truncate font-heading text-lg font-semibold tracking-tight text-sidebar-foreground">
+                DevFlow
+              </span>
+
+              <span className="ml-1 mt-0.5 text-[10px] font-medium text-muted-foreground">
+                AI
+              </span>
             </div>
-          ) : (
-            <>
-              <Link
-                href="/workspace"
-                onClick={onNavigate}
-                aria-label="DevFlow workspace"
-                className="flex min-w-0 flex-1 items-center gap-2.5 overflow-hidden px-1"
-              >
-                <Image
-                  src="/logo.png"
-                  alt="DevFlow"
-                  width={32}
-                  height={32}
-                  priority
-                  className="size-8 shrink-0 object-contain"
-                />
-
-                <span className="truncate font-heading text-base font-semibold tracking-tight text-sidebar-foreground">
-                  DevFlow
-                </span>
-              </Link>
-
-              {!isSheet ? (
-                <SidebarTrigger
-                  className="size-8 shrink-0 rounded-md text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                  aria-label="Collapse sidebar"
-                />
-              ) : null}
-            </>
-          )}
+          </Link>
         </div>
 
-        {/* =================================================
+        {/* ==============================================
             WORKSPACE SWITCHER
-        ================================================== */}
+        =============================================== */}
 
         <DropdownMenu>
-          <SidebarMenu>
+          <SidebarMenu className="pb-3">
             <SidebarMenuItem>
               <DropdownMenuTrigger
                 render={
                   <SidebarMenuButton
                     size="lg"
                     tooltip={workspaceName}
-                    className="rounded-md data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                    className={[
+                      "h-10 rounded-md px-2",
+                      "data-[state=open]:bg-hover",
+                      "data-[state=open]:text-sidebar-foreground",
+                    ].join(" ")}
                   />
                 }
               >
-                <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary text-sm font-semibold text-primary-foreground">
-                  {workspaceInitials}
-                </div>
+                <BriefcaseBusiness
+                  className="size-4.5 shrink-0 text-muted-foreground"
+                  strokeWidth={1.75}
+                  aria-hidden="true"
+                />
 
-                <div className="grid min-w-0 flex-1 text-left leading-tight">
-                  <span className="truncate text-sm font-medium">
-                    {workspaceName}
-                  </span>
+                <span className="min-w-0 flex-1 truncate text-sm font-medium">
+                  {workspaceName}
+                </span>
 
-                  <span className="truncate text-xs text-muted-foreground">
-                    Workspace
-                  </span>
-                </div>
-
-                <Icon
-                  icon="solar:alt-arrow-down-linear"
-                  className="ml-auto size-4 shrink-0 text-muted-foreground"
+                <ChevronDown
+                  className="size-4 shrink-0 text-muted-foreground"
+                  strokeWidth={1.75}
                   aria-hidden="true"
                 />
               </DropdownMenuTrigger>
@@ -186,21 +400,15 @@ export function WorkspaceSidebarContent({
             align="start"
             side={dropdownSide}
             sideOffset={8}
-            className="min-w-56 rounded-md"
+            className="min-w-56"
           >
             <DropdownMenuGroup>
-              <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-                Workspace
-              </DropdownMenuLabel>
+              <DropdownMenuLabel>Workspace</DropdownMenuLabel>
 
               <DropdownMenuItem
                 render={<Link href="/select-workspace" onClick={onNavigate} />}
               >
-                <Icon
-                  icon="solar:transfer-horizontal-linear"
-                  className="size-4"
-                  aria-hidden="true"
-                />
+                <BriefcaseBusiness className="size-4" strokeWidth={1.75} />
 
                 <span>Switch workspace</span>
               </DropdownMenuItem>
@@ -210,11 +418,7 @@ export function WorkspaceSidebarContent({
                   <Link href="/workspace/settings" onClick={onNavigate} />
                 }
               >
-                <Icon
-                  icon="solar:settings-linear"
-                  className="size-4"
-                  aria-hidden="true"
-                />
+                <Settings className="size-4" strokeWidth={1.75} />
 
                 <span>Workspace settings</span>
               </DropdownMenuItem>
@@ -223,106 +427,40 @@ export function WorkspaceSidebarContent({
         </DropdownMenu>
       </SidebarHeader>
 
-      {/* =====================================================
+      {/* ================================================
           MAIN NAVIGATION
-      ====================================================== */}
+      ================================================= */}
 
-      <SidebarContent>
-        <SidebarGroup className="px-2 py-3">
+      <SidebarContent className="min-h-0">
+        <SidebarGroup className="px-3 py-4">
           <SidebarGroupContent>
-            <SidebarMenu className="gap-1">
-              {workspaceNavigation.map((item) => {
-                const href = getWorkspaceHref(item.href);
-
-                const active = isWorkspaceRouteActive(pathname, item.href);
-
-                return (
-                  <SidebarMenuItem key={item.label}>
-                    <SidebarMenuButton
-                      tooltip={item.label}
-                      isActive={active}
-                      render={<Link href={href} onClick={onNavigate} />}
-                      className="
-                        h-9
-                        gap-3
-                        rounded-md
-                        px-2.5
-                        text-muted-foreground
-                        transition-colors
-                        hover:bg-sidebar-accent
-                        hover:text-sidebar-accent-foreground
-                        data-[active=true]:bg-primary/10
-                        data-[active=true]:font-medium
-                        data-[active=true]:text-primary
-                      "
-                    >
-                      <Icon
-                        icon={item.icon}
-                        className="size-4 shrink-0"
-                        aria-hidden="true"
-                      />
-
-                      <span className="truncate">{item.label}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
+            <NavigationMenu
+              items={mainNavigation}
+              pathname={pathname}
+              onNavigate={onNavigate}
+            />
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
 
-      {/* =====================================================
-          FOOTER
-      ====================================================== */}
+      {/* ================================================
+          FOOTER NAVIGATION
+      ================================================= */}
 
-      <SidebarFooter className="gap-2 p-2">
-        {/* Secondary Navigation */}
+      <SidebarFooter className="shrink-0 gap-0 px-3 pb-3">
+        <SidebarSeparator className="mx-0 mb-3" />
 
-        <SidebarMenu className="gap-1">
-          {workspaceSecondaryNavigation.map((item) => {
-            const href = getWorkspaceHref(item.href);
+        <NavigationMenu
+          items={secondaryNavigation}
+          pathname={pathname}
+          onNavigate={onNavigate}
+        />
 
-            const active = isWorkspaceRouteActive(pathname, item.href);
+        <SidebarSeparator className="mx-0 my-3" />
 
-            return (
-              <SidebarMenuItem key={item.label}>
-                <SidebarMenuButton
-                  tooltip={item.label}
-                  isActive={active}
-                  render={<Link href={href} onClick={onNavigate} />}
-                  className="
-                    h-9
-                    gap-3
-                    rounded-md
-                    px-2.5
-                    text-muted-foreground
-                    transition-colors
-                    hover:bg-sidebar-accent
-                    hover:text-sidebar-accent-foreground
-                    data-[active=true]:bg-primary/10
-                    data-[active=true]:font-medium
-                    data-[active=true]:text-primary
-                  "
-                >
-                  <Icon
-                    icon={item.icon}
-                    className="size-4 shrink-0"
-                    aria-hidden="true"
-                  />
-
-                  <span className="truncate">{item.label}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            );
-          })}
-        </SidebarMenu>
-
-        <SidebarSeparator className="mx-0" />
-
-        {/* =================================================
+        {/* ==============================================
             CURRENT USER
-        ================================================== */}
+        =============================================== */}
 
         <DropdownMenu>
           <SidebarMenu>
@@ -332,24 +470,24 @@ export function WorkspaceSidebarContent({
                   <SidebarMenuButton
                     size="lg"
                     tooltip={user.name}
-                    className="
-                      rounded-md
-                      data-[state=open]:bg-sidebar-accent
-                      data-[state=open]:text-sidebar-accent-foreground
-                    "
+                    className={[
+                      "h-12 rounded-md px-2",
+                      "data-[state=open]:bg-hover",
+                      "data-[state=open]:text-sidebar-foreground",
+                    ].join(" ")}
                   />
                 }
               >
-                <Avatar className="size-8 shrink-0 rounded-md">
+                <Avatar className="size-9 shrink-0">
                   <AvatarImage src={user.imageUrl} alt={user.name} />
 
-                  <AvatarFallback className="rounded-md">
+                  <AvatarFallback className="text-xs font-medium">
                     {userInitials}
                   </AvatarFallback>
                 </Avatar>
 
                 <div className="grid min-w-0 flex-1 text-left leading-tight">
-                  <span className="truncate text-sm font-medium">
+                  <span className="truncate text-sm font-medium text-sidebar-foreground">
                     {user.name}
                   </span>
 
@@ -358,9 +496,9 @@ export function WorkspaceSidebarContent({
                   </span>
                 </div>
 
-                <Icon
-                  icon="solar:menu-dots-bold"
-                  className="ml-auto size-4 shrink-0 text-muted-foreground"
+                <ChevronDown
+                  className="size-4 shrink-0 text-muted-foreground"
+                  strokeWidth={1.75}
                   aria-hidden="true"
                 />
               </DropdownMenuTrigger>
@@ -371,21 +509,21 @@ export function WorkspaceSidebarContent({
             align="end"
             side={dropdownSide}
             sideOffset={8}
-            className="min-w-60 rounded-md"
+            className="min-w-60"
           >
             <DropdownMenuGroup>
               <DropdownMenuLabel>
                 <div className="flex items-center gap-3">
-                  <Avatar className="size-9 rounded-md">
+                  <Avatar className="size-9">
                     <AvatarImage src={user.imageUrl} alt={user.name} />
 
-                    <AvatarFallback className="rounded-md">
-                      {userInitials}
-                    </AvatarFallback>
+                    <AvatarFallback>{userInitials}</AvatarFallback>
                   </Avatar>
 
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{user.name}</p>
+                    <p className="truncate text-sm font-medium text-foreground">
+                      {user.name}
+                    </p>
 
                     <p className="truncate text-xs font-normal text-muted-foreground">
                       {user.email}
@@ -403,11 +541,7 @@ export function WorkspaceSidebarContent({
                   <Link href="/workspace/settings" onClick={onNavigate} />
                 }
               >
-                <Icon
-                  icon="solar:settings-linear"
-                  className="size-4"
-                  aria-hidden="true"
-                />
+                <Settings className="size-4" strokeWidth={1.75} />
 
                 <span>Settings</span>
               </DropdownMenuItem>
@@ -415,11 +549,7 @@ export function WorkspaceSidebarContent({
               <DropdownMenuItem
                 render={<Link href="/select-workspace" onClick={onNavigate} />}
               >
-                <Icon
-                  icon="solar:transfer-horizontal-linear"
-                  className="size-4"
-                  aria-hidden="true"
-                />
+                <BriefcaseBusiness className="size-4" strokeWidth={1.75} />
 
                 <span>Switch workspace</span>
               </DropdownMenuItem>
