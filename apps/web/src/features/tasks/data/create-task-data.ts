@@ -212,3 +212,26 @@ export const taskEstimateOptions: TaskEstimateOption[] = [
     label: "1d",
   },
 ];
+
+import type { CreateTaskDialogData } from "../types/task";
+
+export const defaultCreateTaskData: CreateTaskDialogData = {
+  projects: createTaskProjects,
+  users: createTaskUsers,
+  sprints: createTaskSprints,
+  labels: createTaskLabels,
+};
+
+export function resolveCreateTaskData(
+  data?: Partial<CreateTaskDialogData>,
+): CreateTaskDialogData {
+  return {
+    projects: data?.projects ?? defaultCreateTaskData.projects,
+
+    users: data?.users ?? defaultCreateTaskData.users,
+
+    sprints: data?.sprints ?? defaultCreateTaskData.sprints,
+
+    labels: data?.labels ?? defaultCreateTaskData.labels,
+  };
+}
