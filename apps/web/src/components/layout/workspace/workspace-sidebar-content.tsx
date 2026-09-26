@@ -256,7 +256,7 @@ function NavigationMenu({
                 aria-hidden="true"
                 className={cn(
                   "absolute top-1/2 z-10 w-0.5 -translate-y-1/2 rounded-r-full bg-primary",
-                  collapsed ? "-left-0 h-7" : "-left-0 h-8",
+                  collapsed ? "-left-0  h-7" : "-left-0 h-8",
                 )}
               />
             ) : null}
